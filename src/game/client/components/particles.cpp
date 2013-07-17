@@ -1,0 +1,274 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <base/math.h>
+#include <engine/graphics.h>
+#include <engine/demo.h>
+
+#include <game/generated/client_data.h>
+#include <game/client/render.h>
+#include <game/gamecore.h>
+#include "particles.h"
+#include "camera.h"
+
+CParticles::CParticles()
+{
+	OnReset();
+	m_RenderTrail.m_pParts = this;
+	m_RenderExplosions.m_pParts = this;
+	m_RenderGeneral.m_pParts = this;
+	m_RenderHClientBlood.m_pParts = this;
+	m_RenderHClientFreeze.m_pParts = this;
+	m_RenderHClientTumbstone.m_pParts = this;
+}
+
+
+void CParticles::OnReset()
+{
+	// reset particles
+	for(int i = 0; i < MAX_PARTICLES; i++)
+	{
+		m_aParticles[i].m_PrevPart = i-1;
+		m_aParticles[i].m_NextPart = i+1;
+	}
+
+	m_aParticles[0].m_PrevPart = 0;
+	m_aParticles[MAX_PARTICLES-1].m_NextPart = -1;
+	m_FirstFree = 0;
+
+	for(int i = 0; i < NUM_GROUPS; i++)
+		m_aFirstPart[i] = -1;
+}
+
+void CParticles::Add(int Group, CParticle *pPart)
+{
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	{
+		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
+		if(pInfo->m_Paused)
+			return;
+	}
+
+    //m_FirstFree >= MAX_PARTICLES
+	if (m_FirstFree == -1)
+		return;
+
+	// remove from the free list
+	int Id = m_FirstFree;
+	m_FirstFree = m_aParticles[Id].m_NextPart;
+	if(m_FirstFree != -1)
+		m_aParticles[m_FirstFree].m_PrevPart = -1;
+
+	// copy data
+	m_aParticles[Id] = *pPart;
+
+	// insert to the group list
+	m_aParticles[Id].m_PrevPart = -1;
+	m_aParticles[Id].m_NextPart = m_aFirstPart[Group];
+	if(m_aFirstPart[Group] != -1)
+		m_aParticles[m_aFirstPart[Group]].m_PrevPart = Id;
+	m_aFirstPart[Group] = Id;
+
+	// set some parameters
+	m_aParticles[Id].m_Life = 0;
+}
+
+void CParticles::Update(float TimePassed)
+{
+	static float FrictionFraction = 0;
+	FrictionFraction += TimePassed;
+
+	if(FrictionFraction > 2.0f) // safty messure
+		FrictionFraction = 0;
+
+	int FrictionCount = 0;
+	while(FrictionFraction > 0.05f)
+	{
+		FrictionCount++;
+		FrictionFraction -= 0.05f;
+	}
+
+	for(int g = 0; g < NUM_GROUPS; g++)
+	{
+		int i = m_aFirstPart[g];
+		while(i != -1)
+		{
+			int Next = m_aParticles[i].m_NextPart;
+			//m_aParticles[i].vel += flow_get(m_aParticles[i].pos)*time_passed * m_aParticles[i].flow_affected;
+			m_aParticles[i].m_Vel.y += m_aParticles[i].m_Gravity*TimePassed;
+
+			for(int f = 0; f < FrictionCount; f++) // apply friction
+				m_aParticles[i].m_Vel *= m_aParticles[i].m_Friction;
+
+			// move the point
+			vec2 Vel = m_aParticles[i].m_Vel*TimePassed;
+			if (m_aParticles[i].m_Type == PARTICLE_BLOOD)
+			{
+			    int coll = 0;
+                Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, 0.1f, NULL, &coll);
+                if (coll && !m_aParticles[i].m_Collide)
+                {
+                    vec2 Dir = normalize(m_aParticles[i].m_Vel);
+
+                    CParticle p;
+                    p.SetDefault();
+                    p.m_Spr = SPRITE_PART_EXPL01;
+                    p.m_Pos = m_aParticles[i].m_Pos + Dir * 8.0f;
+                    p.m_Vel = vec2(0.0,0.0f);
+                    p.m_LifeSpan = 30.0f + frandom()*0.3f;
+                    p.m_StartSize = 5.0f + frandom()*22.0f;
+                    p.m_EndSize = 0.0f;
+                    p.m_Rot = frandom()*pi*2;
+                    p.m_Rotspeed = 0.0f;
+                    p.m_Gravity = 0.0f;
+                    p.m_Friction = 0.0f;
+                    p.m_Type = PARTICLE_BLOOD_L;
+                    p.m_Collide = true;
+                    p.m_Color = vec4(m_aParticles[i].m_Color.r, m_aParticles[i].m_Color.g, m_aParticles[i].m_Color.b, 0.35f);
+                    m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_BLOOD, &p);
+
+                    m_aParticles[i].m_Collide = true;
+                    m_aParticles[i].m_Life = m_aParticles[i].m_LifeSpan+1;
+                }
+
+                m_aParticles[i].m_LastPos = m_aParticles[i].m_Pos;
+			}
+			else
+                Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, 0.1f+0.9f*frandom(), NULL);
+
+			m_aParticles[i].m_Vel = Vel* (1.0f/TimePassed);
+			m_aParticles[i].m_Life += TimePassed;
+			m_aParticles[i].m_Rot += TimePassed * m_aParticles[i].m_Rotspeed;
+
+
+			// check particle death
+			if(m_aParticles[i].m_Life > m_aParticles[i].m_LifeSpan)
+			{
+				// remove it from the group list
+				if(m_aParticles[i].m_PrevPart != -1)
+					m_aParticles[m_aParticles[i].m_PrevPart].m_NextPart = m_aParticles[i].m_NextPart;
+				else
+					m_aFirstPart[g] = m_aParticles[i].m_NextPart;
+
+				if(m_aParticles[i].m_NextPart != -1)
+					m_aParticles[m_aParticles[i].m_NextPart].m_PrevPart = m_aParticles[i].m_PrevPart;
+
+				// insert to the free list
+				if(m_FirstFree != -1)
+					m_aParticles[m_FirstFree].m_PrevPart = i;
+				m_aParticles[i].m_PrevPart = -1;
+				m_aParticles[i].m_NextPart = m_FirstFree;
+				m_FirstFree = i;
+			}
+
+			i = Next;
+		}
+	}
+}
+
+void CParticles::OnRender()
+{
+	if(Client()->State() < IClient::STATE_ONLINE)
+		return;
+
+	static int64 LastTime = 0;
+	int64 t = time_get();
+
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	{
+		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
+		if(!pInfo->m_Paused)
+			Update((float)((t-LastTime)/(double)time_freq())*pInfo->m_Speed);
+	}
+	else
+		Update((float)((t-LastTime)/(double)time_freq()));
+
+	LastTime = t;
+}
+
+void CParticles::RenderGroup(int Group)
+{
+	Graphics()->BlendNormal();
+	//gfx_blend_additive();
+	if (Group == GROUP_HCLIENT_FREEZE)
+        Graphics()->TextureSet(g_pData->m_aImages[IMAGE_UNFREEZE_EFFECT].m_Id);
+    else if (Group == GROUP_HCLIENT_TOMBSTONE)
+        Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MINETEE_FX_TOMBSTONE].m_Id);
+    else
+        Graphics()->TextureSet(g_pData->m_aImages[IMAGE_PARTICLES].m_Id);
+
+    //Graphics()->QuadsBegin();
+
+	int i = m_aFirstPart[Group];
+	while(i != -1)
+	{
+	    vec2 p = m_aParticles[i].m_Pos;
+
+	    if (m_aParticles[i].m_Type == PARTICLE_BLOOD_L)
+	    {
+            int Nx = 32*((int)p.x / 32);
+            int Ny = 32*((int)p.y / 32);
+            int Nw = 32;
+            int Nh = 32;
+
+	        if (!Collision()->CheckPoint(vec2(Nx+16.0f, Ny+16.0f)))
+	        {
+	            m_aParticles[i].m_Life = m_aParticles[i].m_LifeSpan+1;
+	            i = m_aParticles[i].m_NextPart;
+	            continue;
+	        }
+
+            if (Collision()->CheckPoint(vec2(Nx+32.0f+16.0f, Ny+16.0f)))
+                Nw += 32;
+            if (Collision()->CheckPoint(vec2(Nx-32.0f+16.0f, Ny+16.0f)))
+                Nx -= 32;
+            if (Collision()->CheckPoint(vec2(Nx+16.0f, Ny+32.0f+16.0f)))
+                Nh += 32;
+            if (Collision()->CheckPoint(vec2(Nx+16.0f, Ny-32.0f+16.0f)))
+                Ny -= 32;
+
+            vec2 Center = m_pClient->m_pCamera->m_Center;
+
+			// set clipping
+			float Points[4];
+			Graphics()->GetScreen(&Points[0], &Points[1], &Points[2], &Points[3]);
+			float x0 = (Nx - Points[0]) / (Points[2]-Points[0]);
+			float y0 = (Ny - Points[1]) / (Points[3]-Points[1]);
+			float x1 = ((Nx+Nw) - Points[0]) / (Points[2]-Points[0]);
+			float y1 = ((Ny+Nh) - Points[1]) / (Points[3]-Points[1]);
+
+			Graphics()->ClipEnable((int)(x0*Graphics()->ScreenWidth()), (int)(y0*Graphics()->ScreenHeight()),
+				(int)((x1-x0)*Graphics()->ScreenWidth()), (int)((y1-y0)*Graphics()->ScreenHeight()));
+	    }
+
+	    Graphics()->QuadsBegin();
+
+	    if(m_aParticles[i].m_Spr != -1)
+            RenderTools()->SelectSprite(m_aParticles[i].m_Spr);
+		float a = m_aParticles[i].m_Life / m_aParticles[i].m_LifeSpan;
+		float Size = mix(m_aParticles[i].m_StartSize, m_aParticles[i].m_EndSize, a);
+
+		Graphics()->QuadsSetRotation(m_aParticles[i].m_Rot);
+
+		Graphics()->SetColor(
+			m_aParticles[i].m_Color.r,
+			m_aParticles[i].m_Color.g,
+			m_aParticles[i].m_Color.b,
+			m_aParticles[i].m_Color.a); // pow(a, 0.75f) *
+
+        IGraphics::CQuadItem QuadItem(p.x, p.y, Size, Size);
+        if (Group == GROUP_HCLIENT_TOMBSTONE)
+            QuadItem = IGraphics::CQuadItem(p.x, p.y-Size/2, Size, Size);
+
+        Graphics()->QuadsDraw(&QuadItem, 1);
+
+        Graphics()->QuadsEnd();
+		if (m_aParticles[i].m_Type == PARTICLE_BLOOD_L)
+            Graphics()->ClipDisable();
+
+		i = m_aParticles[i].m_NextPart;
+	}
+
+    //Graphics()->QuadsEnd();
+
+	Graphics()->BlendNormal();
+}
