@@ -3,7 +3,7 @@
 H-Client its a mod for the game Teeworlds created and maintained by unsigned char*.
 
 Please visit http://hclient.wordpress.com for up-to-date information about 
-the game.
+the mod.
 
 
 
