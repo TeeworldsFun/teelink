@@ -916,16 +916,6 @@ void CCharacter::Tick()
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
 
-	// handle death-tiles and leaving gamelayer
-	if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
-		GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
-		GameServer()->Collision()->GetCollisionAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
-		GameServer()->Collision()->GetCollisionAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
-		GameLayerClipped(m_Pos))
-	{
-		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
-	}
-
 	//H-Client: Fluid Damages
 	int BlockID = GameServer()->Collision()->GetMineTeeBlockAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f);
 	if (Server()->Tick() - TimerFluidDamage >= Server()->TickSpeed()/2 && (BlockID >= BLOCK_UNDEF104 && BlockID <= BLOCK_LAVA))
@@ -954,6 +944,16 @@ void CCharacter::Tick()
             TakeDamage(vec2(0.0f,-1.0f), 1, m_pPlayer->GetCID(), WEAPON_WORLD);
             TimerFluidDamage = Server()->Tick();
         }
+	}
+
+	// handle death-tiles and leaving gamelayer
+	if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
+		GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
+		GameServer()->Collision()->GetCollisionAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
+		GameServer()->Collision()->GetCollisionAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
+		GameLayerClipped(m_Pos))
+	{
+		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 	}
 
 	// handle Weapons
