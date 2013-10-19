@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Release" />
+	<File name="src/base/system.c" open="1" top="0" tabpos="3">
+		<Cursor position="18973" topLine="873" />
+	</File>
+	<File name="src/engine/client/autoupdate.cpp" open="1" top="0" tabpos="4">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="src/game/generated/nethash.cpp" open="1" top="0" tabpos="1">
+		<Cursor position="48" topLine="0" />
+	</File>
 </CodeBlocks_layout_file>

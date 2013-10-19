@@ -294,6 +294,11 @@
 		<Unit filename="src/game/editor/popups.cpp" />
 		<Unit filename="src/game/gamecore.cpp" />
 		<Unit filename="src/game/gamecore.h" />
+		<Unit filename="src/game/generated/client_data.cpp" />
+		<Unit filename="src/game/generated/client_data.h" />
+		<Unit filename="src/game/generated/nethash.cpp" />
+		<Unit filename="src/game/generated/protocol.cpp" />
+		<Unit filename="src/game/generated/protocol.h" />
 		<Unit filename="src/game/layers.cpp" />
 		<Unit filename="src/game/layers.h" />
 		<Unit filename="src/game/localization.cpp" />

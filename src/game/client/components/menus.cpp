@@ -659,10 +659,6 @@ int CMenus::RenderMenubar(CUIRect r)
         static int s_NewsButton=0;
         if (DoButton_MenuTab(&s_NewsButton, Localize("News"), m_ActivePage==PAGE_NEWS, &Button, CUI::CORNER_TL))
             NewPage = PAGE_NEWS;
-        Box.VSplitLeft(75.0f, &Button, &Box);
-        static int s_IrcButton=0;
-        if (DoButton_MenuTab(&s_IrcButton, Localize("Irc"), m_ActivePage==PAGE_IRC, &Button, 0))
-            NewPage = PAGE_IRC;
         //H-Client
 		Box.VSplitLeft(75.0f, &Button, &Box);
         if(DoButton_MenuTab(&s_ServersButton, Localize("Servers"), m_ActivePage==PAGE_SERVERS, &Button, CUI::CORNER_TR))
@@ -727,11 +723,6 @@ int CMenus::RenderMenubar(CUIRect r)
 	else
 	{
 		// online menus
-		//H-Client
-		Box.VSplitLeft(50.0f, &Button, &Box);
-        static int s_IrcButton=0;
-        if (DoButton_MenuTab(&s_IrcButton, Localize("Irc"), m_ActivePage==PAGE_IRC, &Button, CUI::CORNER_TL))
-            NewPage = PAGE_IRC;
 		Box.VSplitLeft(90.0f, &Button, &Box);
         if(DoButton_MenuTab(&s_ServersButton, Localize("Servers"), m_ActivePage==PAGE_SERVERS, &Button, 0))
         {
@@ -1170,16 +1161,17 @@ void CMenus::RenderNews(CUIRect MainView)
 
 void CMenus::RenderIrc(CUIRect MainView)
 {
-    RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+    MainView.Margin(5.0f, &MainView);
+    RenderTools()->DrawUIRect(&MainView, vec4(0.2,0.4,0.4,0.5), CUI::CORNER_ALL, 10.0f);
 
     CUIRect MainIrc, EntryBox, Button;
     MainView.Margin(10.0f, &MainIrc);
 
     if (m_pClient->Irc()->GetState() == IIrc::STATE_DISCONNECTED)
     {
-        EntryBox.x = MainIrc.w/2.0f-300.0f/2.0f;
+        EntryBox.x = MainIrc.x+(MainIrc.w/2.0f-300.0f/2.0f);
         EntryBox.w = 300.0f;
-        EntryBox.y = MainIrc.h/2.0f-55.0f/2.0f;
+        EntryBox.y = MainIrc.y+(MainIrc.h/2.0f-55.0f/2.0f);
         EntryBox.h = 55.0f;
 
         RenderTools()->DrawUIRect(&EntryBox, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
@@ -1203,9 +1195,9 @@ void CMenus::RenderIrc(CUIRect MainView)
     }
     else if (m_pClient->Irc()->GetState() == IIrc::STATE_CONNECTING)
     {
-        EntryBox.x = MainIrc.w/2.0f-300.0f/2.0f;
+        EntryBox.x = MainIrc.x+(MainIrc.w/2.0f-300.0f/2.0f);
         EntryBox.w = 300.0f;
-        EntryBox.y = MainIrc.h/2.0f-25.0f/2.0f;
+        EntryBox.y = MainIrc.y+(MainIrc.h/2.0f-25.0f/2.0f);
         EntryBox.h = 25.0f;
 
         RenderTools()->DrawUIRect(&EntryBox, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
@@ -1637,13 +1629,9 @@ int CMenus::Render()
 				RenderSettings(MainView);
             else if(m_GamePage == PAGE_SERVERS) //H-Client
                 RenderServerbrowser(MainView);
-            else if(m_GamePage == PAGE_IRC) //H-Client
-                RenderIrc(MainView);
 		}
 		else if(g_Config.m_UiPage == PAGE_NEWS)
 			RenderNews(MainView);
-		else if(g_Config.m_UiPage == PAGE_IRC) //H-Client
-			RenderIrc(MainView);
 		else if(g_Config.m_UiPage == PAGE_SERVERS) //H-Client
             RenderServerbrowser(MainView);
 		/*else if(g_Config.m_UiPage == PAGE_INTERNET)
@@ -2264,7 +2252,6 @@ void CMenus::OnStateChange(int NewState, int OldState)
 		{
 			if(str_find_nocase(Client()->ErrorString(), "password"))
 			{
-			    dbg_msg("H-CLIENT", "PASAAA POR AKII!!");
 				m_Popup = POPUP_PASSWORD;
 				UI()->SetHotItem(&g_Config.m_Password);
 				UI()->SetActiveItem(&g_Config.m_Password);

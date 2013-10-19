@@ -1166,6 +1166,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
     MainView.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
 	DDRaceGame.HSplitTop(80.0f, &DDRaceGame, &Ghost);
 	StandartGame.VSplitLeft(400.0f, &StandartGame, 0x0);
+	DDRaceGame.VSplitLeft(400.0f, &DDRaceGame, 0x0);
 
     //Logo
     {
@@ -1388,9 +1389,12 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         RenderTools()->DrawUIRect(&HUDItem, vec4(1,1,1,0.25f), CUI::CORNER_TR, 5.0f);
         UI()->DoLabel(&HUDItem, "DDRace", HUDItem.h*ms_FontmodHeight, 0);
 
+        CUIRect DDRaceGameB;
+        DDRaceGame.VSplitMid(&DDRaceGame, &DDRaceGameB);
+
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
         if(DoButton_CheckBox(&g_Config.m_ddrShowHiddenWays, Localize("View hidden ways"), g_Config.m_ddrShowHiddenWays, &HUDItem))
-            g_Config.m_ddrShowHiddenWays ^= 1;
+            g_Config.m_ddrShowTeeDirection ^= 1;
 
         CUIRect Label, EditBox;
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
@@ -1402,6 +1406,11 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 		static float s_Offset = 0.0f;
         static float s_EditBox = 0;
 		DoEditBox(&s_EditBox, &EditBox, g_Config.m_ddrAutoTeamNum, sizeof(g_Config.m_ddrAutoTeamNum), 14.0f, &s_Offset, false, CUI::CORNER_ALL);
+
+
+        DDRaceGameB.HSplitTop(20.0f, &HUDItem, &DDRaceGameB);
+        if(DoButton_CheckBox(&g_Config.m_ddrShowTeeDirection, Localize("View Tee Direction"), g_Config.m_ddrShowTeeDirection, &HUDItem))
+            g_Config.m_ddrShowTeeDirection ^= 1;
 	}
 
 	//Ghost

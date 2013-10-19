@@ -1095,7 +1095,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 			status box	tab	+-------+
 	*/
 
-	CUIRect ServerList, ToolBox, StatusBox, TabBar, ToolBar;
+	CUIRect ServerList, ToolBox, StatusBox, TabBar, ToolBar, ChatBox;
 
 	// background
 	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
@@ -1133,7 +1133,8 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
     ms_ColorTabbarInactive = vec4(0,0,0,0.15f);
 
     ServerList.HSplitTop(5.0f, 0x0, &ServerList);
-	ServerList.HSplitBottom(70.0f, &ServerList, &StatusBox);
+	ServerList.HSplitBottom(250.0f, &ServerList, &ChatBox);
+	ChatBox.HSplitBottom(70.0f, &ChatBox, &StatusBox);
 	StatusBox.VSplitRight(100.0f, &StatusBox, &TabBar);
 	ServerList.VSplitRight(5.0f, &ServerList, 0);
 
@@ -1141,6 +1142,9 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 	{
 		RenderServerbrowserServerList(ServerList);
 	}
+
+	// Chat Box
+	RenderIrc(ChatBox);
 
 	int ToolboxPage = g_Config.m_UiToolboxPage;
 

@@ -6,6 +6,6 @@
 #define GAME_VERSION "0.6 trunk"
 #define GAME_NETVERSION "0.6 " GAME_NETVERSION_HASH
 
-#define HCLIENT_VERSION "2.7.2"
+#define HCLIENT_VERSION "2.7.3"
 #define MINETEE_VERSION "0.6a"
 #endif

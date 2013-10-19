@@ -142,5 +142,5 @@ MACRO_CONFIG_INT(hcLaserColorAlpha, hc_laser_color_alpha, 190, 0, 255, CFGFLAG_C
 MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")
 MACRO_CONFIG_INT(ddrAutoTeam, ddrace_auto_team, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable/Disable Auto Team")
 MACRO_CONFIG_STR(ddrAutoTeamNum, ddrace_auto_team_num, 2, "0", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto Team Num")
-
+MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")
 #endif

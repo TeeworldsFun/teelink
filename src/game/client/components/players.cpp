@@ -682,6 +682,30 @@ void CPlayers::RenderPlayer(
                 m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
             m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Freezed = false;
         }
+
+        //Tee Direction Info
+        if (g_Config.m_ddrShowTeeDirection && !pInfo.m_Local)
+        {
+            if (Player.m_Direction != 0)
+            {
+                Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ARROW].m_Id);
+                Graphics()->QuadsBegin();
+                IGraphics::CQuadItem QuadItem(Position.x-15, Position.y - 70, 22, 22);
+                if (Player.m_Direction == -1)
+                    Graphics()->QuadsSetRotation(GetAngle(vec2(1,0))+pi);
+                Graphics()->QuadsDraw(&QuadItem, 1);
+                Graphics()->QuadsEnd();
+            }
+            if (Player.m_Jumped&1)
+            {
+                Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ARROW].m_Id);
+                Graphics()->QuadsBegin();
+                IGraphics::CQuadItem QuadItem(Position.x+15, Position.y - 70, 22, 22);
+                Graphics()->QuadsSetRotation(GetAngle(vec2(0,1))+pi);
+                Graphics()->QuadsDraw(&QuadItem, 1);
+                Graphics()->QuadsEnd();
+            }
+        }
 	}
 
 	//H-Client:: MineTee

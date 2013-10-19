@@ -1,0 +1,38 @@
+# depslib dependency file v1.0
+1382140520 source:/home/cytral/Proyectos/github/HClient/src/base/system.c
+	<stdlib.h>
+	<stdio.h>
+	<stdarg.h>
+	<string.h>
+	<ctype.h>
+	<time.h>
+	"system.h"
+	<sys/time.h>
+	<unistd.h>
+	<sys/stat.h>
+	<sys/types.h>
+	<sys/socket.h>
+	<sys/ioctl.h>
+	<errno.h>
+	<netdb.h>
+	<netinet/in.h>
+	<fcntl.h>
+	<pthread.h>
+	<arpa/inet.h>
+	<dirent.h>
+	<Carbon/Carbon.h>
+	<windows.h>
+	<winsock2.h>
+	<ws2tcpip.h>
+	<fcntl.h>
+	<direct.h>
+	<errno.h>
+	<sys/filio.h>
+
+1382140520 /home/cytral/Proyectos/github/HClient/src/base/system.h
+	"detect.h"
+
+1382140520 /home/cytral/Proyectos/github/HClient/src/base/detect.h
+	<sys/endian.h>
+	<endian.h>
+

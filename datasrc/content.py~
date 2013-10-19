@@ -243,7 +243,6 @@ image_minetee_food = Image("minetee_food", "minetee-food.png") #H-Client
 image_minetee_items = Image("minetee_items", "minetee-items.png") #H-Client
 image_settings_icons = Image("settings_icons", "settings_tabicons.png") #H-Client
 image_irc = Image("irc", "irc.png") #H-Client
-image_arrow = Image("arrow", "arrow.png") #H-Client
 
 container.images.Add(image_null)
 container.images.Add(image_game)
@@ -268,7 +267,6 @@ container.images.Add(Image("minetee_fx_tombstone", "fx_tombstone.png")) #H-Clien
 container.images.Add(image_settings_icons) #H-Client
 container.images.Add(image_minetee_items) #H-Client
 container.images.Add(image_irc) #H-Client
-container.images.Add(image_arrow) #H-Client
 
 container.pickups.Add(Pickup("health"))
 container.pickups.Add(Pickup("armor"))
