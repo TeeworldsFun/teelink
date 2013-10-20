@@ -1171,10 +1171,14 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
     //Logo
     {
         static float logoBlend = 1.0f;
-        static float logoBlendTimer = time_get();
+        static long logoBlendTimer = time_get();
+        static long logoAngleTimer = time_get();
         static int logoBlendDir = 1;
+        static float logoRot = 0.0f;
+        static int logoRotDir = 1;
+        const int logoAngleValues[2] = { -35, 35 };
 
-        if (time_get() > logoBlendTimer + 0.02f*time_freq())
+        if (time_get() > logoBlendTimer + (long)(0.02f*time_freq()))
         {
             logoBlend += logoBlendDir==0?-0.01f:0.01f;
             logoBlend = clamp(logoBlend, 0.5f, 1.0f);
@@ -1188,12 +1192,9 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
                 logoBlendTimer = time_get();
         }
 
-        if (g_Config.m_hc3DLogo)
-        {
-            static float logoRot = 0.0f;
-            static int logoRotDir = 1;
-            const int logoAngleValues[2] = { -35, 35 };
 
+        if (time_get() > logoAngleTimer + (long)(0.02f*time_freq()))
+        {
             logoRot += (logoRotDir==1)?0.25f:-0.25f;
             if (logoRot < logoAngleValues[0] || logoRot > logoAngleValues[1])
             {
@@ -1201,6 +1202,11 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
                 logoRotDir ^= 1;
             }
 
+            logoAngleTimer = time_get();
+        }
+
+        if (g_Config.m_hc3DLogo)
+        {
             IGraphics::CQuadItem QuadItem(-(206/2), -(206/2),206,206, logoRot);
             Graphics()->TextureSet(g_pData->m_aImages[IMAGE_HCLIENT_LOGO].m_Id);
             Graphics()->QuadsBegin();

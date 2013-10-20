@@ -539,7 +539,7 @@ void CClient::Connect(const char *pAddress)
 	char aBuf[512];
 	int Port = 8303;
 
-	Disconnect(false);
+	DisconnectWithReason("H-Client ", false);
 
 	str_copy(m_aServerAddressStr, pAddress, sizeof(m_aServerAddressStr));
 

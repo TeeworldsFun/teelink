@@ -421,8 +421,10 @@ void CHud::RenderVoting()
     }
 
     float WidthBox = 100.0f+10.0f+4.0f+5.0f+offSetPreview;
+    static long voteSmallTimer = time_get();
+    static long voteNormalTimer = time_get();
 
-    if (m_pClient->m_pVoting->GetState() == CVoting::STATE_NORMAL && m_pClient->m_pVoting->GetLastVote() != 0)
+    if (m_pClient->m_pVoting->GetState() == CVoting::STATE_NORMAL && m_pClient->m_pVoting->GetLastVote() != 0 && time_get() > voteNormalTimer+(long)(0.02f*time_freq()))
     {
         m_pClient->m_pVoting->m_offSetX = min(m_pClient->m_pVoting->m_offSetX+5.0f, WidthBox);
 
@@ -431,9 +433,14 @@ void CHud::RenderVoting()
             m_pClient->m_pVoting->m_offSetX = 30.0f;
             m_pClient->m_pVoting->SetState(CVoting::STATE_SMALL);
         }
+
+        voteNormalTimer = time_get();
     }
-    else if (m_pClient->m_pVoting->GetState() == CVoting::STATE_SMALL)
+    else if (m_pClient->m_pVoting->GetState() == CVoting::STATE_SMALL && time_get() > voteSmallTimer+(long)(0.02f*time_freq()))
+    {
         m_pClient->m_pVoting->m_offSetX = max(-10.0f, m_pClient->m_pVoting->m_offSetX-0.5f);
+        voteSmallTimer = time_get();
+    }
 
     offSetX = m_pClient->m_pVoting->m_offSetX;
 

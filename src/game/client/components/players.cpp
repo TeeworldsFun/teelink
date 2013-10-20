@@ -870,16 +870,22 @@ void CPlayers::RenderPlayer(
 		Graphics()->QuadsDraw(&QuadItem, 1);
 		Graphics()->QuadsEnd();*/
 
-
+        //H-Client: 3D Emoticon
         static float emoteRot = 0.0f;
         static int emoteRotDir = 1;
+        static long emoteTimer = time_get();
         const int emoteAngleValues[2] = { -25, 25 };
 
-        emoteRot += (emoteRotDir==1)?0.75f:-0.75f;
-        if (emoteRot < emoteAngleValues[0] || emoteRot > emoteAngleValues[1])
+        if (time_get() >= emoteTimer+(long)(0.02f*time_freq()))
         {
-            emoteRot = emoteAngleValues[emoteRotDir];
-            emoteRotDir ^= 1;
+            emoteRot += (emoteRotDir==1)?0.75f:-0.75f;
+            if (emoteRot < emoteAngleValues[0] || emoteRot > emoteAngleValues[1])
+            {
+                emoteRot = emoteAngleValues[emoteRotDir];
+                emoteRotDir ^= 1;
+            }
+
+            emoteTimer = time_get();
         }
 
         IGraphics::CQuadItem QuadItem(-(64/2), -((64*h)/2),64,64*h, 0.25f);
