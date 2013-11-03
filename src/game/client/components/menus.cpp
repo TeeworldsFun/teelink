@@ -61,6 +61,7 @@ CMenus::CMenus()
 	//m_ActivePage = PAGE_INTERNET;
 	m_ActivePage = PAGE_SERVERS; //H-Client
 	m_GamePage = PAGE_GAME;
+	m_GamePagePanel = PANEL_SERVERS;
 
 	m_NeedRestartGraphics = false;
 	m_NeedRestartSound = false;
@@ -1167,6 +1168,11 @@ void CMenus::RenderIrc(CUIRect MainView)
     CUIRect MainIrc, EntryBox, Button;
     MainView.Margin(10.0f, &MainIrc);
 
+    if (m_GamePagePanel != PANEL_CHAT && UI()->MouseInside(&MainView) && Input()->KeyPressed(KEY_MOUSE_1))
+    {
+        m_GamePagePanel = PANEL_CHAT;
+    }
+
     if (m_pClient->Irc()->GetState() == IIrc::STATE_DISCONNECTED)
     {
         EntryBox.x = MainIrc.x+(MainIrc.w/2.0f-300.0f/2.0f);
@@ -1182,6 +1188,10 @@ void CMenus::RenderIrc(CUIRect MainView)
         Button.VSplitLeft(40.0f, &Label, &Button);
         UI()->DoLabelScaled(&Label, Localize("Nick:"), 14.0f, -1);
         static float OffsetNick;
+        if (g_Config.m_IrcNick[0] == 0) {
+            strncpy(g_Config.m_IrcNick, g_Config.m_PlayerName, sizeof(g_Config.m_IrcNick));
+            str_irc_sanitize(g_Config.m_IrcNick);
+        } //TODO_ here?
         DoEditBox(&g_Config.m_IrcNick, &Button, g_Config.m_IrcNick, sizeof(g_Config.m_IrcNick), 12.0f, &OffsetNick, false, CUI::CORNER_ALL, true);
 
         EntryBox.HSplitTop(5.0f, 0x0, &EntryBox);
@@ -1291,7 +1301,7 @@ void CMenus::RenderIrc(CUIRect MainView)
         static float Offset;
         DoEditBox(&EntryText, &InputBox, EntryText, sizeof(EntryText), 12.0f, &Offset, false, CUI::CORNER_L);
         static float s_ButtonSend = 0;
-        if (DoButton_Menu(&s_ButtonSend, Localize("Send"), 0, &Button) || Input()->KeyPressed(KEY_RETURN))
+        if (DoButton_Menu(&s_ButtonSend, Localize("Send"), 0, &Button) || (Input()->KeyPressed(KEY_RETURN) && m_GamePagePanel == PANEL_CHAT))
         {
             if (EntryText[0] == '/')
             {

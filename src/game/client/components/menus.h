@@ -143,6 +143,9 @@ class CMenus : public CComponent
         SUBPAGE_FAVORITES,
         SUBPAGE_HEROIAMARELO,
         SUBPAGE_TEEWORLDS,
+
+        PANEL_SERVERS = 1,
+        PANEL_CHAT,
 	};
 
 	enum
@@ -155,6 +158,7 @@ class CMenus : public CComponent
 
 	int m_GamePage;
 	int m_GameSubPage; //H-Client
+	int m_GamePagePanel; //H-Client
 	int m_Popup;
 	int m_ActivePage;
 	bool m_MenuActive;

@@ -943,6 +943,25 @@ void CPlayers::OnRender()
 			}
 		}
 	}
+
+	//Render Kills Info
+	if (Graphics()->ShowInfoKills())
+    {
+        std::list<CGameClient::KillInfo>::iterator it = m_pClient->m_KillInfo.begin();
+        for (int i=0; it != m_pClient->m_KillInfo.end(); it++)
+        {
+            CUIRect rect;
+            rect.x = (*it).m_X-14;
+            rect.y = (*it).m_Y-14;
+            rect.w = rect.h = 28.0f;
+
+            vec4 color = vec4(0, 1, 0 , 0.45);
+            if ((*it).m_isDead)
+                color = vec4(1, 0, 0 , 0.45);
+
+            RenderTools()->DrawUIRect(&rect, color, 0, 0.0f);
+        }
+    }
 }
 
 

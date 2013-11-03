@@ -149,6 +149,8 @@ public:
 	virtual void Cube3D(CQuadItem QuadItem) = 0;
 	virtual int GetInvalidTexture() = 0;
 	virtual bool Tumbtail() const = 0;
+    virtual bool ShowInfoKills() const = 0;
+	virtual void ShowInfoKills(bool state) = 0;
 };
 
 class IEngineGraphics : public IGraphics

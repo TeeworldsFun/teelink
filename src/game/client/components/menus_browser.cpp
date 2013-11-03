@@ -26,6 +26,11 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 	CUIRect Headers;
 	CUIRect Status;
 
+    if (m_GamePagePanel != PANEL_SERVERS && UI()->MouseInside(&View) && Input()->KeyPressed(KEY_MOUSE_1))
+    {
+        m_GamePagePanel = PANEL_SERVERS;
+    }
+
 	View.HSplitTop(ms_ListheaderHeight, &Headers, &View);
 	View.HSplitBottom(28.0f, &View, &Status);
 
@@ -1243,7 +1248,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 		Button.VMargin(2.0f, &Button);
 
 		static int s_JoinButton = 0;
-		if(DoButton_Menu(&s_JoinButton, Localize("Connect"), 0, &Button) || m_EnterPressed)
+		if(DoButton_Menu(&s_JoinButton, Localize("Connect"), 0, &Button) || (m_EnterPressed && m_GamePagePanel == PANEL_SERVERS))
 		{
 			Client()->Connect(g_Config.m_UiServerAddress);
 			m_EnterPressed = false;

@@ -23,6 +23,7 @@ struct CParticle
 		m_Type = 0;
 		m_Collide = 0;
 		m_LastPos = vec2(0.0f, 0.0f);
+		m_ToBlack = false;
 	}
 
 	vec2 m_Pos;
@@ -43,6 +44,7 @@ struct CParticle
 	float m_Gravity;
 	float m_Friction;
 
+    float m_ToBlack; //H-Client
 	int m_Type; //H-Client
 	int m_Collide; //H-Client
 	vec2 m_LastPos; //H-Client

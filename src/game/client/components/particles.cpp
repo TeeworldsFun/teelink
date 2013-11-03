@@ -246,13 +246,15 @@ void CParticles::RenderGroup(int Group)
             RenderTools()->SelectSprite(m_aParticles[i].m_Spr);
 		float a = m_aParticles[i].m_Life / m_aParticles[i].m_LifeSpan;
 		float Size = mix(m_aParticles[i].m_StartSize, m_aParticles[i].m_EndSize, a);
+		float EndColor = 0.7f;
+		if (m_aParticles[i].m_ToBlack) { EndColor = mix(0.7f, 0.0f, a); }
 
 		Graphics()->QuadsSetRotation(m_aParticles[i].m_Rot);
 
 		Graphics()->SetColor(
-			m_aParticles[i].m_Color.r,
-			m_aParticles[i].m_Color.g,
-			m_aParticles[i].m_Color.b,
+			(m_aParticles[i].m_Color.r-(0.7f-EndColor)>0)?m_aParticles[i].m_Color.r-(0.7f-EndColor):0.0f,
+			(m_aParticles[i].m_Color.g-(0.7f-EndColor)>0)?m_aParticles[i].m_Color.g-(0.7f-EndColor):0.0f,
+			(m_aParticles[i].m_Color.b-(0.7f-EndColor)>0)?m_aParticles[i].m_Color.b-(0.7f-EndColor):0.0f,
 			m_aParticles[i].m_Color.a); // pow(a, 0.75f) *
 
         IGraphics::CQuadItem QuadItem(p.x, p.y, Size, Size);

@@ -47,6 +47,12 @@ void CKillMessages::OnMessage(int MsgType, void *pRawMsg)
 
         //H-Client: Reset Freeze State
         m_pClient->m_aClients[pMsg->m_Victim].m_FreezedState.Reset();
+
+        //H-Client
+        if (Kill.m_VictimID == m_pClient->m_Snap.m_LocalClientID)
+            m_pClient->m_KillInfo.push_back(CGameClient::KillInfo(vec2(m_pClient->m_Snap.m_pLocalCharacter->m_X, m_pClient->m_Snap.m_pLocalCharacter->m_Y), Kill.m_aKillerName, true));
+        else if (Kill.m_KillerID == m_pClient->m_Snap.m_LocalClientID)
+            m_pClient->m_KillInfo.push_back(CGameClient::KillInfo(vec2(m_pClient->m_Snap.m_pLocalCharacter->m_X, m_pClient->m_Snap.m_pLocalCharacter->m_Y), Kill.m_aVictimName, false));
 	}
 }
 

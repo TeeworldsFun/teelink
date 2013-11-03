@@ -324,6 +324,7 @@ void CGameClient::OnInit()
 
 	m_TakeInitScreenShot = false; //H-Client
 	m_DDRaceMsgSent = false; //DDRace
+	m_KillInfo.clear(); //H-Client
 
 	LoadBackgroundMap("hclient");
 }
@@ -420,6 +421,7 @@ void CGameClient::OnConnected()
 
 	// send the inital info
 	SendInfo(true);
+	Graphics()->ShowInfoKills(false);
 }
 
 void CGameClient::OnReset()
@@ -440,6 +442,7 @@ void CGameClient::OnReset()
 	m_Tuning = CTuningParams();
 
 	m_DDRaceMsgSent = false; //H-Client: DDRace
+	m_KillInfo.clear(); //H-Client
 }
 
 
@@ -734,6 +737,8 @@ void CGameClient::OnGameOver()
 {
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		Client()->AutoScreenshot_Start();
+
+    Graphics()->ShowInfoKills(true);
 }
 
 void CGameClient::OnStartGame()
@@ -742,6 +747,7 @@ void CGameClient::OnStartGame()
 		Client()->DemoRecorder_HandleAutoStart();
 
     m_TakeInitScreenShot = true;
+    Graphics()->ShowInfoKills(false);
 }
 
 void CGameClient::OnRconLine(const char *pLine)

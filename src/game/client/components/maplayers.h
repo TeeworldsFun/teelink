@@ -24,7 +24,7 @@ public:
 	virtual void OnInit();
 	virtual void OnRender();
 
-	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup);
+	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup, bool isBkg = false);
 
 	bool MineTeeIsDay() const { return m_MineTeeIsDay; }
 };

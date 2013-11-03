@@ -1002,6 +1002,11 @@ int CGraphics_OpenGL::GetTextureHeight(int tid)
 int CGraphics_OpenGL::GetInvalidTexture() {
     return m_InvalidTexture;
 }
+
+void CGraphics_OpenGL::ShowInfoKills(bool state)
+{
+    m_DoScreenShowInfoKills = state;
+}
 //
 
 int CGraphics_SDL::TryInit()

@@ -109,6 +109,27 @@ public:
 	} m_Inventory;
 
 	std::vector<std::string> m_vMaps; //H-Client Maps
+	struct KillInfo
+	{
+	    int m_X;
+	    int m_Y;
+	    char m_aName[MAX_NAME_LENGTH];
+	    bool m_isDead;
+
+        KillInfo()
+        {
+            m_aName[0] = 0;
+            m_isDead = false;
+        }
+        KillInfo(vec2 pos, char name[], bool isdead)
+        {
+            m_X = pos.x;
+            m_Y = pos.y;
+            str_copy(m_aName, name, strlen(m_aName));
+            m_isDead = isdead;
+        }
+	};
+    std::list<KillInfo> m_KillInfo;
 
 	// TODO: move this
 	CTuningParams m_Tuning;

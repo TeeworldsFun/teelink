@@ -720,6 +720,11 @@ void str_copy(char *dst, const char *src, int dst_size);
 int str_length(const char *str);
 
 /*
+	Function: str_irc_sanitize
+*/
+void str_irc_sanitize(char *str_in);
+
+/*
 	Function: str_format
 		Performs printf formating into a buffer.
 

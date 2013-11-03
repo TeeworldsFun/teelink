@@ -32,13 +32,17 @@ void CMapLayers::OnInit()
 	m_EnvStart = time_get();
 }
 
-void CMapLayers::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup)
+void CMapLayers::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup, bool isBkg)
 {
 	float Points[4];
 
 	RenderTools()->MapscreenToWorld(CenterX, CenterY, pGroup->m_ParallaxX/100.0f, pGroup->m_ParallaxY/100.0f,
 		pGroup->m_OffsetX, pGroup->m_OffsetY, Graphics()->ScreenAspect(), (Graphics()->Tumbtail())?4.0f:1.0f, Points);
-	Graphics()->MapScreen(Points[0], Points[1], Points[2], Points[3]);
+
+    if (Graphics()->ShowInfoKills() && !isBkg)
+        Graphics()->MapScreen(0, 0, Collision()->GetWidth()*32, Collision()->GetHeight()*32);
+    else
+        Graphics()->MapScreen(Points[0], Points[1], Points[2], Points[3]);
 }
 
 void CMapLayers::EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser)
@@ -134,7 +138,7 @@ void CMapLayers::OnRender()
 				(int)((x1-x0)*Graphics()->ScreenWidth()), (int)((y1-y0)*Graphics()->ScreenHeight()));
 		}
 
-		MapScreenToGroup(Center.x, Center.y, pGroup);
+		MapScreenToGroup(Center.x, Center.y, pGroup, g==0);
 
 		for(int l = 0; l < pGroup->m_NumLayers; l++)
 		{
