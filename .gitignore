@@ -8,6 +8,7 @@ __pycache__/
 *.pyo
 *.depend
 *.layout
+COMPILAR.bat
 scripts/work/
 src/game/generated/
 other/icons/*.res

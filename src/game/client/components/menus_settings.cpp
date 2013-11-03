@@ -1400,7 +1400,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
         if(DoButton_CheckBox(&g_Config.m_ddrShowHiddenWays, Localize("View hidden ways"), g_Config.m_ddrShowHiddenWays, &HUDItem))
-            g_Config.m_ddrShowTeeDirection ^= 1;
+            g_Config.m_ddrShowHiddenWays ^= 1;
 
         CUIRect Label, EditBox;
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
