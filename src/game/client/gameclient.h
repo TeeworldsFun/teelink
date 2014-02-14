@@ -10,6 +10,7 @@
 #include <game/gamecore.h>
 #include "render.h"
 #include <vector>
+#include <string.h>
 #include <string>
 
 class CGameClient : public IGameClient
@@ -306,7 +307,7 @@ public:
 	class CGhost *m_pGhost; //Ghost
 
 	bool m_TakeInitScreenShot;
-	int IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos);
+	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2& NewPos2, int ownID);
 	int LoadBackgroundMap(const char *map);
 	//
 
