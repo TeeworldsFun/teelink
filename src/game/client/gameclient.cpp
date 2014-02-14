@@ -1399,35 +1399,34 @@ IGameClient *CreateGameClient()
 
 
 //H-Client
-// TODO: should be more general
-int CGameClient::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos)
+int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2& NewPos2, int ownID)
 {
-	// Find other players
-	static const int ProximityRadius = 28;
-	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+	float PhysSize = 28.0f;
+	float Distance = 0.0f;
 	int ClosestID = -1;
+
+	if (!m_Tuning.m_PlayerHooking)
+		return ClosestID;
 
 	for (int i=0; i<MAX_CLIENTS; i++)
 	{
-        CClientData cData = m_aClients[i];
-        CNetObj_Character Prev = m_Snap.m_aCharacters[i].m_Prev;
-        CNetObj_Character Player = m_Snap.m_aCharacters[i].m_Cur;
+		CClientData cData = m_aClients[i];
+		CNetObj_Character Prev = m_Snap.m_aCharacters[i].m_Prev;
+		CNetObj_Character Player = m_Snap.m_aCharacters[i].m_Cur;
 
-        vec2 Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Client()->IntraGameTick());
+		vec2 Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Client()->IntraGameTick());
 
-        if (!cData.m_Active || cData.m_Team == TEAM_SPECTATORS || m_Snap.m_LocalClientID == m_Snap.m_paPlayerInfos[i]->m_ClientID)
-            continue;
+		if (!cData.m_Active || cData.m_Team == TEAM_SPECTATORS || i == ownID)
+			continue;
 
-		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, Position);
-		float Len = distance(Position, IntersectPos);
-		if(Len < ProximityRadius+Radius)
+		vec2 ClosestPoint = closest_point_on_line(HookPos, NewPos, Position);
+		if(distance(Position, ClosestPoint) < PhysSize+2.0f)
 		{
-			Len = distance(Pos0, IntersectPos);
-			if(Len < ClosestLen)
+			if(ClosestID == -1 || distance(HookPos, Position) < Distance)
 			{
-				NewPos = IntersectPos;
-				ClosestLen = Len;
+				NewPos2 = ClosestPoint;
 				ClosestID = i;
+				Distance = distance(HookPos, Position);
 			}
 		}
 	}
