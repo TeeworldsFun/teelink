@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_ANIMSTATE_H
 #define GAME_CLIENT_ANIMSTATE_H
-#include <game/generated/client_data.h>
 
 class CAnimState
 {

@@ -26,6 +26,10 @@ public:
 	virtual NETADDR GetAddr(int Index) = 0;
 	virtual const char *GetName(int Index) = 0;
 	virtual bool IsValid(int Index) = 0;
+
+	// H-Client: DDNet
+	virtual int GetCount(int Index) = 0;
+	virtual void SetCount(int Index, int Count) = 0;
 };
 
 class IEngineMasterServer : public IMasterServer

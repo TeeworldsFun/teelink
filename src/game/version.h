@@ -3,9 +3,9 @@
 #ifndef GAME_VERSION_H
 #define GAME_VERSION_H
 #include "generated/nethash.cpp"
-#define GAME_VERSION "0.6 trunk"
+#define GAME_VERSION "0.6.2"
 #define GAME_NETVERSION "0.6 " GAME_NETVERSION_HASH
-
-#define HCLIENT_VERSION "2.7.3"
-#define MINETEE_VERSION "0.6a"
+#define HCLIENT_VERSION "3.0b"
+#define CLIENT_VERSIONNR 308
+static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
 #endif

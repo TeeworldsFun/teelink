@@ -11,7 +11,7 @@ class CSound : public IEngineSound
 
 public:
 	IEngineGraphics *m_pGraphics;
-	IStorageTW *m_pStorage;
+	IStorage *m_pStorage;
 
 	virtual int Init();
 
@@ -27,7 +27,7 @@ public:
 
 	virtual bool IsSoundEnabled() { return m_SoundEnabled != 0; }
 
-	virtual int LoadWV(const char *pFilename);
+	virtual int LoadWV(const char *pFilename, int forceSampleID = -1);
 
 	virtual void SetListenerPos(float x, float y);
 	virtual void SetChannel(int ChannelID, float Vol, float Pan);

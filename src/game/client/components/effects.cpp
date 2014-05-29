@@ -44,7 +44,7 @@ void CEffects::AirJump(vec2 Pos)
 	p.m_Pos = Pos + vec2(6.0f, 16.0f);
 	m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 
-	m_pClient->m_pSounds->Play(CSounds::CHN_WORLD, SOUND_PLAYER_AIRJUMP, 1.0f, Pos);
+	m_pClient->m_pSounds->PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_AIRJUMP, 1.0f, Pos);
 }
 
 void CEffects::DamageIndicator(vec2 Pos, vec2 Dir)
@@ -92,51 +92,6 @@ void CEffects::SmokeTrail(vec2 Pos, vec2 Vel)
 	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
-void CEffects::LaserTrail(vec2 Pos, vec2 Vel, vec4 color)
-{
-	if(!m_Add50hz)
-		return;
-
-	CParticle p;
-	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SMOKE;
-	p.m_Pos = Pos;
-	p.m_Vel = Vel + RandomDir()*15.0f;
-	p.m_LifeSpan = 0.05f + frandom()*0.2f;
-	p.m_StartSize = 5.0f + frandom()*8;
-	p.m_EndSize = 0;
-	p.m_Friction = 0.7f;
-	p.m_Gravity = 0.0f;
-	p.m_Color = color;
-	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
-}
-
-void CEffects::Unfreeze(vec2 Pos, vec2 Dir, float alpha)
-{
-    const int Sprites[] = {SPRITE_PART_UNFREEZE01, SPRITE_PART_UNFREEZE02, SPRITE_PART_UNFREEZE03, SPRITE_PART_UNFREEZE04};
-
-    for(int i = 0; i < 16; i++)
-    {
-        CParticle p;
-        p.SetDefault();
-        p.m_Spr = Sprites[Client()->GameTick()%4];
-        p.m_Pos = Pos;
-        if (i%3)
-            p.m_Vel = RandomDir() * (powf(frandom(), 3)*1100.0f);
-        else
-            p.m_Vel = Dir * (powf(frandom(), 3)*1100.0f);
-        p.m_LifeSpan = 2.0f + frandom()*0.3f;
-        p.m_StartSize = 1.0f + frandom()*32;
-        p.m_EndSize = 0.0f;
-        p.m_Rot = frandom()*pi*2;
-        p.m_Rotspeed = frandom();
-        p.m_Gravity = 2500.0f;
-        p.m_Friction = 0.95f;
-        p.m_Color = vec4(1.0f, 1.0f, 1.0f, alpha);
-        m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_FREEZE, &p);
-    }
-}
-//
 
 void CEffects::SkidTrail(vec2 Pos, vec2 Vel)
 {
@@ -170,7 +125,6 @@ void CEffects::BulletTrail(vec2 Pos)
 	p.m_StartSize = 8.0f;
 	p.m_EndSize = 0;
 	p.m_Friction = 0.7f;
-	p.m_ToBlack = true;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
@@ -194,7 +148,7 @@ void CEffects::PlayerSpawn(vec2 Pos)
 		m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 
 	}
-	m_pClient->m_pSounds->Play(CSounds::CHN_WORLD, SOUND_PLAYER_SPAWN, 1.0f, Pos);
+	m_pClient->m_pSounds->PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_SPAWN, 1.0f, Pos);
 }
 
 void CEffects::PlayerDeath(vec2 Pos, int ClientID)
@@ -238,6 +192,82 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientID)
         Blood(Pos, vec2(0.0f, 0.0f), 1, ClientID);
 }
 
+// H-Client
+void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
+{
+    vec3 BloodColor(1.0f, 0.0f, 0.0f);
+
+    if(g_Config.m_hcGoreStyleTeeColors && ClientID >= 0 && ClientID < MAX_CLIENTS)
+    {
+        if(m_pClient->m_aClients[ClientID].m_UseCustomColor)
+            BloodColor = m_pClient->m_pSkins->GetColorV3(m_pClient->m_aClients[ClientID].m_ColorBody);
+        else
+        {
+            const CSkins::CSkin *s = m_pClient->m_pSkins->Get(m_pClient->m_aClients[ClientID].m_SkinID);
+            if(s)
+                BloodColor = s->m_BloodColor;
+        }
+    }
+
+    if (Type == 0)
+    {
+        int SubType = 0;
+        for(int i = 0; i < 20; i++)
+        {
+            CParticle p;
+            p.SetDefault();
+
+            if (!SubType)
+            {
+                p.m_Spr = SPRITE_PART_SMOKE;
+                p.m_Vel = Dir * (powf(frandom(), 3)*600.0f);
+            }
+            else
+            {
+                p.m_Spr = SPRITE_PART_SMOKE;
+                p.m_Vel = RandomDir() * (powf(frandom(), 3)*200.0f);
+            }
+
+            p.m_Pos = Pos;
+            p.m_LifeSpan = 1.5f + frandom()*0.3f;
+            p.m_StartSize = 10.0f + frandom()*32;
+            p.m_EndSize = 0;
+            p.m_Rot = frandom()*pi*2;
+            p.m_Rotspeed = frandom();
+            p.m_Gravity = frandom()*400.0f;
+            p.m_Friction = 0.7f;
+            p.m_Collide = false;
+            p.m_Color = vec4(BloodColor.r, BloodColor.g, BloodColor.b, 0.75f);
+            m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
+
+            if (i == 10)
+                SubType ^= 1;
+        }
+    }
+    else if (Type == 1)
+    {
+        for(int i = 0; i < 64; i++)
+        {
+            CParticle p;
+            p.SetDefault();
+            p.m_Spr = SPRITE_PART_SMOKE;
+            p.m_Pos = Pos;
+            p.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
+            p.m_LifeSpan = 4.0f + frandom()*0.3f;
+            p.m_StartSize = 5.0f + frandom()*32;
+            p.m_EndSize = 0.0f;
+            p.m_Rot = frandom()*pi*2;
+            p.m_Rotspeed = frandom();
+            p.m_Gravity = 3000.0f;
+            p.m_Friction = 0.95f;
+            p.m_Collide = false;
+            p.m_Color = vec4(BloodColor.r, BloodColor.g, BloodColor.b, 0.75f);
+            p.m_Type = CParticles::PARTICLE_BLOOD;
+            m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
+        }
+    }
+}
+//
 
 void CEffects::Explosion(vec2 Pos)
 {
@@ -295,8 +325,7 @@ void CEffects::HammerHit(vec2 Pos)
 	p.m_EndSize = 0;
 	p.m_Rot = frandom()*pi*2;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_EXPLOSIONS, &p);
-	m_pClient->m_pSounds->Play(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
-
+	m_pClient->m_pSounds->PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
 
     //H-Client
     for (int i=0; i<MAX_CLIENTS; i++)
@@ -320,48 +349,8 @@ void CEffects::HammerHit(vec2 Pos)
     //
 }
 
-//H-Client
-void CEffects::BlockDestroy(vec2 Pos)
-{
-    const int Sprites[] = {SPRITE_PART_UNFREEZE01, SPRITE_PART_UNFREEZE02, SPRITE_PART_UNFREEZE03, SPRITE_PART_UNFREEZE04};
-
-    for(int i = 0; i < 2; i++)
-    {
-        CParticle p;
-        p.SetDefault();
-        p.m_Spr = Sprites[Client()->GameTick()%4];
-        p.m_Pos = Pos;
-        p.m_Vel = RandomDir() * (powf(frandom(), 3)*1100.0f);
-        p.m_LifeSpan = 0.9f + frandom()*0.3f;
-        p.m_StartSize = 1.0f + frandom()*32;
-        p.m_EndSize = 0.0f;
-        p.m_Rot = frandom()*pi*2;
-        p.m_Rotspeed = frandom();
-        p.m_Gravity = 2500.0f;
-        p.m_Friction = 0.75f;
-        p.m_Color = vec4(185.0f/255.0f, 122.0f/255.0f, 87.0f/255.0f, 1.0f);
-        m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_FREEZE, &p);
-    }
-}
-
-void CEffects::Tombstone(vec2 Pos)
-{
-	CParticle p;
-	p.SetDefault();
-	p.m_Spr = -1;
-	p.m_Pos = Pos;
-	p.m_LifeSpan = 60.0f;
-	p.m_StartSize = 64.0f;
-	p.m_EndSize = 8.0f;
-	p.m_Gravity = 2500.0f;
-	p.m_Friction = 0.9f;
-	p.m_Rot = 0.0f;
-	p.m_Collide = true;
-	p.m_Color = vec4(1.0f, 1.0f, 1.0f ,1.0f);
-	m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_TOMBSTONE, &p);
-}
-
-void CEffects::LightFlame(vec2 Pos)
+// H-Client
+void CEffects::LaserTrail(vec2 Pos, vec2 Vel, vec4 color)
 {
 	if(!m_Add50hz)
 		return;
@@ -370,162 +359,39 @@ void CEffects::LightFlame(vec2 Pos)
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SMOKE;
 	p.m_Pos = Pos;
-	p.m_LifeSpan = 0.3f;
-	p.m_StartSize = 20.0f;
+	p.m_Vel = Vel + RandomDir()*50.0f;
+	p.m_LifeSpan = frandom()*0.2f;
+	p.m_StartSize = 5.0f + frandom()*6;
 	p.m_EndSize = 0;
-	p.m_Gravity = frandom()*-10000.0f;
-	p.m_Rot = frandom()*pi*2;
-	p.m_Collide = false;
-	p.m_Color = mix(vec4(1.0f,0.8f, 64/255 ,1.0f), vec4(237/255, 28/255, 36/255, 1.0f), frandom());
-	m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
+	p.m_Friction = 0.7f;
+	p.m_Gravity = 0.0f;
+	p.m_Color = color;
+	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
-void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
+void CEffects::Unfreeze(vec2 Pos, vec2 Dir, float alpha)
 {
-    vec3 BloodColor(1.0f, 0.0f, 0.0f);
+    const int Sprites[] = {SPRITE_PART_UNFREEZE01, SPRITE_PART_UNFREEZE02, SPRITE_PART_UNFREEZE03, SPRITE_PART_UNFREEZE04};
 
-    if(g_Config.m_hcGoreStyleTeeColors && ClientID >= 0 && ClientID < MAX_CLIENTS)
-    {
-        if(m_pClient->m_aClients[ClientID].m_UseCustomColor)
-            BloodColor = m_pClient->m_pSkins->GetColorV3(m_pClient->m_aClients[ClientID].m_ColorBody);
-        else
-        {
-            const CSkins::CSkin *s = m_pClient->m_pSkins->Get(m_pClient->m_aClients[ClientID].m_SkinID);
-            if(s)
-                BloodColor = s->m_BloodColor;
-        }
-    }
-
-    if (Type == 0)
-    {
-        int SubType = 0;
-        for(int i = 0; i < 20; i++)
-        {
-            CParticle p;
-            p.SetDefault();
-
-            if (!SubType)
-            {
-                p.m_Spr = SPRITE_PART_SMOKE;
-                p.m_Vel = Dir * (powf(frandom(), 3)*600.0f);
-            }
-            else
-            {
-                p.m_Spr = SPRITE_PART_SMOKE;
-                p.m_Vel = RandomDir() * (powf(frandom(), 3)*200.0f);
-            }
-
-            p.m_Pos = Pos;
-            p.m_LifeSpan = 1.5f + frandom()*0.3f;
-            p.m_StartSize = 10.0f + frandom()*32;
-            p.m_EndSize = 0;
-            p.m_Rot = frandom()*pi*2;
-            p.m_Rotspeed = frandom();
-            p.m_Gravity = frandom()*400.0f;
-            p.m_Friction = 0.7f;
-            p.m_Color = vec4(BloodColor.r, BloodColor.g, BloodColor.b, 0.75f);
-            m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
-
-            if (i == 10)
-                SubType ^= 1;
-        }
-    }
-    else if (Type == 1)
-    {
-        for(int i = 0; i < 64; i++)
-        {
-            CParticle p;
-            p.SetDefault();
-            p.m_Spr = SPRITE_PART_SMOKE;
-            p.m_Pos = Pos;
-            p.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
-            p.m_LifeSpan = 4.0f + frandom()*0.3f;
-            p.m_StartSize = 5.0f + frandom()*32;
-            p.m_EndSize = 0.0f;
-            p.m_Rot = frandom()*pi*2;
-            p.m_Rotspeed = frandom();
-            p.m_Gravity = 3000.0f;
-            p.m_Friction = 0.95f;
-            p.m_Color = vec4(BloodColor.r, BloodColor.g, BloodColor.b, 0.75f);
-            p.m_Type = CParticles::PARTICLE_BLOOD;
-            m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
-        }
-    }
-}
-
-void CEffects::FireSplit(vec2 Pos, vec2 Dir)
-{
-    vec3 LavaColor(0.97f, 0.3f, 0.0f);
-
-    int SubType = 0;
-    for(int i = 0; i < 20; i++)
+    for(int i = 0; i < 16; i++)
     {
         CParticle p;
         p.SetDefault();
-
-        if (!SubType)
-        {
-            p.m_Spr = SPRITE_PART_SMOKE;
-            p.m_Vel = Dir * (powf(frandom(), 3)*600.0f);
-        }
-        else
-        {
-            p.m_Spr = SPRITE_PART_SMOKE;
-            p.m_Vel = RandomDir() * (powf(frandom(), 3)*200.0f);
-        }
-
+        p.m_Spr = Sprites[Client()->GameTick()%4];
         p.m_Pos = Pos;
+        if (i%3)
+            p.m_Vel = RandomDir() * (powf(frandom(), 3)*1100.0f);
+        else
+            p.m_Vel = Dir * (powf(frandom(), 3)*1100.0f);
         p.m_LifeSpan = 2.0f + frandom()*0.3f;
-        p.m_StartSize = 10.0f + frandom()*16;
-        p.m_EndSize = 0;
+        p.m_StartSize = 1.0f + frandom()*32;
+        p.m_EndSize = 0.0f;
         p.m_Rot = frandom()*pi*2;
         p.m_Rotspeed = frandom();
-        p.m_Gravity = frandom()*3000.0f;
-        p.m_Friction = 0.7f;
-        p.m_Color = vec4(LavaColor.r, LavaColor.g, LavaColor.b, 0.85f);
-        p.m_Collide = true;
-        m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
-
-        if (i == 10)
-            SubType ^= 1;
-    }
-}
-
-void CEffects::WaterSplit(vec2 Pos, vec2 Dir)
-{
-    vec3 LavaColor(0.0f, 0.0f, 1.0f);
-
-    int SubType = 0;
-    for(int i = 0; i < 20; i++)
-    {
-        CParticle p;
-        p.SetDefault();
-
-        if (!SubType)
-        {
-            p.m_Spr = SPRITE_PART_SMOKE;
-            p.m_Vel = Dir * (powf(frandom(), 3)*600.0f);
-        }
-        else
-        {
-            p.m_Spr = SPRITE_PART_SMOKE;
-            p.m_Vel = RandomDir() * (powf(frandom(), 3)*200.0f);
-        }
-
-        p.m_Pos = Pos;
-        p.m_LifeSpan = 0.45f + frandom()*0.3f;
-        p.m_StartSize = 10.0f + frandom()*16;
-        p.m_EndSize = 0;
-        p.m_Rot = frandom()*pi*2;
-        p.m_Rotspeed = frandom();
-        p.m_Gravity = 1000.0f;
-        p.m_Friction = 0.7f;
-        p.m_Color = vec4(LavaColor.r, LavaColor.g, LavaColor.b, 0.65f);
-        p.m_Collide = true;
-        m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
-
-        if (i == 10)
-            SubType ^= 1;
+        p.m_Gravity = 2500.0f;
+        p.m_Friction = 0.95f;
+        p.m_Color = vec4(1.0f, 1.0f, 1.0f, alpha);
+        m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_FREEZE, &p);
     }
 }
 //

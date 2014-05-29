@@ -64,6 +64,7 @@ public:
 	const char *m_pGameType;
 
 	bool IsTeamplay() const;
+	bool IsGameOver() const { return m_GameOverTick != -1; }
 
 	IGameController(class CGameContext *pGameServer);
 	virtual ~IGameController();
@@ -72,7 +73,7 @@ public:
 
 	void DoWarmup(int Seconds);
 
-	virtual void StartRound();
+	void StartRound();
 	void EndRound();
 	void ChangeMap(const char *pToMap);
 
@@ -127,8 +128,6 @@ public:
 
 	virtual void OnPlayerInfoChange(class CPlayer *pP);
 
-	virtual bool OnChat(int cid, int team, const char *msg) { return true; };
-
 	//
 	virtual bool CanSpawn(int Team, vec2 *pPos);
 
@@ -143,8 +142,6 @@ public:
 	int ClampTeam(int Team);
 
 	virtual void PostReset();
-
-	int GetRoundStartTick() const { return m_RoundStartTick; }
 };
 
 #endif

@@ -3,17 +3,13 @@
 #ifndef GAME_MAPITEMS_H
 #define GAME_MAPITEMS_H
 
-#include<engine/shared/protocol.h>
-
 // layer types
 enum
 {
-	// TODO(Shereef Marzouk): fix this for vanilla, make use of LAYERTYPE_GAME instead of using m_game variable in the editor.
 	LAYERTYPE_INVALID=0,
 	LAYERTYPE_GAME,
 	LAYERTYPE_TILES,
 	LAYERTYPE_QUADS,
-	LAYERTYPE_FRONT,
 
 	MAPITEMTYPE_VERSION=0,
 	MAPITEMTYPE_INFO,
@@ -44,26 +40,32 @@ enum
 	ENTITY_WEAPON_GRENADE,
 	ENTITY_POWERUP_NINJA,
 	ENTITY_WEAPON_RIFLE,
-	//End Of Lower Tiles
 	NUM_ENTITIES,
-	//Start From Top Left
-	//Tile Controllers
+
 	TILE_AIR=0,
 	TILE_SOLID,
 	TILE_DEATH,
 	TILE_NOHOOK,
-	TILE_TSOLID=5,
+    TILE_TSOLID=5,
 	TILE_THROUGH = 6,
 	TILE_FREEZE = 9,
 	TILE_UNFREEZE,
 	TILE_SOLO_START,
 	TILE_SOLO_END,
+	TILE_ENDLESS_HOOK_ON=17,
+	TILE_ENDLEES_HOOK_OFF,
+
 	//Switches
 	TILE_BEGIN = 33,
 	TILE_END,
 	TILE_STOP = 60,
 	TILE_STOPS,
 	TILE_STOPA,
+
+	TILE_SUPER_JUMP_ON=106,
+	TILE_JET_PACK_ON,
+	TILE_SUPER_JUMP_OFF=123,
+	TILE_JET_PACJ_OFF,
 	//End of higher tiles
 	//Layers
 	LAYER_GAME=0,
@@ -72,16 +74,11 @@ enum
 	LAYER_SPEEDUP,
 	LAYER_SWITCH,
 	NUM_LAYERS,
-	//Flags
+
 	TILEFLAG_VFLIP=1,
 	TILEFLAG_HFLIP=2,
 	TILEFLAG_OPAQUE=4,
 	TILEFLAG_ROTATE=8,
-	//Rotation
-	ROTATION_0 = 0,
-	ROTATION_90 = TILEFLAG_ROTATE,
-	ROTATION_180 = (TILEFLAG_VFLIP|TILEFLAG_HFLIP),
-	ROTATION_270 = (TILEFLAG_VFLIP|TILEFLAG_HFLIP|TILEFLAG_ROTATE),
 
 	LAYERFLAG_DETAIL=1,
 	TILESLAYERFLAG_GAME=1,
@@ -125,7 +122,16 @@ public:
 	unsigned char m_Reserved;
 };
 
-struct CMapItemImage
+struct CMapItemInfo
+{
+	int m_Version;
+	int m_Author;
+	int m_MapVersion;
+	int m_Credits;
+	int m_License;
+} ;
+
+struct CMapItemImage_v1
 {
 	int m_Version;
 	int m_Width;
@@ -134,6 +140,12 @@ struct CMapItemImage
 	int m_ImageName;
 	int m_ImageData;
 } ;
+
+struct CMapItemImage : public CMapItemImage_v1
+{
+	enum { CURRENT_VERSION=2 };
+	int m_Format;
+};
 
 struct CMapItemGroup_v1
 {
@@ -208,6 +220,7 @@ struct CMapItemLayerQuads
 
 struct CMapItemVersion
 {
+    enum { CURRENT_VERSION=1 };
 	int m_Version;
 } ;
 
@@ -220,7 +233,7 @@ struct CEnvPoint
 	bool operator<(const CEnvPoint &Other) { return m_Time < Other.m_Time; }
 } ;
 
-struct CMapItemEnvelope
+struct CMapItemEnvelope_v1
 {
 	int m_Version;
 	int m_Channels;
@@ -229,41 +242,10 @@ struct CMapItemEnvelope
 	int m_aName[8];
 } ;
 
-// DDRace
-
-
-
-class CTeleTile
+struct CMapItemEnvelope : public CMapItemEnvelope_v1
 {
-public:
-	unsigned char m_Number;
-	unsigned char m_Type;
-};
-
-class CSpeedupTile
-{
-public:
-	unsigned char m_Force;
-	unsigned char m_MaxSpeed;
-	unsigned char m_Type;
-	short m_Angle;
-};
-
-class CSwitchTile
-{
-public:
-	unsigned char m_Number;
-	unsigned char m_Type;
-	unsigned char m_Flags;
-	unsigned char m_Delay;
-};
-
-class CDoorTile
-{
-public:
-	unsigned char m_Index;
-	unsigned char m_Flags;
-	int m_Number;
+	enum { CURRENT_VERSION=2 };
+	int m_Synchronized;
 };
 
 #endif

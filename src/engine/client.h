@@ -23,7 +23,7 @@ protected:
 	float m_PredIntraTick;
 
 	float m_LocalTime;
-	float m_FrameTime;
+	float m_RenderFrameTime;
 
 	int m_GameTickSpeed;
 public:
@@ -68,12 +68,12 @@ public:
 	inline int GameTickSpeed() const { return m_GameTickSpeed; }
 
 	// other time access
-	inline float FrameTime() const { return m_FrameTime; }
+	inline float RenderFrameTime() const { return m_RenderFrameTime; }
 	inline float LocalTime() const { return m_LocalTime; }
 
 	// actions
 	virtual void Connect(const char *pAddress) = 0;
-	virtual void Disconnect(bool reloadbkg = true) = 0;
+	virtual void Disconnect() = 0;
 	virtual void Quit() = 0;
 	virtual const char *DemoPlayer_Play(const char *pFilename, int StorageType) = 0;
 	virtual void DemoRecorder_Start(const char *pFilename, bool WithTimestamp) = 0;
@@ -125,7 +125,6 @@ public:
 		CMsgPacker Packer(pMsg->MsgID());
 		if(pMsg->Pack(&Packer))
 			return -1;
-
 		return SendMsg(&Packer, Flags);
 	}
 
@@ -138,22 +137,7 @@ public:
 
 	virtual int GetDebugFont() = 0;
 
-	/** H-Client **/
-	virtual const char *LoadMap(const char *pName, const char *pFilename, unsigned WantedCrc, int clientstate = IClient::STATE_LOADING) = 0;
-	//Ghost Stuff
-    virtual const char* GetCurrentMap() = 0;
-	virtual int GetCurrentMapCrc() = 0;
-	//Server Password
-    virtual bool SaveServerPassword(const char *address, const char *pswd) = 0;
-    virtual void GetServerPassword(const char *address, char *pDest, unsigned int sizeDest) = 0;
-    //Sync
-    virtual int MapSyncAmount() = 0;
-	virtual int MapSyncTotalsize() = 0;
-    virtual void SetSyncAmount(int i) = 0;
-	virtual void SetSyncTotalSize(int i) = 0;
-	virtual bool BackgroundLoaded() = 0;
-	virtual void SetBackgroundLoaded(bool state) = 0;
-    //
+	virtual const char* GetCurrentMap() = 0; // H-Client
 };
 
 class IGameClient : public IInterface
@@ -172,7 +156,6 @@ public:
 	virtual void OnStateChange(int NewState, int OldState) = 0;
 	virtual void OnConnected() = 0;
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker) = 0;
-	virtual void OnMessageIrc(const char *pFrom, const char *pUser, const char *pText) = 0;
 	virtual void OnPredict() = 0;
 	virtual void OnActivateEditor() = 0;
 
@@ -181,8 +164,7 @@ public:
 	virtual const char *GetItemName(int Type) = 0;
 	virtual const char *Version() = 0;
 	virtual const char *NetVersion() = 0;
-	virtual const char *HClientNetVersion() = 0; //H-Client
-	virtual int LoadBackgroundMap(const char *map) = 0; //H-Client
+
 };
 
 extern IGameClient *CreateGameClient();

@@ -9,6 +9,7 @@ class CScoreboard : public CComponent
 	void RenderGoals(float x, float y, float w);
 	void RenderSpectators(float x, float y, float w);
 	void RenderScoreboard(float x, float y, float w, int Team, const char *pTitle);
+	void RenderScoreboard64(float x, float y, float w, int Team, const char *pTitle); // H-Client: DDNet
 	void RenderRecordingNotification();
 	void RenderLocalTime();
 

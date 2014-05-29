@@ -108,24 +108,15 @@ void CBinds::SetDefaults()
 	Bind('3', "+weapon3");
 	Bind('4', "+weapon4");
 	Bind('5', "+weapon5");
-	Bind('6', "+weapon6");
-	Bind('7', "+weapon7");
-	Bind('8', "+weapon8");
-	Bind('9', "+weapon9");
 
 	Bind(KEY_MOUSE_WHEEL_UP, "+prevweapon");
 	Bind(KEY_MOUSE_WHEEL_DOWN, "+nextweapon");
 
 	Bind('t', "chat all");
 	Bind('y', "chat team");
-	Bind('i', "chat irc"); //H-Client
 
 	Bind(KEY_F3, "vote yes");
 	Bind(KEY_F4, "vote no");
-
-	Bind('q', "+showhookcoll");
-	Bind('h', "+adminpanel");
-	Bind('e', "bgpaint");
 }
 
 void CBinds::OnConsoleInit()

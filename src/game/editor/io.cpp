@@ -197,199 +197,10 @@ void editor_load_old(DATAFILE *df, MAP *map)
 
 int CEditor::Save(const char *pFilename)
 {
-    if (str_find(pFilename,".json"))
-        return m_Map.SaveJSON(Kernel()->RequestInterface<IStorageTW>(), pFilename);
-
-	return m_Map.Save(Kernel()->RequestInterface<IStorageTW>(), pFilename);
+	return m_Map.Save(Kernel()->RequestInterface<IStorage>(), pFilename);
 }
 
-int CEditorMap::SaveJSON(class IStorageTW *pStorage, const char *pFileName)
-{
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "saving to '%s'...", pFileName);
-	m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "editor", aBuf);
-
-    IOHANDLE jsonFile = pStorage->OpenFile(pFileName, IOFLAG_WRITE, IStorageTW::TYPE_SAVE);
-    if (!jsonFile)
-	{
-		str_format(aBuf, sizeof(aBuf), "failed to open file '%s'...", pFileName);
-		m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "editor", aBuf);
-		return 0;
-	}
-
-	str_format(aBuf, sizeof(aBuf), "[{\n");
-	io_write(jsonFile, aBuf, str_length(aBuf));
-
-
-    str_format(aBuf, sizeof(aBuf), "Images:[");
-    io_write(jsonFile, aBuf, str_length(aBuf));
-	// save images
-	for(int i = 0; i < m_lImages.size(); i++)
-	{
-		CEditorImage *pImg = m_lImages[i];
-		pImg->AnalyseTileFlags();
-
-        str_format(aBuf, sizeof(aBuf), "\"%s.png\"", pImg->m_aName);
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        if (i < m_lImages.size()-1)
-            io_write(jsonFile, ",", 1);
-	}
-    str_format(aBuf, sizeof(aBuf), "],\n");
-    io_write(jsonFile, aBuf, str_length(aBuf));
-
-    str_format(aBuf, sizeof(aBuf), "Groups:[\n");
-    io_write(jsonFile, aBuf, str_length(aBuf));
-	// save layers
-	int LayerCount = 0, GroupCount = 0;
-	for(int g = 0; g < m_lGroups.size(); g++)
-	{
-		CLayerGroup *pGroup = m_lGroups[g];
-		if(!pGroup->m_SaveToMap)
-			continue;
-
-        str_format(aBuf, sizeof(aBuf), "{\n");
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        str_format(aBuf, sizeof(aBuf), "Version: %d,\n", CMapItemGroup::CURRENT_VERSION);
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        str_format(aBuf, sizeof(aBuf), "Parallax: [%d, %d],\n", pGroup->m_ParallaxX, pGroup->m_ParallaxY);
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        str_format(aBuf, sizeof(aBuf), "Offset: [%d, %d],\n", pGroup->m_OffsetX, pGroup->m_OffsetY);
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        str_format(aBuf, sizeof(aBuf), "Clipping: %s,\n", (pGroup->m_UseClipping)?"true":"false");
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        str_format(aBuf, sizeof(aBuf), "ClipRect: [%d, %d, %d, %d],\n", pGroup->m_ClipX, pGroup->m_ClipY, pGroup->m_ClipW, pGroup->m_ClipH);
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        str_format(aBuf, sizeof(aBuf), "Name: \"%s\",\n", pGroup->m_aName);
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        str_format(aBuf, sizeof(aBuf), "Layers: [\n");
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-		for(int l = 0; l < pGroup->m_lLayers.size(); l++)
-		{
-			if(!pGroup->m_lLayers[l]->m_SaveToMap)
-				continue;
-
-            str_format(aBuf, sizeof(aBuf), "{\n");
-            io_write(jsonFile, aBuf, str_length(aBuf));
-			if(pGroup->m_lLayers[l]->m_Type == LAYERTYPE_TILES)
-			{
-				m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "editor", "saving tiles layer");
-				CLayerTiles *pLayer = (CLayerTiles *)pGroup->m_lLayers[l];
-				pLayer->PrepareForSave();
-
-                str_format(aBuf, sizeof(aBuf), "LType: \"Tiles\",\n");
-                io_write(jsonFile, aBuf, str_length(aBuf));
-
-                str_format(aBuf, sizeof(aBuf), "Flags: %d,\n",pLayer->m_Flags);
-                io_write(jsonFile, aBuf, str_length(aBuf));
-
-                str_format(aBuf, sizeof(aBuf), "Color: [%d, %d, %d, %d],\n",pLayer->m_Color.r,pLayer->m_Color.g,pLayer->m_Color.b,pLayer->m_Color.a);
-                io_write(jsonFile, aBuf, str_length(aBuf));
-
-				//Item.m_ColorEnv = pLayer->m_ColorEnv;
-				//Item.m_ColorEnvOffset = pLayer->m_ColorEnvOffset;
-
-                str_format(aBuf, sizeof(aBuf), "Size: [%d, %d],\n",pLayer->m_Width, pLayer->m_Height);
-                io_write(jsonFile, aBuf, str_length(aBuf));
-
-                str_format(aBuf, sizeof(aBuf), "ImageIndex: %d,\n",pLayer->m_Image);
-                io_write(jsonFile, aBuf, str_length(aBuf));
-
-                str_format(aBuf, sizeof(aBuf), "Name: \"%s\",\n",pLayer->m_aName);
-                io_write(jsonFile, aBuf, str_length(aBuf));
-
-                str_format(aBuf, sizeof(aBuf), "Tiles: [\n");
-                io_write(jsonFile, aBuf, str_length(aBuf));
-
-				for (int i=0; i<pLayer->m_Width*pLayer->m_Height; i++)
-				{
-                    str_format(aBuf, sizeof(aBuf), "[%d, ", pLayer->m_pTiles[i].m_Index);
-                    io_write(jsonFile, aBuf, str_length(aBuf));
-
-                    if (pLayer->m_pTiles[i].m_Flags&TILEFLAG_VFLIP && pLayer->m_pTiles[i].m_Flags&TILEFLAG_HFLIP)
-                        str_format(aBuf, sizeof(aBuf), "3]");
-                    else if(pLayer->m_pTiles[i].m_Flags&TILEFLAG_VFLIP)
-                        str_format(aBuf, sizeof(aBuf), "1]");
-                    else if(pLayer->m_pTiles[i].m_Flags&TILEFLAG_HFLIP)
-                        str_format(aBuf, sizeof(aBuf), "2]");
-                    else
-                        str_format(aBuf, sizeof(aBuf), "0]");
-                    io_write(jsonFile, aBuf, str_length(aBuf));
-
-                    if (i < pLayer->m_Width*pLayer->m_Height-1)
-                        str_format(aBuf, sizeof(aBuf), ",\n");
-                    else
-                        str_format(aBuf, sizeof(aBuf), "\n");
-                    io_write(jsonFile, aBuf, str_length(aBuf));
-				}
-
-                str_format(aBuf, sizeof(aBuf), "]\n");
-                io_write(jsonFile, aBuf, str_length(aBuf));
-			}
-			/*else if(pGroup->m_lLayers[l]->m_Type == LAYERTYPE_QUADS)
-			{
-				m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "editor", "saving quads layer");
-				CLayerQuads *pLayer = (CLayerQuads *)pGroup->m_lLayers[l];
-				if(pLayer->m_lQuads.size())
-				{
-					CMapItemLayerQuads Item;
-					Item.m_Version = 2;
-					Item.m_Layer.m_Flags = pLayer->m_Flags;
-					Item.m_Layer.m_Type = pLayer->m_Type;
-					Item.m_Image = pLayer->m_Image;
-
-					// add the data
-					Item.m_NumQuads = pLayer->m_lQuads.size();
-					Item.m_Data = df.AddDataSwapped(pLayer->m_lQuads.size()*sizeof(CQuad), pLayer->m_lQuads.base_ptr());
-
-					// save layer name
-					StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), pLayer->m_aName);
-
-					df.AddItem(MAPITEMTYPE_LAYER, LayerCount, sizeof(Item), &Item);
-
-					// clean up
-					//mem_free(quads);
-
-					GItem.m_NumLayers++;
-					LayerCount++;
-				}
-			}*/
-
-            if (l < pGroup->m_lLayers.size()-1)
-                str_format(aBuf, sizeof(aBuf), "},\n");
-            else
-                str_format(aBuf, sizeof(aBuf), "}\n");
-            io_write(jsonFile, aBuf, str_length(aBuf));
-		}
-        str_format(aBuf, sizeof(aBuf), "]\n");
-        io_write(jsonFile, aBuf, str_length(aBuf));
-
-        if (g < m_lGroups.size()-1)
-            str_format(aBuf, sizeof(aBuf), "},\n");
-        else
-            str_format(aBuf, sizeof(aBuf), "}\n");
-        io_write(jsonFile, aBuf, str_length(aBuf));
-	}
-
-    str_format(aBuf, sizeof(aBuf), "]\n");
-    io_write(jsonFile, aBuf, str_length(aBuf));
-
-    str_format(aBuf, sizeof(aBuf), "}]\n");
-    io_write(jsonFile, aBuf, str_length(aBuf));
-    io_close(jsonFile);
-
-    return 1;
-}
-
-int CEditorMap::Save(class IStorageTW *pStorage, const char *pFileName)
+int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 {
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "saving to '%s'...", pFileName);
@@ -409,6 +220,31 @@ int CEditorMap::Save(class IStorageTW *pStorage, const char *pFileName)
 		df.AddItem(MAPITEMTYPE_VERSION, 0, sizeof(Item), &Item);
 	}
 
+	// save map info
+	{
+		CMapItemInfo Item;
+		Item.m_Version = 1;
+
+		if(m_MapInfo.m_aAuthor[0])
+			Item.m_Author = df.AddData(str_length(m_MapInfo.m_aAuthor)+1, m_MapInfo.m_aAuthor);
+		else
+			Item.m_Author = -1;
+		if(m_MapInfo.m_aVersion[0])
+			Item.m_MapVersion = df.AddData(str_length(m_MapInfo.m_aVersion)+1, m_MapInfo.m_aVersion);
+		else
+			Item.m_MapVersion = -1;
+		if(m_MapInfo.m_aCredits[0])
+			Item.m_Credits = df.AddData(str_length(m_MapInfo.m_aCredits)+1, m_MapInfo.m_aCredits);
+		else
+			Item.m_Credits = -1;
+		if(m_MapInfo.m_aLicense[0])
+			Item.m_License = df.AddData(str_length(m_MapInfo.m_aLicense)+1, m_MapInfo.m_aLicense);
+		else
+			Item.m_License = -1;
+
+		df.AddItem(MAPITEMTYPE_INFO, 0, sizeof(Item), &Item);
+	}
+
 	// save images
 	for(int i = 0; i < m_lImages.size(); i++)
 	{
@@ -419,7 +255,7 @@ int CEditorMap::Save(class IStorageTW *pStorage, const char *pFileName)
 		pImg->AnalyseTileFlags();
 
 		CMapItemImage Item;
-		Item.m_Version = 1;
+		Item.m_Version = CMapItemImage::CURRENT_VERSION;
 
 		Item.m_Width = pImg->m_Width;
 		Item.m_Height = pImg->m_Height;
@@ -428,7 +264,11 @@ int CEditorMap::Save(class IStorageTW *pStorage, const char *pFileName)
 		if(pImg->m_External)
 			Item.m_ImageData = -1;
 		else
-			Item.m_ImageData = df.AddData(Item.m_Width*Item.m_Height*4, pImg->m_pData);
+		{
+			int PixelSize = pImg->m_Format == CImageInfo::FORMAT_RGB ? 3 : 4;
+			Item.m_ImageData = df.AddData(Item.m_Width*Item.m_Height*PixelSize, pImg->m_pData);
+		}
+		Item.m_Format = pImg->m_Format;
 		df.AddItem(MAPITEMTYPE_IMAGE, i, sizeof(Item), &Item);
 	}
 
@@ -531,10 +371,11 @@ int CEditorMap::Save(class IStorageTW *pStorage, const char *pFileName)
 	for(int e = 0; e < m_lEnvelopes.size(); e++)
 	{
 		CMapItemEnvelope Item;
-		Item.m_Version = 1;
+		Item.m_Version = CMapItemEnvelope::CURRENT_VERSION;
 		Item.m_Channels = m_lEnvelopes[e]->m_Channels;
 		Item.m_StartPoint = PointCount;
 		Item.m_NumPoints = m_lEnvelopes[e]->m_lPoints.size();
+		Item.m_Synchronized = m_lEnvelopes[e]->m_Synchronized;
 		StrToInts(Item.m_aName, sizeof(Item.m_aName)/sizeof(int), m_lEnvelopes[e]->m_aName);
 
 		df.AddItem(MAPITEMTYPE_ENVELOPE, e, sizeof(Item), &Item);
@@ -554,6 +395,7 @@ int CEditorMap::Save(class IStorageTW *pStorage, const char *pFileName)
 	}
 
 	df.AddItem(MAPITEMTYPE_ENVPOINTS, 0, TotalSize, pPoints);
+	mem_free(pPoints);
 
 	// finish the data file
 	df.Finish();
@@ -576,10 +418,10 @@ int CEditorMap::Save(class IStorageTW *pStorage, const char *pFileName)
 int CEditor::Load(const char *pFileName, int StorageType)
 {
 	Reset();
-	return m_Map.Load(Kernel()->RequestInterface<IStorageTW>(), pFileName, StorageType);
+	return m_Map.Load(Kernel()->RequestInterface<IStorage>(), pFileName, StorageType);
 }
 
-int CEditorMap::Load(class IStorageTW *pStorage, const char *pFileName, int StorageType)
+int CEditorMap::Load(class IStorage *pStorage, const char *pFileName, int StorageType)
 {
 	CDataFileReader DataFile;
 	//DATAFILE *df = datafile_load(filename);
@@ -597,10 +439,27 @@ int CEditorMap::Load(class IStorageTW *pStorage, const char *pFileName, int Stor
 		editor->reset();
 		editor_load_old(df, this);
 		*/
+		return 0;
 	}
-	else if(pItem->m_Version == 1)
+	else if(pItem->m_Version == CMapItemVersion::CURRENT_VERSION)
 	{
 		//editor.reset(false);
+
+		// load map info
+		{
+			CMapItemInfo *pItem = (CMapItemInfo *)DataFile.FindItem(MAPITEMTYPE_INFO, 0);
+			if(pItem && pItem->m_Version == 1)
+			{
+				if(pItem->m_Author > -1)
+					str_copy(m_MapInfo.m_aAuthor, (char *)DataFile.GetData(pItem->m_Author), sizeof(m_MapInfo.m_aAuthor));
+				if(pItem->m_MapVersion > -1)
+					str_copy(m_MapInfo.m_aVersion, (char *)DataFile.GetData(pItem->m_MapVersion), sizeof(m_MapInfo.m_aVersion));
+				if(pItem->m_Credits > -1)
+					str_copy(m_MapInfo.m_aCredits, (char *)DataFile.GetData(pItem->m_Credits), sizeof(m_MapInfo.m_aCredits));
+				if(pItem->m_License > -1)
+					str_copy(m_MapInfo.m_aLicense, (char *)DataFile.GetData(pItem->m_License), sizeof(m_MapInfo.m_aLicense));
+			}
+		}
 
 		// load images
 		{
@@ -615,17 +474,18 @@ int CEditorMap::Load(class IStorageTW *pStorage, const char *pFileName, int Stor
 				CEditorImage *pImg = new CEditorImage(m_pEditor);
 				pImg->m_External = pItem->m_External;
 
-				if(pItem->m_External)
+				if(pItem->m_External || (pItem->m_Version > 1 && pItem->m_Format != CImageInfo::FORMAT_RGB && pItem->m_Format != CImageInfo::FORMAT_RGBA))
 				{
 					char aBuf[256];
 					str_format(aBuf, sizeof(aBuf),"mapres/%s.png", pName);
 
 					// load external
 					CEditorImage ImgInfo(m_pEditor);
-					if(m_pEditor->Graphics()->LoadPNG(&ImgInfo, aBuf, IStorageTW::TYPE_ALL))
+					if(m_pEditor->Graphics()->LoadPNG(&ImgInfo, aBuf, IStorage::TYPE_ALL))
 					{
 						*pImg = ImgInfo;
-						pImg->m_TexID = m_pEditor->Graphics()->LoadTextureRaw(ImgInfo.m_Width, ImgInfo.m_Height, ImgInfo.m_Format, ImgInfo.m_pData, CImageInfo::FORMAT_AUTO, 0);
+						pImg->m_Texture = m_pEditor->Graphics()->LoadTextureRaw(ImgInfo.m_Width, ImgInfo.m_Height, ImgInfo.m_Format, ImgInfo.m_pData, CImageInfo::FORMAT_AUTO, 0);
+						ImgInfo.m_pData = 0;
 						pImg->m_External = 1;
 					}
 				}
@@ -633,13 +493,14 @@ int CEditorMap::Load(class IStorageTW *pStorage, const char *pFileName, int Stor
 				{
 					pImg->m_Width = pItem->m_Width;
 					pImg->m_Height = pItem->m_Height;
-					pImg->m_Format = CImageInfo::FORMAT_RGBA;
+					pImg->m_Format = pItem->m_Version == 1 ? CImageInfo::FORMAT_RGBA : pItem->m_Format;
+					int PixelSize = pImg->m_Format == CImageInfo::FORMAT_RGB ? 3 : 4;
 
 					// copy image data
 					void *pData = DataFile.GetData(pItem->m_ImageData);
-					pImg->m_pData = mem_alloc(pImg->m_Width*pImg->m_Height*4, 1);
-					mem_copy(pImg->m_pData, pData, pImg->m_Width*pImg->m_Height*4);
-					pImg->m_TexID = m_pEditor->Graphics()->LoadTextureRaw(pImg->m_Width, pImg->m_Height, pImg->m_Format, pImg->m_pData, CImageInfo::FORMAT_AUTO, 0);
+					pImg->m_pData = mem_alloc(pImg->m_Width*pImg->m_Height*PixelSize, 1);
+					mem_copy(pImg->m_pData, pData, pImg->m_Width*pImg->m_Height*PixelSize);
+					pImg->m_Texture = m_pEditor->Graphics()->LoadTextureRaw(pImg->m_Width, pImg->m_Height, pImg->m_Format, pImg->m_pData, CImageInfo::FORMAT_AUTO, 0);
 				}
 
 				// copy image name
@@ -647,7 +508,7 @@ int CEditorMap::Load(class IStorageTW *pStorage, const char *pFileName, int Stor
 					str_copy(pImg->m_aName, pName, 128);
 
 				// load auto mapper file
-				pImg->m_AutoMapper.Load(pImg->m_aName);
+				pImg->LoadAutoMapper();
 
 				m_lImages.add(pImg);
 
@@ -790,9 +651,13 @@ int CEditorMap::Load(class IStorageTW *pStorage, const char *pFileName, int Stor
 				if(pItem->m_aName[0] != -1)	// compatibility with old maps
 					IntsToStr(pItem->m_aName, sizeof(pItem->m_aName)/sizeof(int), pEnv->m_aName);
 				m_lEnvelopes.add(pEnv);
+				if(pItem->m_Version >= 2)
+					pEnv->m_Synchronized = pItem->m_Synchronized;
 			}
 		}
 	}
+	else
+		return 0;
 
 	return 1;
 }
@@ -810,7 +675,7 @@ int CEditor::Append(const char *pFileName, int StorageType)
 	NewMap.m_pEditor = this;
 
 	int Err;
-	Err = NewMap.Load(Kernel()->RequestInterface<IStorageTW>(), pFileName, StorageType);
+	Err = NewMap.Load(Kernel()->RequestInterface<IStorage>(), pFileName, StorageType);
 	if(!Err)
 		return Err;
 

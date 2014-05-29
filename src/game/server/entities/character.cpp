@@ -1,16 +1,13 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
-#include <engine/serverbrowser.h> //H-Client
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <game/mapitems.h>
-#include <game/layers.h>
 
 #include "character.h"
 #include "laser.h"
 #include "projectile.h"
-#include "pickup.h"
 
 //input count
 struct CInputCount
@@ -48,25 +45,6 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_ProximityRadius = ms_PhysSize;
 	m_Health = 0;
 	m_Armor = 0;
-
-    m_BotDir = 1;
-    m_BotLastPos = m_Pos;
-    m_BotLastStuckTime = 0.0f;
-    m_BotStuckCount = 0;
-    m_BotTimePlayerFound = Server()->Tick();
-    m_BotTimeGrounded = Server()->Tick();
-    m_BotTimeLastOption = Server()->Tick();
-    m_BotTimeLastDamage = 0.0f;
-    m_BotClientIDFix = -1;
-    m_BotTimeLastSound = Server()->Tick();
-
-    //H-Client
-    m_NeedSendInventory = true;
-	TimerFluidDamage = Server()->Tick();
-	inWater = false;
-    //
-
-    m_Kills = 0;
 }
 
 void CCharacter::Reset()
@@ -76,17 +54,9 @@ void CCharacter::Reset()
 
 bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 {
-	for (int i=0; i<NUM_BLOCKS; i++)
-	{
-	    m_aBlocks[i].m_Got = false;
-	    m_aBlocks[i].m_Amount = 0;
-	}
-
-	for (int i=0; i<9; m_Inventory.m_Items[i++]=NUM_WEAPONS+NUM_BLOCKS);
-    m_Inventory.m_Selected=0;
-
 	m_EmoteStop = -1;
 	m_LastAction = -1;
+	m_LastNoAmmoSound = -1;
 	m_ActiveWeapon = WEAPON_GUN;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
@@ -127,18 +97,8 @@ void CCharacter::SetWeapon(int W)
 	m_ActiveWeapon = W;
 	GameServer()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 
-	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS+NUM_BLOCKS)
+	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
 		m_ActiveWeapon = 0;
-
-    //H-Client
-    for (int i=0; i<9; i++)
-    {
-        if (m_Inventory.m_Items[i] == W)
-        {
-            m_Inventory.m_Selected = i;
-            break;
-        }
-    }
 }
 
 bool CCharacter::IsGrounded()
@@ -243,7 +203,6 @@ void CCharacter::DoWeaponSwitch()
 
 void CCharacter::HandleWeaponSwitch()
 {
-    int WantedBlock = -1;
 	int WantedWeapon = m_ActiveWeapon;
 	if(m_QueuedWeapon != -1)
 		WantedWeapon = m_QueuedWeapon;
@@ -256,27 +215,9 @@ void CCharacter::HandleWeaponSwitch()
 	{
 		while(Next) // Next Weapon selection
 		{
-
-		    if (str_find_nocase(GameServer()->GameType(), "MineTee"))
-		    {
-		        WantedWeapon = (m_Inventory.m_Selected+1>8)?0:m_Inventory.m_Selected+1;
-
-		        if (m_Inventory.m_Items[WantedWeapon] != NUM_WEAPONS+NUM_BLOCKS)
-		        {
-		            m_Inventory.m_Selected = WantedWeapon;
-		            WantedWeapon = m_Inventory.m_Items[WantedWeapon];
-		            Next--;
-		        }
-		        else
-		            m_Inventory.m_Selected = WantedWeapon;
-		    }
-		    else
-		    {
-                WantedWeapon = (WantedWeapon+1)%NUM_WEAPONS;
-
-                if(m_aWeapons[WantedWeapon].m_Got)
-                    Next--;
-		    }
+			WantedWeapon = (WantedWeapon+1)%NUM_WEAPONS;
+			if(m_aWeapons[WantedWeapon].m_Got)
+				Next--;
 		}
 	}
 
@@ -284,248 +225,25 @@ void CCharacter::HandleWeaponSwitch()
 	{
 		while(Prev) // Prev Weapon selection
 		{
-		    if (str_find_nocase(GameServer()->GameType(), "MineTee"))
-		    {
-		        WantedWeapon = (m_Inventory.m_Selected-1<0)?8:m_Inventory.m_Selected-1;
-
-		        if (m_Inventory.m_Items[WantedWeapon] != NUM_WEAPONS+NUM_BLOCKS)
-		        {
-		            m_Inventory.m_Selected = WantedWeapon;
-		            WantedWeapon = m_Inventory.m_Items[WantedWeapon];
-		            Prev--;
-		        }
-		        else
-                   m_Inventory.m_Selected = WantedWeapon;
-		    }
-		    else
-		    {
-                WantedWeapon = (WantedWeapon-1)<0?NUM_WEAPONS-1:WantedWeapon-1;
-
-                if(m_aWeapons[WantedWeapon].m_Got)
-                    Prev--;
-		    }
+			WantedWeapon = (WantedWeapon-1)<0?NUM_WEAPONS-1:WantedWeapon-1;
+			if(m_aWeapons[WantedWeapon].m_Got)
+				Prev--;
 		}
 	}
 
 	// Direct Weapon selection
 	if(m_LatestInput.m_WantedWeapon)
-	{
-	 /*   if (str_find_nocase(GameServer()->GameType(), "MineTee"))
-	    {
-	        WantedWeapon = m_Inventory.m_Items[m_Input.m_WantedWeapon-1];
-	        m_Inventory.m_Selected = m_Input.m_WantedWeapon-1;
-	    }
-	    else*/
-            WantedWeapon = m_Input.m_WantedWeapon-1;
-	}
+		WantedWeapon = m_Input.m_WantedWeapon-1;
 
 	// check for insane values
-	if(WantedWeapon >= 0 && WantedWeapon < NUM_WEAPONS+NUM_BLOCKS && WantedWeapon != m_ActiveWeapon && ((WantedWeapon < NUM_WEAPONS && m_aWeapons[WantedWeapon].m_Got) || (WantedWeapon >= NUM_WEAPONS && m_aBlocks[WantedWeapon-NUM_WEAPONS].m_Got)))
+	if(WantedWeapon >= 0 && WantedWeapon < NUM_WEAPONS && WantedWeapon != m_ActiveWeapon && m_aWeapons[WantedWeapon].m_Got)
 		m_QueuedWeapon = WantedWeapon;
 
 	DoWeaponSwitch();
-	UpdateInventory();
-}
-
-void CCharacter::Construct()
-{
-	if(m_ReloadTimer != 0)
-		return;
-
-    bool Builded = false;
-    int ActiveBlock = (m_ActiveWeapon - NUM_WEAPONS) % NUM_BLOCKS;
-
-    DoWeaponSwitch();
-	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
-
-	// check if we gonna fire
-	bool WillFire = false;
-	if(CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses)
-		WillFire = true;
-
-	if(!WillFire)
-		return;
-
-    vec2 ProjStartPos= m_Pos + Direction * 38.0f;
-    vec2 colTilePos = ProjStartPos+Direction * 120.0f;
-
-    if (m_pPlayer->m_PlayerFlags&PLAYERFLAG_BGPAINT)
-    {
-        ivec2 TilePos = ivec2((m_Pos.x+m_LatestInput.m_TargetX)/32.0f, (m_Pos.y+m_LatestInput.m_TargetY)/32.0f);
-        if (TilePos.x > 0 && TilePos.x < GameServer()->Layers()->MineTeeLayer()->m_Width && TilePos.y > 0 && TilePos.y < GameServer()->Layers()->MineTeeLayer()->m_Height)
-        {
-            int Index = TilePos.y*GameServer()->Layers()->MineTeeLayer()->m_Width+TilePos.x;
-            CTile *pMTTiles = (CTile *)GameServer()->Layers()->Map()->GetData(GameServer()->Layers()->MineTeeLayer()->m_Data);
-            CTile *pMTBGTiles = (CTile *)GameServer()->Layers()->Map()->GetData(GameServer()->Layers()->MineTeeBGLayer()->m_Data);
-            if (pMTTiles[Index].m_Index != 0 || pMTBGTiles[Index].m_Index == ActiveBlock)
-                return;
-
-            CNetMsg_Sv_TileChangeExt TileInfo;
-            TileInfo.m_Index = -1;
-            TileInfo.m_Size = -1;
-            TileInfo.m_X = TilePos.x;
-            TileInfo.m_Y = TilePos.y;
-            TileInfo.m_ITile = (m_ActiveWeapon == WEAPON_HAMMER)?0:ActiveBlock;
-            TileInfo.m_Act = TILE_CREATE;
-            TileInfo.m_State = 1;
-
-            Server()->SendPackMsg(&TileInfo, MSGFLAG_VITAL, -1);
-            GameServer()->Collision()->CreateTile(vec2(TilePos.x*32, TilePos.y*32), (m_ActiveWeapon == WEAPON_HAMMER)?0:ActiveBlock, 0, 1);
-            GameServer()->CreateSound(m_Pos, SOUND_DESTROY_BLOCK);
-
-            Builded = true;
-        }
-    }
-    else if (m_pPlayer->m_PlayerFlags&PLAYERFLAG_FGPAINT)
-    {
-        ivec2 TilePos = ivec2((m_Pos.x+m_LatestInput.m_TargetX)/32.0f, (m_Pos.y+m_LatestInput.m_TargetY)/32.0f);
-        if (TilePos.x > 0 && TilePos.x < GameServer()->Layers()->MineTeeLayer()->m_Width && TilePos.y > 0 && TilePos.y < GameServer()->Layers()->MineTeeLayer()->m_Height)
-        {
-            int Index = TilePos.y*GameServer()->Layers()->MineTeeLayer()->m_Width+TilePos.x;
-            CTile *pMTTiles = (CTile *)GameServer()->Layers()->Map()->GetData(GameServer()->Layers()->MineTeeLayer()->m_Data);
-            CTile *pMTFGTiles = (CTile *)GameServer()->Layers()->Map()->GetData(GameServer()->Layers()->MineTeeFGLayer()->m_Data);
-            if (pMTTiles[Index].m_Index != 0 || pMTFGTiles[Index].m_Index == ActiveBlock)
-                return;
-
-            CNetMsg_Sv_TileChangeExt TileInfo;
-            TileInfo.m_Index = -1;
-            TileInfo.m_Size = -1;
-            TileInfo.m_X = TilePos.x;
-            TileInfo.m_Y = TilePos.y;
-            TileInfo.m_ITile = (m_ActiveWeapon == WEAPON_HAMMER)?0:ActiveBlock;
-            TileInfo.m_Col = false;
-            TileInfo.m_Act = TILE_CREATE;
-            TileInfo.m_State = 2;
-
-            Server()->SendPackMsg(&TileInfo, MSGFLAG_VITAL, -1);
-            GameServer()->Collision()->CreateTile(vec2(TilePos.x*32, TilePos.y*32), (m_ActiveWeapon == WEAPON_HAMMER)?0:ActiveBlock, 0, 1);
-            GameServer()->CreateSound(m_Pos, SOUND_DESTROY_BLOCK);
-
-            Builded = true;
-        }
-    }
-    else if (GameServer()->Collision()->IntersectLine(ProjStartPos, colTilePos, &colTilePos, 0x0, false))
-    {
-
-        vec2 finishPosPost = colTilePos-Direction * 8.0f;
-        if (GameServer()->Collision()->GetCollisionAt(finishPosPost.x, finishPosPost.y) != CCollision::COLFLAG_SOLID)
-        {
-            CNetMsg_Sv_TileChangeExt TileInfo;
-            TileInfo.m_Size = -1;
-            TileInfo.m_Index = -1;
-            TileInfo.m_X = static_cast<int>(finishPosPost.x/32.0f);
-            TileInfo.m_Y = static_cast<int>(finishPosPost.y/32.0f);
-
-            if (ActiveBlock == BLOCK_SEEDM)
-            {
-                TileInfo.m_ITile = BLOCK_SEED1;
-                TileInfo.m_Col = 0;
-            }
-            else
-            {
-                TileInfo.m_ITile = ActiveBlock;
-                TileInfo.m_Col = 1;
-            }
-            TileInfo.m_Act = TILE_CREATE;
-            TileInfo.m_State = 0;
-
-            //Check player stuck
-            for (int i=0; i<MAX_CLIENTS; i++)
-            {
-                if (!GameServer()->m_apPlayers[i])
-                    continue;
-
-                CCharacter *pChar = GameServer()->m_apPlayers[i]->GetCharacter();
-                if (!pChar || !pChar->IsAlive())
-                    continue;
-
-                if (distance(vec2(static_cast<int>(pChar->m_Pos.x/32), static_cast<int>(pChar->m_Pos.y/32)), vec2(TileInfo.m_X, TileInfo.m_Y)) < 2)
-                    return;
-            }
-
-            //check blocks
-            unsigned char DenyBlocks[] = { BLOCK_LUZ };
-            CTile *pMTTiles = (CTile *)GameServer()->Layers()->Map()->GetData(GameServer()->Layers()->MineTeeLayer()->m_Data);
-            for (size_t i=0; i<sizeof(DenyBlocks); i++)
-            {
-                if (ActiveBlock != DenyBlocks[i])
-                    continue;
-
-                int Index = (TileInfo.m_Y-1)*GameServer()->Layers()->MineTeeLayer()->m_Width+TileInfo.m_X;
-                if (pMTTiles[Index].m_Index == DenyBlocks[i])
-                    return;
-                Index = (TileInfo.m_Y+1)*GameServer()->Layers()->MineTeeLayer()->m_Width+TileInfo.m_X;
-                if (pMTTiles[Index].m_Index == DenyBlocks[i])
-                    return;
-                Index = TileInfo.m_Y*GameServer()->Layers()->MineTeeLayer()->m_Width+(TileInfo.m_X-1);
-                if (pMTTiles[Index].m_Index == DenyBlocks[i])
-                    return;
-                Index = TileInfo.m_Y*GameServer()->Layers()->MineTeeLayer()->m_Width+(TileInfo.m_X+1);
-                if (pMTTiles[Index].m_Index == DenyBlocks[i])
-                    return;
-                Index = (TileInfo.m_Y-1)*GameServer()->Layers()->MineTeeLayer()->m_Width+(TileInfo.m_X-1);
-                if (pMTTiles[Index].m_Index == DenyBlocks[i])
-                    return;
-                Index = (TileInfo.m_Y+1)*GameServer()->Layers()->MineTeeLayer()->m_Width+(TileInfo.m_X+1);
-                if (pMTTiles[Index].m_Index == DenyBlocks[i])
-                    return;
-                Index = (TileInfo.m_Y+1)*GameServer()->Layers()->MineTeeLayer()->m_Width+(TileInfo.m_X-1);
-                if (pMTTiles[Index].m_Index == DenyBlocks[i])
-                    return;
-                Index = (TileInfo.m_Y-1)*GameServer()->Layers()->MineTeeLayer()->m_Width+(TileInfo.m_X+1);
-                if (pMTTiles[Index].m_Index == DenyBlocks[i])
-                    return;
-            }
-
-            if (distance(m_Pos, finishPosPost) >= 42.0f)
-            {
-                Server()->SendPackMsg(&TileInfo, MSGFLAG_VITAL, -1);
-                if (ActiveBlock == BLOCK_SEEDM)
-                    GameServer()->Collision()->CreateTile(finishPosPost, BLOCK_SEED1, 0, 0);
-                else
-                    GameServer()->Collision()->CreateTile(finishPosPost, ActiveBlock, CCollision::COLFLAG_SOLID, 0);
-                GameServer()->CreateSound(m_Pos, SOUND_DESTROY_BLOCK);
-
-                int Index = TileInfo.m_Y*GameServer()->Collision()->GetWidth()+TileInfo.m_X;
-                GameServer()->Collision()->m_pSecBlocks[Index] = GetPlayer()->GetCID();
-
-                Builded = true;
-            }
-        }
-    }
-
-    if (Builded)
-    {
-        m_aBlocks[ActiveBlock].m_Amount--;
-        if(m_aBlocks[ActiveBlock].m_Amount == 0)
-        {
-            m_aBlocks[ActiveBlock].m_Got = false;
-            /*for (int i=m_Inventory.m_Selected-1; i>=0; i--)
-            {
-                if (m_Inventory.m_Items[i] != NUM_WEAPONS+NUM_BLOCKS)
-                {
-                    ActiveBlock = m_Inventory.m_Items[i];
-                    m_Inventory.m_Selected = i;
-                    break;
-                }
-            }*/
-
-            ActiveBlock = m_Inventory.m_Items[0];
-            m_Inventory.m_Selected = 0;
-            SetWeapon(ActiveBlock);
-        }
-        UpdateInventory();
-    }
 }
 
 void CCharacter::FireWeapon()
 {
-    if (str_comp_nocase(GameServer()->GameType(), "MineTee") == 0 && (m_ActiveWeapon >= NUM_WEAPONS || (m_ActiveWeapon == WEAPON_HAMMER && (m_pPlayer->m_PlayerFlags&PLAYERFLAG_BGPAINT || m_pPlayer->m_PlayerFlags&PLAYERFLAG_FGPAINT))) && g_Config.m_SvGameMode == 0)
-    {
-        Construct();
-        return;
-    }
-
 	if(m_ReloadTimer != 0)
 		return;
 
@@ -553,7 +271,11 @@ void CCharacter::FireWeapon()
 	{
 		// 125ms is a magical limit of how fast a human can click
 		m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
-		GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+		if(m_LastNoAmmoSound+Server()->TickSpeed() <= Server()->Tick())
+		{
+			GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+			m_LastNoAmmoSound = Server()->Tick();
+		}
 		return;
 	}
 
@@ -563,109 +285,42 @@ void CCharacter::FireWeapon()
 	{
 		case WEAPON_HAMMER:
 		{
-            // reset objects Hit
-            m_NumObjectsHit = 0;
-            GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
-            int Hits = 0;
+			// reset objects Hit
+			m_NumObjectsHit = 0;
+			GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
-            if ((str_comp_nocase(GameServer()->GameType(), "MineTee") == 0 || str_comp_nocase(GameServer()->GameType(), "CTF-BREAK") == 0) && g_Config.m_SvGameMode == 0)
-            {
-                vec2 colTilePos = ProjStartPos+Direction * 80.0f;
-                if (GameServer()->Collision()->IntersectLine(ProjStartPos, colTilePos, &colTilePos, 0x0, false))
-                {
-                    vec2 finishPosPost = colTilePos+Direction * 8.0f;
-                    if (GameServer()->Collision()->GetCollisionAt(finishPosPost.x, finishPosPost.y) == CCollision::COLFLAG_SOLID)
-                    {
-                        int Index = (int)(finishPosPost.x/32) + (int)(finishPosPost.y/32) * GameServer()->Collision()->GetWidth();
-                        if (str_comp_nocase(GameServer()->GameType(), "MineTee") == 0 && GetPlayer()->GetCID() < MAX_CLIENTS-MAX_BOTS && GameServer()->Collision()->m_pSecBlocks[Index] != -1 && GameServer()->Collision()->m_pSecBlocks[Index] != GetPlayer()->GetCID())
-                        {
-                            char aBuf[128];
-                            str_format(aBuf, sizeof(aBuf), "** You can't detroy this block... contact with '%s' or wait until he leaves.", Server()->ClientName(GameServer()->Collision()->m_pSecBlocks[Index]));
-                            GameServer()->SendChatTarget(GetPlayer()->GetCID(), aBuf);
-                        }
-                        else
-                        {
-                            int TIndex = -1;
-                            if ((TIndex = GameServer()->Collision()->DestroyTile(finishPosPost)) > 0)
-                            {
-                                CNetMsg_Sv_TileChangeExt TileInfo;
-                                TileInfo.m_Size = -1;
-                                TileInfo.m_Index = -1;
-                                TileInfo.m_X = static_cast<int>(finishPosPost.x/32.0f);
-                                TileInfo.m_Y = static_cast<int>(finishPosPost.y/32.0f);
-                                TileInfo.m_Act = TILE_DESTROY;
-                                GameServer()->CreateSound(m_Pos, SOUND_DESTROY_BLOCK);
-                                Server()->SendPackMsg(&TileInfo, MSGFLAG_VITAL, -1);
+			CCharacter *apEnts[MAX_CLIENTS];
+			int Hits = 0;
+			int Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apEnts,
+														MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 
-                                if (str_comp_nocase(GameServer()->GameType(), "MineTee") == 0)
-                                {
-                                    if (TIndex == BLOCK_TNT)
-                                    {
-                                        GameServer()->CreateExplosion(finishPosPost, GetPlayer()->GetCID(), WEAPON_WORLD, false);
-                                        GameServer()->CreateSound(finishPosPost, SOUND_GRENADE_EXPLODE);
-                                    }
-                                    else
-                                    {
-                                        if (TIndex >= BLOCK_UNDEF47 && TIndex < BLOCK_BED)
-                                            TIndex = BLOCK_BED;
-                                        else if (TIndex == BLOCK_GRASSGROUND || TIndex == BLOCK_BNGRASS)
-                                            TIndex = BLOCK_GROUND;
-                                        else if (TIndex >= BLOCK_SEED1 && TIndex <= BLOCK_SEED7)
-                                            TIndex = BLOCK_SEEDM;
-                                        else if (TIndex == BLOCK_SEED8)
-                                            TIndex = BLOCK_TRIGO;
-                                        else if (TIndex >= BLOCK_INVTA && TIndex <= BLOCK_INVTB)
-                                            TIndex = BLOCK_INVENTARY;
-                                        else if (TIndex == BLOCK_CARBON)
-                                            TIndex = BLOCK_CARBONP;
-                                        else if (TIndex == BLOCK_DIAMOND)
-                                            TIndex = BLOCK_DIAMANTEP;
+			for (int i = 0; i < Num; ++i)
+			{
+				CCharacter *pTarget = apEnts[i];
 
-                                        CPickup *pPickup = new CPickup(&GameServer()->m_World, POWERUP_BLOCK, TIndex);
-                                        pPickup->m_Pos = vec2(TileInfo.m_X*32.0f + 8.0f, TileInfo.m_Y*32.0f + 8.0f);
-                                    }
-                                }
-                            }
+				if ((pTarget == this) || GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
+					continue;
 
-                            Hits=0;
-                            m_ReloadTimer=Server()->TickSpeed()/8;
-                        }
-                    }
-                }
-            }
+				// set his velocity to fast upward (for now)
+				if(length(pTarget->m_Pos-ProjStartPos) > 0.0f)
+					GameServer()->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-ProjStartPos)*m_ProximityRadius*0.5f);
+				else
+					GameServer()->CreateHammerHit(ProjStartPos);
 
-            CCharacter *apEnts[MAX_CLIENTS];
-            int Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apEnts,
-                                                            MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+				vec2 Dir;
+				if (length(pTarget->m_Pos - m_Pos) > 0.0f)
+					Dir = normalize(pTarget->m_Pos - m_Pos);
+				else
+					Dir = vec2(0.f, -1.f);
 
-            for (int i = 0; i < Num; ++i)
-            {
-                CCharacter *pTarget = apEnts[i];
+				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
+					m_pPlayer->GetCID(), m_ActiveWeapon);
+				Hits++;
+			}
 
-                if ((pTarget == this) || GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
-                    continue;
-
-                // set his velocity to fast upward (for now)
-                if(length(pTarget->m_Pos-ProjStartPos) > 0.0f)
-                    GameServer()->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-ProjStartPos)*m_ProximityRadius*0.5f);
-                else
-                    GameServer()->CreateHammerHit(ProjStartPos);
-
-                vec2 Dir;
-                if (length(pTarget->m_Pos - m_Pos) > 0.0f)
-                    Dir = normalize(pTarget->m_Pos - m_Pos);
-                else
-                    Dir = vec2(0.f, -1.f);
-
-                pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
-                    m_pPlayer->GetCID(), m_ActiveWeapon);
-                Hits++;
-            }
-
-
-            // if we Hit anything, we have to wait for the reload
-            if(Hits)
-                m_ReloadTimer = Server()->TickSpeed()/3;
+			// if we Hit anything, we have to wait for the reload
+			if(Hits)
+				m_ReloadTimer = Server()->TickSpeed()/3;
 
 		} break;
 
@@ -820,20 +475,10 @@ void CCharacter::HandleWeapons()
 
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
-    if (str_find_nocase(GameServer()->GameType(), "minetee") && IsInventoryFull())
-        return false;
-
 	if(m_aWeapons[Weapon].m_Ammo < g_pData->m_Weapons.m_aId[Weapon].m_Maxammo || !m_aWeapons[Weapon].m_Got)
 	{
-	    m_aWeapons[Weapon].m_Ammo = min(g_pData->m_Weapons.m_aId[Weapon].m_Maxammo, Ammo);
-
-        if (!m_aWeapons[Weapon].m_Got)
-            UpdateInventory(Weapon);
-        else
-            UpdateInventory();
-
 		m_aWeapons[Weapon].m_Got = true;
-
+		m_aWeapons[Weapon].m_Ammo = min(g_pData->m_Weapons.m_aId[Weapon].m_Maxammo, Ammo);
 		return true;
 	}
 	return false;
@@ -867,7 +512,7 @@ void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 	mem_copy(&m_Input, pNewInput, sizeof(m_Input));
 	m_NumInputs++;
 
-	// or are not allowed to aim in the center
+	// it is not allowed to aim in the center
 	if(m_Input.m_TargetX == 0 && m_Input.m_TargetY == 0)
 		m_Input.m_TargetY = -1;
 }
@@ -876,6 +521,10 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput *pNewInput)
 {
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
 	mem_copy(&m_LatestInput, pNewInput, sizeof(m_LatestInput));
+
+	// it is not allowed to aim in the center
+	if(m_LatestInput.m_TargetX == 0 && m_LatestInput.m_TargetY == 0)
+		m_LatestInput.m_TargetY = -1;
 
 	if(m_NumInputs > 2 && m_pPlayer->GetTeam() != TEAM_SPECTATORS)
 	{
@@ -900,10 +549,6 @@ void CCharacter::ResetInput()
 
 void CCharacter::Tick()
 {
-	//BotsIA
-	if (m_pPlayer->GetTeam() > TEAM_BLUE)
-        BotIA();
-
 	if(m_pPlayer->m_ForceBalanced)
 	{
 		char Buf[128];
@@ -915,36 +560,6 @@ void CCharacter::Tick()
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
-
-	//H-Client: Fluid Damages
-	int BlockID = GameServer()->Collision()->GetMineTeeBlockAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f);
-	if (Server()->Tick() - TimerFluidDamage >= Server()->TickSpeed()/2 && (BlockID >= BLOCK_UNDEF104 && BlockID <= BLOCK_LAVA))
-	{
-	    TakeDamage(vec2(0.0f,-1.0f), 1, m_pPlayer->GetCID(), WEAPON_WORLD);
-	    TimerFluidDamage = Server()->Tick();
-	}
-
-	if (!inWater)
-	{
-        if ((BlockID >= BLOCK_UNDEF82 && BlockID <= BLOCK_AGUA) && (Server()->Tick() - TimerFluidDamage >= Server()->TickSpeed()*8))
-        {
-            inWater = true;
-            TimerFluidDamage = Server()->Tick();
-        }
-    }
-	else
-	{
-	    if (BlockID < BLOCK_UNDEF82 || BlockID > BLOCK_AGUA)
-	    {
-            inWater = false;
-            TimerFluidDamage = Server()->Tick();
-	    }
-        else if (Server()->Tick() - TimerFluidDamage >= Server()->TickSpeed()*2)
-        {
-            TakeDamage(vec2(0.0f,-1.0f), 1, m_pPlayer->GetCID(), WEAPON_WORLD);
-            TimerFluidDamage = Server()->Tick();
-        }
-	}
 
 	// handle death-tiles and leaving gamelayer
 	if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
@@ -961,7 +576,6 @@ void CCharacter::Tick()
 
 	// Previnput
 	m_PrevInput = m_Input;
-
 	return;
 }
 
@@ -1046,12 +660,20 @@ void CCharacter::TickDefered()
 			m_ReckoningCore = m_Core;
 		}
 	}
+}
 
-	//H-Client: Check Hook State
-    int plHooked = m_Core.m_HookedPlayer;
-	if (plHooked >= MAX_CLIENTS-MAX_BOTS && plHooked < MAX_CLIENTS && GameServer()->m_apPlayers[plHooked] &&
-     (GameServer()->m_apPlayers[plHooked]->GetTeam() == TEAM_ANIMAL_TEECOW || GameServer()->m_apPlayers[plHooked]->GetTeam() == TEAM_ANIMAL_TEEPIG))
-	    m_Core.m_HookTick = 0;
+void CCharacter::TickPaused()
+{
+	++m_AttackTick;
+	++m_DamageTakenTick;
+	++m_Ninja.m_ActivationTick;
+	++m_ReckoningTick;
+	if(m_LastAction != -1)
+		++m_LastAction;
+	if(m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart > -1)
+		++m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart;
+	if(m_EmoteStop > -1)
+		++m_EmoteStop;
 }
 
 bool CCharacter::IncreaseHealth(int Amount)
@@ -1073,10 +695,7 @@ bool CCharacter::IncreaseArmor(int Amount)
 void CCharacter::Die(int Killer, int Weapon)
 {
 	// we got to wait 0.5 secs before respawning
-	if (m_pPlayer->GetTeam() > TEAM_BLUE)
-        m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*20;
-	else
-        m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+	m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
 
 	char aBuf[256];
@@ -1086,15 +705,12 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	// send the kill message
-	if (Weapon != WEAPON_WORLD && m_pPlayer->GetTeam() <= TEAM_BLUE)
-	{
-        CNetMsg_Sv_KillMsg Msg;
-        Msg.m_Killer = Killer;
-        Msg.m_Victim = m_pPlayer->GetCID();
-        Msg.m_Weapon = Weapon;
-        Msg.m_ModeSpecial = ModeSpecial;
-        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
-	}
+	CNetMsg_Sv_KillMsg Msg;
+	Msg.m_Killer = Killer;
+	Msg.m_Victim = m_pPlayer->GetCID();
+	Msg.m_Weapon = Weapon;
+	Msg.m_ModeSpecial = ModeSpecial;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
 
 	// a nice sound
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
@@ -1106,9 +722,6 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
-
-	if ((str_find_nocase(GameServer()->GameType(), "minetee") || str_find_nocase(GameServer()->GameType(), "CTF-BREAK"))  && m_pPlayer->GetTeam() <= TEAM_BLUE)
-	    GameServer()->CreateTombstone(m_Pos);
 }
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
@@ -1117,9 +730,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage)
 		return false;
-
-    if (m_pPlayer->GetCID() >= MAX_CLIENTS-MAX_BOTS)
-        m_BotTimeLastDamage = Server()->Tick();
 
 	// m_pPlayer only inflicts half damage on self
 	if(From == m_pPlayer->GetCID())
@@ -1175,7 +785,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS && GameServer()->m_apPlayers[i]->m_SpectatorID == From)
 				Mask |= CmaskOne(i);
 		}
-
 		GameServer()->CreateSound(GameServer()->m_apPlayers[From]->m_ViewPos, SOUND_HIT, Mask);
 	}
 
@@ -1198,13 +807,10 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 	}
 
-    if (m_pPlayer->GetTeam() <= TEAM_BLUE)
-    {
-        if (Dmg > 2)
-            GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
-        else
-            GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
-    }
+	if (Dmg > 2)
+		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
+	else
+		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
 
 	m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
@@ -1216,11 +822,6 @@ void CCharacter::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient))
 		return;
-
-    //H-Client
-    if ((g_Config.m_SvMonsters == 0 && m_pPlayer->GetTeam() >= TEAM_ENEMY_TEEPER && m_pPlayer->GetTeam() <= TEAM_ENEMY_SPIDERTEE) ||
-        (g_Config.m_SvAnimals == 0 && m_pPlayer->GetTeam() >= TEAM_ANIMAL_TEECOW && m_pPlayer->GetTeam() <= TEAM_ANIMAL_TEEPIG))
-        return;
 
 	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));
 	if(!pCharacter)
@@ -1263,14 +864,7 @@ void CCharacter::Snap(int SnappingClient)
 	{
 		pCharacter->m_Health = m_Health;
 		pCharacter->m_Armor = m_Armor;
-
-		if (m_ActiveWeapon >= NUM_WEAPONS)
-		{
-		    int ActiveBlock = m_ActiveWeapon - NUM_WEAPONS;
-            if(m_aBlocks[ActiveBlock].m_Amount > 0)
-                pCharacter->m_AmmoCount = m_aBlocks[ActiveBlock].m_Amount;
-		}
-		else if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
+		if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
 			pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo;
 	}
 
@@ -1281,428 +875,4 @@ void CCharacter::Snap(int SnappingClient)
 	}
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
-
-	//H-Client: Send Inventory
-	if(m_pPlayer->GetCID() == SnappingClient && m_NeedSendInventory && str_find_nocase(GameServer()->GameType(), "minetee"))
-	{
-        CNetObj_Inventory *pClientInventory = static_cast<CNetObj_Inventory *>(Server()->SnapNewItem(NETOBJTYPE_INVENTORY, m_pPlayer->GetCID(), sizeof(CNetObj_Inventory)));
-        if(!pClientInventory)
-            return;
-
-        //TODO: Ugly
-        pClientInventory->m_Item1 = m_Inventory.m_Items[0];
-        pClientInventory->m_Item2 = m_Inventory.m_Items[1];
-        pClientInventory->m_Item3 = m_Inventory.m_Items[2];
-        pClientInventory->m_Item4 = m_Inventory.m_Items[3];
-        pClientInventory->m_Item5 = m_Inventory.m_Items[4];
-        pClientInventory->m_Item6 = m_Inventory.m_Items[5];
-        pClientInventory->m_Item7 = m_Inventory.m_Items[6];
-        pClientInventory->m_Item8 = m_Inventory.m_Items[7];
-        pClientInventory->m_Item9 = m_Inventory.m_Items[8];
-
-        pClientInventory->m_Ammo1 = GetCurrentAmmo(pClientInventory->m_Item1);
-        pClientInventory->m_Ammo2 = GetCurrentAmmo(pClientInventory->m_Item2);
-        pClientInventory->m_Ammo3 = GetCurrentAmmo(pClientInventory->m_Item3);
-        pClientInventory->m_Ammo4 = GetCurrentAmmo(pClientInventory->m_Item4);
-        pClientInventory->m_Ammo5 = GetCurrentAmmo(pClientInventory->m_Item5);
-        pClientInventory->m_Ammo6 = GetCurrentAmmo(pClientInventory->m_Item6);
-        pClientInventory->m_Ammo7 = GetCurrentAmmo(pClientInventory->m_Item7);
-        pClientInventory->m_Ammo8 = GetCurrentAmmo(pClientInventory->m_Item8);
-        pClientInventory->m_Ammo9 = GetCurrentAmmo(pClientInventory->m_Item9);
-
-        pClientInventory->m_Selected = m_Inventory.m_Selected;
-        m_NeedSendInventory = false;
-	}
-}
-
-//H-Client
-bool CCharacter::GiveBlock(int Block, int Amount)
-{
-    if (str_find_nocase(GameServer()->GameType(), "minetee") && IsInventoryFull() && !m_aBlocks[Block].m_Got)
-        return false;
-
-    if (Block >= NUM_BLOCKS || Block < 0)
-        return false;
-
-    if (!m_aBlocks[Block].m_Got)
-    {
-        m_aBlocks[Block].m_Amount = Amount;
-        m_aBlocks[Block].m_Got = true;
-
-        UpdateInventory(NUM_WEAPONS+Block);
-    }
-    else
-    {
-        if (m_aBlocks[Block].m_Amount > 255)
-            return false;
-
-        m_aBlocks[Block].m_Amount+=Amount;
-
-        UpdateInventory();
-    }
-
-    return true;
-}
-
-void CCharacter::UpdateInventory(int item)
-{
-    for (int i=0; i<9; i++)
-    {
-        if (item != NUM_WEAPONS+NUM_BLOCKS)
-        {
-            if (m_Inventory.m_Items[i] == NUM_WEAPONS+NUM_BLOCKS)
-            {
-                m_Inventory.m_Items[i] = item;
-                break;
-            }
-        }
-        else
-        {
-            int Index = m_Inventory.m_Items[i];
-            if (Index != NUM_WEAPONS+NUM_BLOCKS)
-            {
-                if (Index >= NUM_WEAPONS)
-                {
-                    if (!m_aBlocks[Index-NUM_WEAPONS].m_Got)
-                        m_Inventory.m_Items[i] = NUM_WEAPONS+NUM_BLOCKS;
-                }
-                else if (!m_aWeapons[Index].m_Got)
-                    m_Inventory.m_Items[i] = NUM_WEAPONS+NUM_BLOCKS;
-            }
-        }
-    }
-
-    m_NeedSendInventory = true;
-}
-
-bool CCharacter::IsInventoryFull()
-{
-    for (int i=0; i<9; i++)
-    {
-        if (m_Inventory.m_Items[i] == NUM_WEAPONS+NUM_BLOCKS)
-            return false;
-    }
-
-    return true;
-}
-
-void CCharacter::BotIA()
-{
-    //Control spawn bots
-    int Time = -1;
-    Time = (Server()->Tick()-GameServer()->m_pController->GetRoundStartTick()) / (float)Server()->TickSpeed();
-    bool MineTeeIsDay = (static_cast<int>(Time/300)%2)?false:true;
-    if (300 < 0)
-        MineTeeIsDay = true;
-
-    if (IsAlive() && (!MineTeeIsDay && m_pPlayer->GetTeam() >= TEAM_ENEMY_TEEPER && m_pPlayer->GetTeam() <= TEAM_ENEMY_SPIDERTEE))
-    {
-        CTile *pMTLTiles = GameServer()->Layers()->TileLights();
-        int Index = static_cast<int>(m_Pos.y/32)*GameServer()->Layers()->Lights()->m_Width+static_cast<int>(m_Pos.x/32);
-
-        if (pMTLTiles[Index].m_Index == 0)
-            Die(m_pPlayer->GetCID(), WEAPON_WORLD);
-
-        return;
-    }
-    else if (MineTeeIsDay && m_pPlayer->GetTeam() >= TEAM_ANIMAL_TEECOW && m_pPlayer->GetTeam() <= TEAM_ANIMAL_TEEPIG)
-    {
-        Die(m_pPlayer->GetCID(), WEAPON_WORLD);
-        return;
-    }
-
-    //Sounds
-    if (Server()->Tick() - m_BotTimeLastSound > Server()->TickSpeed()*5.0f)
-    {
-        if (m_pPlayer->GetTeam() == TEAM_ANIMAL_TEECOW)
-            GameServer()->CreateSound(m_Pos, SOUND_ANIMAL_TEECOW);
-        else if (m_pPlayer->GetTeam() == TEAM_ENEMY_ZOMBITEE)
-            GameServer()->CreateSound(m_Pos, SOUND_ENEMY_ZOMBITEE);
-        m_BotTimeLastSound = Server()->Tick();
-    }
-
-    //Run actions
-    if (m_pPlayer->GetTeam() == TEAM_ENEMY_TEEPER && (Server()->Tick() - m_BotTimePlayerFound > Server()->TickSpeed()*0.35f || Server()->Tick()-m_BotTimeGrounded > Server()->TickSpeed()*4))
-    {
-
-        Die(m_pPlayer->GetCID(), WEAPON_WORLD);
-        GameServer()->CreateExplosion(m_Pos, m_pPlayer->GetCID(), WEAPON_WORLD, false);
-        GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
-        return;
-    }
-    else if (m_pPlayer->GetTeam() == TEAM_ENEMY_ZOMBITEE)
-    {
-        if (Server()->Tick()-m_BotTimeGrounded > Server()->TickSpeed()*4)
-        {
-            Die(m_pPlayer->GetCID(), WEAPON_WORLD);
-            return;
-        }
-        if (m_BotClientIDFix != -1)
-        {
-            CCharacter *pChar =  GameServer()->m_apPlayers[m_BotClientIDFix]->GetCharacter();
-            if (!pChar)
-            {
-                m_BotClientIDFix = -1;
-                return;
-            }
-
-            vec2 DirHit = vec2(0.f, -1.f);
-            if (length(pChar->m_Pos - m_Pos) > 0.0f)
-                vec2 DirHit = normalize(pChar->m_Pos - m_Pos);
-            pChar->TakeDamage(vec2(0.f, -1.f) + normalize(DirHit + vec2(0.f, -1.1f)) * 10.0f, 3, m_pPlayer->GetCID(), WEAPON_WORLD);
-            GameServer()->CreateHammerHit(m_Pos);
-            GameServer()->CreateSound(m_Pos, SOUND_HIT);
-            m_BotDir = 0;
-
-            m_BotClientIDFix = -1;
-            return;
-        }
-    }
-    else if (m_pPlayer->GetTeam() == TEAM_ENEMY_SKELETEE)
-    {
-        if (Server()->Tick()-m_BotTimeGrounded > Server()->TickSpeed()*4)
-        {
-            Die(m_pPlayer->GetCID(), WEAPON_WORLD);
-            return;
-        }
-        if (m_BotClientIDFix != -1)
-        {
-            CCharacter *pChar =  GameServer()->m_apPlayers[m_BotClientIDFix]->GetCharacter();
-            if (!pChar)
-            {
-                m_BotClientIDFix = -1;
-                return;
-            }
-
-            m_LatestInput.m_Fire = 1;
-            m_LatestPrevInput.m_Fire = 1;
-            m_Input.m_Fire = 1;
-            m_BotDir = 0;
-
-            m_BotClientIDFix = -1;
-            return;
-        }
-    }
-
-    //Clean m_Input
-	m_Input.m_Hook = 0;
-	m_Input.m_Fire = 0;
-	m_Input.m_Jump = 0;
-
-    //Interact with users
-    bool PlayerClose = false;
-    bool PlayerFound = false;
-    float LessDist = 500.0f;
-
-    m_BotClientIDFix = -1;
-	for (int i=0; i<MAX_CLIENTS-MAX_BOTS; i++)
-	{
-	    CPlayer *pPlayer = GameServer()->m_apPlayers[i];
-	    if (!pPlayer || !pPlayer->GetCharacter())
-            continue;
-
-        int Dist = distance(pPlayer->GetCharacter()->m_Pos, m_Pos);
-        if (Dist < LessDist)
-            LessDist = Dist;
-        else
-            continue;
-
-	    if (Dist < 450.0f)
-        {
-            if (Dist > 120.0f)
-            {
-                vec2 DirPlayer = normalize(pPlayer->GetCharacter()->m_Pos - m_Pos);
-
-                bool isHooked = false;
-                for (int e=0; e<MAX_CLIENTS-MAX_BOTS; e++)
-                {
-                    if (!GameServer()->m_apPlayers[e] || !GameServer()->m_apPlayers[e]->GetCharacter())
-                        continue;
-
-                    int HookedPL = GameServer()->m_apPlayers[e]->GetCharacter()->GetCore()->m_HookedPlayer;
-                    if (HookedPL < 0 || HookedPL != m_pPlayer->GetCID() || !GameServer()->m_apPlayers[HookedPL])
-                        continue;
-
-                    if (GameServer()->m_apPlayers[HookedPL]->GetTeam() == TEAM_ANIMAL_TEECOW || GameServer()->m_apPlayers[HookedPL]->GetTeam() == TEAM_ANIMAL_TEEPIG)
-                    {
-                        isHooked = true;
-                        break;
-                    }
-                }
-
-                if (m_pPlayer->GetTeam() == TEAM_ANIMAL_TEECOW || m_pPlayer->GetTeam() == TEAM_ANIMAL_TEEPIG)
-                    m_BotDir = 0;
-                else if (m_pPlayer->GetTeam() == TEAM_ENEMY_SKELETEE)
-                {
-                    m_BotDir = 0;
-                    m_BotClientIDFix = pPlayer->GetCID();
-                }
-                else
-                {
-                    if (DirPlayer.x < 0)
-                        m_BotDir = -1;
-                    else
-                        m_BotDir = 1;
-                }
-            }
-            else
-            {
-                PlayerClose = true;
-
-                if (m_pPlayer->GetTeam() == TEAM_ENEMY_TEEPER)
-                    m_BotDir = 0;
-                else if (m_pPlayer->GetTeam() == TEAM_ENEMY_ZOMBITEE && Dist < 32.0f)
-                {
-                    m_BotDir = 0;
-                    m_BotClientIDFix = pPlayer->GetCID();
-                }
-            }
-
-
-            m_Input.m_TargetX = static_cast<int>(pPlayer->GetCharacter()->m_Pos.x - m_Pos.x);
-            m_Input.m_TargetY = static_cast<int>(pPlayer->GetCharacter()->m_Pos.y - m_Pos.y);
-
-            PlayerFound = true;
-        }
-	}
-
-    //Fix target
-    if (!PlayerFound)
-    {
-        m_Input.m_TargetX = m_BotDir;
-        m_Input.m_TargetY = 0;
-    }
-
-    //Random Actions to animals
-	if (m_pPlayer->GetTeam() == TEAM_ANIMAL_TEECOW || m_pPlayer->GetTeam() == TEAM_ANIMAL_TEEPIG)
-	{
-        if (Server()->Tick()-m_BotTimeLastOption > Server()->TickSpeed()*10.0f)
-        {
-            int Action = rand()%3;
-            if (Action == 0)
-                m_BotDir = -1;
-            else if (Action == 1)
-                m_BotDir = 1;
-            else if (Action == 2)
-                m_BotDir = 0;
-
-            m_BotTimeLastOption = Server()->Tick();
-        }
-	}
-
-    //Interact with the envirionment
-    if (distance(m_Pos, m_BotLastPos) < 0.5f || abs(m_Pos.x-m_BotLastPos.x) < 8)
-    {
-        if (Server()->Tick() - m_BotLastStuckTime > Server()->TickSpeed()*0.5f)
-        {
-            m_BotStuckCount++;
-            if (m_BotStuckCount == 15)
-            {
-                if (abs(m_Pos.x-m_BotLastPos.x) < 2.0f)
-                {
-                    if (abs(m_Pos.y-m_BotLastPos.y) > 10)
-                        m_Input.m_Jump = 1;
-                    else
-                    {
-                        m_Input.m_Jump = 1;
-                    }
-                }
-
-                m_BotStuckCount = 0;
-                m_BotLastStuckTime = Server()->Tick();
-            }
-
-        }
-
-        if (!PlayerClose)
-            m_Input.m_Jump = 1;
-    }
-
-    //Fix Stuck
-    if (IsGrounded())
-        m_BotTimeGrounded = Server()->Tick();
-
-    //Falls
-    if (m_pPlayer->GetTeam() != TEAM_ENEMY_ZOMBITEE && m_pPlayer->GetTeam() != TEAM_ANIMAL_TEECOW  && m_pPlayer->GetTeam() != TEAM_ANIMAL_TEEPIG && PlayerFound && m_Core.m_Vel.y < 0.0f)
-        m_Input.m_Jump = 1;
-
-    //Limits
-    int tx = m_Pos.x+m_BotDir*45.0f;
-    if (tx < 0 || tx >= GameServer()->Collision()->GetWidth()*32.0f)
-        m_BotDir *= -1;
-
-    //Delay of actions
-    if (!PlayerClose)
-        m_BotTimePlayerFound = Server()->Tick();
-
-    //Set data
-    m_Input.m_Direction = m_BotDir;
-	m_Input.m_PlayerFlags = PLAYERFLAG_PLAYING;
-
-	m_LatestPrevInput = m_LatestInput = m_Input;
-
-	m_BotLastPos = m_Pos;
-}
-
-int CCharacter::GetCurrentAmmo(int wid)
-{
-    if (wid < 0 || wid >= NUM_WEAPONS+NUM_BLOCKS)
-        return 0;
-
-    if (wid >= NUM_WEAPONS)
-        return m_aBlocks[wid-NUM_WEAPONS].m_Amount;
-    else
-        return m_aWeapons[wid].m_Ammo;
-
-    return 0;
-}
-
-void CCharacter::DropItem(int ItemID)
-{
-    if (ItemID == -1)
-        ItemID = m_Inventory.m_Selected;
-
-    if (ItemID == 0)
-        return;
-
-    bool dropped = false;
-    int Index = m_Inventory.m_Items[ItemID];
-    if (Index != NUM_WEAPONS+NUM_BLOCKS)
-    {
-        vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
-
-        if (Index >= NUM_WEAPONS)
-        {
-            if (m_aBlocks[Index-NUM_WEAPONS].m_Got)
-            {
-                m_Inventory.m_Items[ItemID] = NUM_WEAPONS+NUM_BLOCKS;
-                m_aBlocks[Index-NUM_WEAPONS].m_Got = false;
-                CPickup *pPickup = new CPickup(&GameServer()->m_World, POWERUP_DROPITEM, Index-NUM_WEAPONS);
-                pPickup->m_Pos = m_Pos;
-                pPickup->m_Pos.y -= 18.0f;
-                pPickup->m_Vel = vec2(Direction.x*5.0f, -5);
-                pPickup->m_Amount = m_aBlocks[Index-NUM_WEAPONS].m_Amount;
-                pPickup->m_Owner = m_pPlayer->GetCID();
-                dropped = true;
-            }
-        }
-
-        if (dropped)
-        {
-            int ActiveItem = 0;
-            for (int i=m_Inventory.m_Selected-1; i>=0; i--)
-            {
-                if (m_Inventory.m_Items[i] != NUM_WEAPONS+NUM_BLOCKS)
-                {
-                    ActiveItem = m_Inventory.m_Items[i];
-                    m_Inventory.m_Selected = i;
-                    break;
-                }
-            }
-
-            SetWeapon(ActiveItem);
-        }
-    }
-
-    UpdateInventory();
 }

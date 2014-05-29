@@ -35,6 +35,7 @@ CInput::CInput()
 
 	m_InputCurrent = 0;
 	m_InputGrabbed = 0;
+	m_InputDispatched = false;
 
 	m_LastRelease = 0;
 	m_ReleaseDelta = -1;
@@ -47,21 +48,6 @@ void CInput::Init()
 	m_pGraphics = Kernel()->RequestInterface<IEngineGraphics>();
 	SDL_EnableUNICODE(1);
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
-}
-
-void CInput::MousePos(int *x, int *y)
-{
-    int nx = 0, ny = 0;
-    SDL_GetMouseState(&nx,&ny);
-
-    //nx -= Graphics()->ScreenWidth()/2; ny -= Graphics()->ScreenHeight()/2;
-    *x = nx;
-    *y = ny;
-}
-bool CInput::MousePressed(int index)
-{
-    int i = SDL_GetMouseState(NULL, NULL);
-    return i&SDL_BUTTON(index);
 }
 
 void CInput::MouseRelative(float *x, float *y)
@@ -131,10 +117,14 @@ int CInput::Update()
 	/*if(!input_grabbed && Graphics()->WindowActive())
 		Input()->MouseModeRelative();*/
 
-	// clear and begin count on the other one
-	m_InputCurrent^=1;
-	mem_zero(&m_aInputCount[m_InputCurrent], sizeof(m_aInputCount[m_InputCurrent]));
-	mem_zero(&m_aInputState[m_InputCurrent], sizeof(m_aInputState[m_InputCurrent]));
+	if(m_InputDispatched)
+	{
+		// clear and begin count on the other one
+		m_InputCurrent^=1;
+		mem_zero(&m_aInputCount[m_InputCurrent], sizeof(m_aInputCount[m_InputCurrent]));
+		mem_zero(&m_aInputState[m_InputCurrent], sizeof(m_aInputState[m_InputCurrent]));
+		m_InputDispatched = false;
+	}
 
 	{
 		int i;

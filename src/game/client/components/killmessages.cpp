@@ -2,8 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/graphics.h>
 #include <engine/textrender.h>
-#include <engine/serverbrowser.h> //H-Client
-#include <engine/shared/config.h> //H-Client
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
 
@@ -38,8 +36,10 @@ void CKillMessages::OnMessage(int MsgType, void *pRawMsg)
 		Kill.m_ModeSpecial = pMsg->m_ModeSpecial;
 		Kill.m_Tick = Client()->GameTick();
 
-		Kill.m_Show = false; //H-Client
+		//H-Client
+        Kill.m_Show = false;
 		Kill.m_ID = 1;
+		//
 
 		// add the message
 		m_KillmsgCurrent = (m_KillmsgCurrent+1)%MAX_KILLMSGS;
@@ -47,28 +47,24 @@ void CKillMessages::OnMessage(int MsgType, void *pRawMsg)
 
         //H-Client: Reset Freeze State
         m_pClient->m_aClients[pMsg->m_Victim].m_FreezedState.Reset();
-
-        //H-Client
-        if (Kill.m_VictimID == m_pClient->m_Snap.m_LocalClientID)
-            m_pClient->m_KillInfo.push_back(CGameClient::KillInfo(vec2(m_pClient->m_Snap.m_pLocalCharacter->m_X, m_pClient->m_Snap.m_pLocalCharacter->m_Y), Kill.m_aKillerName, true));
-        else if (Kill.m_KillerID == m_pClient->m_Snap.m_LocalClientID)
-            m_pClient->m_KillInfo.push_back(CGameClient::KillInfo(vec2(m_pClient->m_Snap.m_pLocalCharacter->m_X, m_pClient->m_Snap.m_pLocalCharacter->m_Y), Kill.m_aVictimName, false));
 	}
 }
 
+// H-Client
 float *CKillMessages::TeeSize(const void *pID, float Seconds, int Checked)
 {
 	float *pFade = (float*)pID;
 	if(!Checked)
 		*pFade = Seconds;
-	if(*pFade > 0.0f)
+	if((*pFade) > 0.0f)
 	{
-		*pFade -= Client()->FrameTime();
+		*pFade -= Client()->RenderFrameTime();
 		if(*pFade < 0.0f)
 			*pFade = 0.0f;
 	}
 	return pFade;
 }
+//
 
 void CKillMessages::OnRender()
 {
@@ -118,7 +114,7 @@ void CKillMessages::OnRender()
 			}
 		}
 
-
+        // H-Client
         float Seconds = 0.6f; //  0.6 seconds for fade
         float *pFade = TeeSize(&m_aKillmsgs[r].m_ID, Seconds, m_aKillmsgs[r].m_Show);
         float FadeVal = *pFade/Seconds;

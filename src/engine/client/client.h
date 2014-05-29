@@ -62,14 +62,10 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	IGameClient *m_pGameClient;
 	IEngineMap *m_pMap;
 	IConsole *m_pConsole;
-	IStorageTW *m_pStorage;
-	IServerBrowser *m_pServerBrowser;
-	IServerManager *m_pServerManager;
-	IAutoUpdate *m_pAutoUpdate; //H-Client
-	INews *m_pNews; //H-Client
-	IIrc *m_pIrc; //H-Client
-	//IRecordMovie *m_pRecordMovie;
+	IStorage *m_pStorage;
 	IEngineMasterServer *m_pMasterServer;
+	IGeoIP *m_pGeoIP; //H-Client
+	ITexturePack *m_pTexturePack; //H-Client
 
 	enum
 	{
@@ -81,13 +77,10 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	class CDemoPlayer m_DemoPlayer;
 	class CDemoRecorder m_DemoRecorder;
 	class CServerBrowser m_ServerBrowser;
-	class CAutoUpdate m_AutoUpdate; //H-Client
-	class CNews m_News; //H-Client
-	class CIrc m_Irc; //H-Client
-	class CServerManager m_ServerManager; //H-Client
-	//class CRecordMovie m_RecordMovie; //H-Client
 	class CFriends m_Friends;
 	class CMapChecker m_MapChecker;
+	class CGeoIP m_GeoIP; //H-Client
+	class CTexturePack m_TexturePack; //H-Client
 
 	char m_aServerAddressStr[256];
 
@@ -95,10 +88,11 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	int64 m_LocalStartTime;
 
 	int m_DebugFont;
-	float m_FrameTimeLow;
-	float m_FrameTimeHigh;
-	int m_Frames;
 
+	int64 m_LastRenderTime;
+	float m_RenderFrameTimeLow;
+	float m_RenderFrameTimeHigh;
+	int m_RenderFrames;
 
 	NETADDR m_ServerAddress;
 	int m_WindowMustRefocus;
@@ -134,10 +128,6 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	int m_MapdownloadCrc;
 	int m_MapdownloadAmount;
 	int m_MapdownloadTotalsize;
-
-	//Sync
-    int m_MapStateTotalSize;
-	int m_MapStateAmount;
 
 	// time
 	CSmoothTime m_GameTime;
@@ -189,7 +179,9 @@ class CClient : public IClient, public CDemoPlayer::IListner
 		class CHostLookup m_VersionServeraddr;
 	} m_VersionInfo;
 
-	bool m_BackgroundLoaded; //H-Client
+	volatile int m_GfxState;
+	static void GraphicsThreadProxy(void *pThis) { ((CClient*)pThis)->GraphicsThread(); }
+	void GraphicsThread();
 
 public:
 	IEngine *Engine() { return m_pEngine; }
@@ -198,18 +190,15 @@ public:
 	IEngineSound *Sound() { return m_pSound; }
 	IGameClient *GameClient() { return m_pGameClient; }
 	IEngineMasterServer *MasterServer() { return m_pMasterServer; }
-	IStorageTW *Storage() { return m_pStorage; }
-	IServerBrowser *ServerBrowser() { return m_pServerBrowser; }
-	IServerManager *ServerManager() { return m_pServerManager; }
-	IAutoUpdate *AutoUpdate() { return m_pAutoUpdate; }
-	INews *News() { return m_pNews; }
-	IIrc *Irc() { return m_pIrc; }
-	//IRecordMovie *RecordMovie() { return m_pRecordMovie; } //H-Client
+	IStorage *Storage() { return m_pStorage; }
+	IGeoIP *GeoIP() { return m_pGeoIP; } // H-Client
+	ITexturePack *TexturePack() { return m_pTexturePack; } // H-Client
 
 	CClient();
 
 	// ----- send functions -----
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags);
+
 
 	int SendMsgEx(CMsgPacker *pMsg, int Flags, bool System=true);
 	void SendInfo();
@@ -244,8 +233,8 @@ public:
 	virtual void EnterGame();
 
 	virtual void Connect(const char *pAddress);
-	void DisconnectWithReason(const char *pReason, bool reloadbkg = true);
-	virtual void Disconnect(bool reloadbkg = true);
+	void DisconnectWithReason(const char *pReason);
+	virtual void Disconnect();
 
 
 	virtual void GetServerInfo(CServerInfo *pServerInfo);
@@ -268,7 +257,7 @@ public:
 
 	virtual const char *ErrorString();
 
-	const char *LoadMap(const char *pName, const char *pFilename, unsigned WantedCrc, int clientstate = IClient::STATE_LOADING);
+	const char *LoadMap(const char *pName, const char *pFilename, unsigned WantedCrc);
 	const char *LoadMapSearch(const char *pMapName, int WantedCrc);
 
 	static int PlayerScoreComp(const void *a, const void *b);
@@ -305,6 +294,7 @@ public:
 	static void Con_Play(IConsole::IResult *pResult, void *pUserData);
 	static void Con_Record(IConsole::IResult *pResult, void *pUserData);
 	static void Con_StopRecord(IConsole::IResult *pResult, void *pUserData);
+	static void Con_AddDemoMarker(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainServerBrowserUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	void RegisterCommands();
@@ -313,34 +303,13 @@ public:
 	void DemoRecorder_Start(const char *pFilename, bool WithTimestamp);
 	void DemoRecorder_HandleAutoStart();
 	void DemoRecorder_Stop();
+	void DemoRecorder_AddDemoMarker();
 
 	void AutoScreenshot_Start();
 	void AutoScreenshot_Cleanup();
 
 	void ServerBrowserUpdate();
 
-	/** H-Client **/
-	//Ghost Stuff
-    virtual const char* GetCurrentMap();
-	virtual int GetCurrentMapCrc();
-	bool BackgroundLoaded() { return m_BackgroundLoaded; }
-	void SetBackgroundLoaded(bool state) { m_BackgroundLoaded = state; }
-
-	//Server Password
-	struct CServerPasswdReg
-	{
-		char m_Address[64];
-		char m_Passwd[32];
-	};
-
-	bool SaveServerPassword(const char *address, const char *pswd);
-	void GetServerPassword(const char *address, char *pDest, unsigned int sizeDest);
-
-	virtual int MapSyncAmount() { return m_MapStateAmount; }
-	virtual int MapSyncTotalsize() { return m_MapStateTotalSize; }
-
-    virtual void SetSyncAmount(int i) { m_MapStateAmount = i; }
-	virtual void SetSyncTotalSize(int i) { m_MapStateTotalSize = i; }
-	//
+	virtual const char* GetCurrentMap(); // H-Client
 };
 #endif

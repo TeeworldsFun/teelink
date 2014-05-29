@@ -6,12 +6,13 @@
 
 class CMapLayers : public CComponent
 {
-    bool m_MineTeeIsDay;
 	CLayers *m_pLayers;	// todo refactor: maybe remove it and access it through client*
 	int m_Type;
-	float m_EnvStart; //h-client
+	int m_CurrentLocalTick;
+	int m_LastLocalTick;
+	bool m_EnvelopeUpdate;
 
-	//void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup);
+	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup);
 	static void EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser);
 public:
 	enum
@@ -24,9 +25,7 @@ public:
 	virtual void OnInit();
 	virtual void OnRender();
 
-	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup, bool isBkg = false);
-
-	bool MineTeeIsDay() const { return m_MineTeeIsDay; }
+	void EnvelopeUpdate();
 };
 
 #endif

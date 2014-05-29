@@ -23,10 +23,7 @@ class CHud : public CComponent
 	void RenderWarmupTimer();
 
     //H-Client
-    void RenderIRCNotifications();
 	void RenderSelectorSpectatorHud();
-	void RenderInventoryHud();
-	void RenderSyncState();
 	void RenderRecord(); //DDRace
 
 	virtual void OnMessage(int MsgType, void *pRawMsg);

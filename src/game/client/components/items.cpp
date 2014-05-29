@@ -2,9 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/graphics.h>
 #include <engine/demo.h>
-#include <engine/textrender.h> //H-Client
-#include <engine/serverbrowser.h> //H-Client: ServerInfo
 #include <engine/shared/config.h> //H-Client
+#include <engine/serverbrowser.h> //H-Client: ServerInfo
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
 
@@ -15,18 +14,16 @@
 
 #include <game/client/components/flow.h>
 #include <game/client/components/effects.h>
-#include <game/client/components/mapimages.h> //H-Client
 
 #include "items.h"
 
 void CItems::OnReset()
 {
-	ExtraProjectilesNum = 0;
+	m_NumExtraProjectiles = 0;
 }
 
 void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 {
-
 	// get positions
 	float Curvature = 0;
 	float Speed = 0;
@@ -46,7 +43,10 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 		Speed = m_pClient->m_Tuning.m_GunSpeed;
 	}
 
-	float Ct = (Client()->PrevGameTick()-pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + Client()->GameTickTime();
+	static float s_LastGameTickTime = Client()->GameTickTime();
+	if(m_pClient->m_Snap.m_pGameInfoObj && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
+		s_LastGameTickTime = Client()->GameTickTime();
+	float Ct = (Client()->PrevGameTick()-pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + s_LastGameTickTime;
 	if(Ct < 0)
 		return; // projectile havn't been shot yet
 
@@ -68,28 +68,27 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 	if(pCurrent->m_Type == WEAPON_GRENADE)
 	{
 		m_pClient->m_pEffects->SmokeTrail(Pos, Vel*-1);
-		m_pClient->m_pFlow->Add(Pos, Vel*1000*Client()->FrameTime(), 10.0f);
+		static float s_Time = 0.0f;
+		static float s_LastLocalTime = Client()->LocalTime();
 
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 		{
 			const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
-			static float Time = 0;
-			static float LastLocalTime = Client()->LocalTime();
-
 			if(!pInfo->m_Paused)
-				Time += (Client()->LocalTime()-LastLocalTime)*pInfo->m_Speed;
-
-			Graphics()->QuadsSetRotation(Time*pi*2*2 + ItemID);
-
-			LastLocalTime = Client()->LocalTime();
+				s_Time += (Client()->LocalTime()-s_LastLocalTime)*pInfo->m_Speed;
 		}
 		else
-			Graphics()->QuadsSetRotation(Client()->LocalTime()*pi*2*2 + ItemID);
+		{
+			if(m_pClient->m_Snap.m_pGameInfoObj && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
+				s_Time += Client()->LocalTime()-s_LastLocalTime;
+		}
+
+		Graphics()->QuadsSetRotation(s_Time*pi*2*2 + ItemID);
+		s_LastLocalTime = Client()->LocalTime();
 	}
 	else
 	{
 		m_pClient->m_pEffects->BulletTrail(Pos);
-		m_pClient->m_pFlow->Add(Pos, Vel*1000*Client()->FrameTime(), 10.0f);
 
 		if(length(Vel) > 0.00001f)
 			Graphics()->QuadsSetRotation(GetAngle(Vel));
@@ -102,114 +101,10 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 	Graphics()->QuadsDraw(&QuadItem, 1);
 	Graphics()->QuadsSetRotation(0);
 	Graphics()->QuadsEnd();
-
-    //H-Client
-    if (g_Config.m_hcGoreStyle)
-    {
-        for (int i=0; i<MAX_CLIENTS; i++)
-        {
-            vec2 Direction = normalize(Pos - PrevPos);
-            if (!m_pClient->m_Snap.m_aCharacters[i].m_Active || Ct < 0.020f)
-                continue;
-
-            CNetObj_Character Prev = m_pClient->m_Snap.m_aCharacters[i].m_Prev;
-            CNetObj_Character Player = m_pClient->m_Snap.m_aCharacters[i].m_Cur;
-
-            vec2 Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Client()->IntraGameTick());
-            if (distance(StartPos,Position) < 16.0f)
-                continue;
-
-            if (distance(Pos, Position) < 32.0f)
-                m_pClient->m_pEffects->Blood(Position, Direction, 0);
-        }
-    }
-    //
 }
 
 void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCurrent)
 {
-    if (pCurrent->m_Type == POWERUP_BLOCK || (pCurrent->m_Type > POWERUP_DROPITEM && pCurrent->m_Type-POWERUP_DROPITEM >= NUM_WEAPONS-NUM_BLOCKS))
-    {
-        float Scale = 16.0f;
-        float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-        Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-
-        CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)Layers()->MineTeeLayer();
-        if(!pTMap || pTMap->m_Image == -1)
-            Graphics()->TextureSet(-1);
-        else
-            Graphics()->TextureSet(m_pClient->m_pMapimages->Get(pTMap->m_Image));
-
-        vec2 Pos = mix(vec2(pPrev->m_X, pPrev->m_Y), vec2(pCurrent->m_X, pCurrent->m_Y), Client()->IntraGameTick());
-
-        float Offset = Pos.y/32.0f + Pos.x/32.0f;
-        if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
-        {
-            const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
-            static float Time = 0;
-            static float LastLocalTime = Client()->LocalTime();
-
-            if(!pInfo->m_Paused)
-                Time += (Client()->LocalTime()-LastLocalTime)*pInfo->m_Speed;
-
-            Pos.x += cosf(Time*2.0f+Offset)*2.5f;
-            Pos.y += sinf(Time*2.0f+Offset)*2.5f;
-
-            LastLocalTime = Client()->LocalTime();
-        }
-        else
-        {
-            Pos.x += cosf(Client()->LocalTime()*2.0f+Offset)*2.5f;
-            Pos.y += sinf(Client()->LocalTime()*2.0f+Offset)*2.5f;
-        }
-
-        if (pCurrent->m_Type == POWERUP_BLOCK)
-            RenderTools()->RenderTile(pCurrent->m_Subtype, Pos, 16.0f);
-        else
-        {
-            char aBuf[4];
-            str_format(aBuf, sizeof(aBuf), "x%i", pCurrent->m_Subtype);
-            RenderTools()->RenderTile(pCurrent->m_Type-POWERUP_DROPITEM, Pos, 16.0f);
-            TextRender()->Text(0, Pos.x, Pos.y-5.0f, 16.0f, aBuf, -1);
-        }
-
-        return;
-    }
-    else if (pCurrent->m_Type == POWERUP_FOOD)
-    {
-        int c[] = { SPRITE_FOOD01, SPRITE_FOOD02 };
-        Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MINETEE_FOOD].m_Id);
-        Graphics()->QuadsBegin();
-
-        vec2 Pos = mix(vec2(pPrev->m_X, pPrev->m_Y), vec2(pCurrent->m_X, pCurrent->m_Y), Client()->IntraGameTick());
-        float Offset = Pos.y/32.0f + Pos.x/32.0f;
-        if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
-        {
-            const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
-            static float Time = 0;
-            static float LastLocalTime = Client()->LocalTime();
-
-            if(!pInfo->m_Paused)
-                Time += (Client()->LocalTime()-LastLocalTime)*pInfo->m_Speed;
-
-            Pos.x += cosf(Time*2.0f+Offset)*2.5f;
-            Pos.y += sinf(Time*2.0f+Offset)*2.5f;
-
-            LastLocalTime = Client()->LocalTime();
-        }
-        else
-        {
-            Pos.x += cosf(Client()->LocalTime()*2.0f+Offset)*2.5f;
-            Pos.y += sinf(Client()->LocalTime()*2.0f+Offset)*2.5f;
-        }
-
-        RenderTools()->SelectSprite(c[pCurrent->m_Subtype]);
-        RenderTools()->DrawSprite(Pos.x, Pos.y, 64.0f);
-        Graphics()->QuadsEnd();
-
-        return;
-    }
-
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 	Graphics()->QuadsBegin();
 	vec2 Pos = mix(vec2(pPrev->m_X, pPrev->m_Y), vec2(pCurrent->m_X, pCurrent->m_Y), Client()->IntraGameTick());
@@ -221,12 +116,6 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 		RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[clamp(pCurrent->m_Subtype, 0, NUM_WEAPONS-1)].m_pSpriteBody);
 		Size = g_pData->m_Weapons.m_aId[clamp(pCurrent->m_Subtype, 0, NUM_WEAPONS-1)].m_VisualSize;
 	}
-	else if(pCurrent->m_Type > POWERUP_DROPITEM && pCurrent->m_Type-POWERUP_DROPITEM < NUM_WEAPONS-NUM_BLOCKS)
-	{
-		Angle = 0; //-pi/6;//-0.25f * pi * 2.0f;
-		RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[clamp(pCurrent->m_Type-POWERUP_DROPITEM, 0, NUM_WEAPONS-1)].m_pSpriteBody);
-		Size = g_pData->m_Weapons.m_aId[clamp(pCurrent->m_Type-POWERUP_DROPITEM, 0, NUM_WEAPONS-1)].m_VisualSize;
-	}
 	else
 	{
 		const int c[] = {
@@ -235,7 +124,6 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 			SPRITE_PICKUP_WEAPON,
 			SPRITE_PICKUP_NINJA
 			};
-
 		RenderTools()->SelectSprite(c[pCurrent->m_Type]);
 
 		if(c[pCurrent->m_Type] == SPRITE_PICKUP_NINJA)
@@ -248,27 +136,23 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 
 	Graphics()->QuadsSetRotation(Angle);
 
+	static float s_Time = 0.0f;
+	static float s_LastLocalTime = Client()->LocalTime();
 	float Offset = Pos.y/32.0f + Pos.x/32.0f;
 	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
-		static float Time = 0;
-		static float LastLocalTime = Client()->LocalTime();
-
 		if(!pInfo->m_Paused)
-			Time += (Client()->LocalTime()-LastLocalTime)*pInfo->m_Speed;
-
-		Pos.x += cosf(Time*2.0f+Offset)*2.5f;
-		Pos.y += sinf(Time*2.0f+Offset)*2.5f;
-
-		LastLocalTime = Client()->LocalTime();
+			s_Time += (Client()->LocalTime()-s_LastLocalTime)*pInfo->m_Speed;
 	}
 	else
 	{
-		Pos.x += cosf(Client()->LocalTime()*2.0f+Offset)*2.5f;
-		Pos.y += sinf(Client()->LocalTime()*2.0f+Offset)*2.5f;
-	}
-
+		if(m_pClient->m_Snap.m_pGameInfoObj && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
+			s_Time += Client()->LocalTime()-s_LastLocalTime;
+ 	}
+	Pos.x += cosf(s_Time*2.0f+Offset)*2.5f;
+	Pos.y += sinf(s_Time*2.0f+Offset)*2.5f;
+	s_LastLocalTime = Client()->LocalTime();
 	RenderTools()->DrawSprite(Pos.x, Pos.y, Size);
 	Graphics()->QuadsEnd();
 }
@@ -304,17 +188,10 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 			((pCurrent->m_Team == TEAM_RED && pCurGameData->m_FlagCarrierRed == m_pClient->m_Snap.m_LocalClientID) ||
 			(pCurrent->m_Team == TEAM_BLUE && pCurGameData->m_FlagCarrierBlue == m_pClient->m_Snap.m_LocalClientID)))
 			Pos = m_pClient->m_LocalCharacterPos;
-
-        float blink =  clamp(sinf(Client()->LocalTime()*5.0f), 0.80f, 1.0f) ;
-        if ((pCurrent->m_Team == TEAM_RED && (pCurGameData->m_FlagCarrierRed < 0 || pCurGameData->m_FlagCarrierBlue == FLAG_ATSTAND)) || (pCurrent->m_Team == TEAM_BLUE && (pCurGameData->m_FlagCarrierBlue < 0 || pCurGameData->m_FlagCarrierRed == FLAG_ATSTAND)))
-            Graphics()->SetColor(blink, blink, blink, 1.0f);
-        else
-            Graphics()->SetColor(0.8f, 0.8f, 0.8f, 1.0f);
 	}
 
-    IGraphics::CQuadItem QuadItem(Pos.x, Pos.y-Size*0.75f, Size, Size*2);
-    Graphics()->QuadsDraw(&QuadItem, 1);
-
+	IGraphics::CQuadItem QuadItem(Pos.x, Pos.y-Size*0.75f, Size, Size*2);
+	Graphics()->QuadsDraw(&QuadItem, 1);
 	Graphics()->QuadsEnd();
 }
 
@@ -346,7 +223,6 @@ void CItems::RenderLaser(const struct CNetObj_Laser *pCurrent)
 	vec4 OuterColor(0.075f, 0.075f, 0.25f, 1.0f);
 	if (g_Config.m_hcLaserCustomColor)
         OuterColor = vec4(Rgb.r+0.25f, Rgb.g+0.25f, Rgb.b-0.75f, g_Config.m_hcLaserColorAlpha/255.0f);
-
 	Graphics()->SetColor(OuterColor.r, OuterColor.g, OuterColor.b, 1.0f);
 	Out = vec2(Dir.y, -Dir.x) * (7.0f*Ia);
 
@@ -361,7 +237,6 @@ void CItems::RenderLaser(const struct CNetObj_Laser *pCurrent)
 	vec4 InnerColor(0.5f, 0.5f, 1.0f, 1.0f);
 	if (g_Config.m_hcLaserCustomColor)
         InnerColor = vec4(Rgb.r, Rgb.g, Rgb.b, g_Config.m_hcLaserColorAlpha/255.0f);
-
 	Out = vec2(Dir.y, -Dir.x) * (5.0f*Ia);
 	Graphics()->SetColor(InnerColor.r, InnerColor.g, InnerColor.b, 1.0f); // center
 
@@ -371,12 +246,13 @@ void CItems::RenderLaser(const struct CNetObj_Laser *pCurrent)
 			Pos.x-Out.x, Pos.y-Out.y,
 			Pos.x+Out.x, Pos.y+Out.y);
 	Graphics()->QuadsDrawFreeform(&Freeform, 1);
+
 	Graphics()->QuadsEnd();
 
-	//H-Client
+    //H-Client
     CServerInfo Info;
     Client()->GetServerInfo(&Info);
-	if(g_Config.m_hcUseHUD && !str_find_nocase(Info.m_aGameType, "race") && length(Pos-From) != 0 && Pos != From)
+	if(g_Config.m_hcLaserCustomColor && !str_find_nocase(Info.m_aGameType, "race") && length(Pos-From) != 0 && Pos != From)
 	{
 	    vec2 cPos = From;
         for (int i=0; i<length(From-Pos); i++)
@@ -454,23 +330,23 @@ void CItems::OnRender()
 	}
 
 	// render extra projectiles
-	for(int i = 0; i < ExtraProjectilesNum; i++)
+	for(int i = 0; i < m_NumExtraProjectiles; i++)
 	{
-		if(aExtraProjectiles[i].m_StartTick < Client()->GameTick())
+		if(m_aExtraProjectiles[i].m_StartTick < Client()->GameTick())
 		{
-			aExtraProjectiles[i] = aExtraProjectiles[ExtraProjectilesNum-1];
-			ExtraProjectilesNum--;
+			m_aExtraProjectiles[i] = m_aExtraProjectiles[m_NumExtraProjectiles-1];
+			m_NumExtraProjectiles--;
 		}
 		else
-			RenderProjectile(&aExtraProjectiles[i], 0);
+			RenderProjectile(&m_aExtraProjectiles[i], 0);
 	}
 }
 
 void CItems::AddExtraProjectile(CNetObj_Projectile *pProj)
 {
-	if(ExtraProjectilesNum != MAX_EXTRA_PROJECTILES)
+	if(m_NumExtraProjectiles != MAX_EXTRA_PROJECTILES)
 	{
-		aExtraProjectiles[ExtraProjectilesNum] = *pProj;
-		ExtraProjectilesNum++;
+		m_aExtraProjectiles[m_NumExtraProjectiles] = *pProj;
+		m_NumExtraProjectiles++;
 	}
 }

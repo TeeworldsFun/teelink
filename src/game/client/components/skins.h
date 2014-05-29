@@ -28,9 +28,9 @@ public:
 	const CSkin *Get(int Index);
 	int Find(const char *pName);
 
+	static int SkinScan(const char *pName, int IsDir, int DirType, void *pUser); // H-Client
+
 private:
 	sorted_array<CSkin> m_aSkins;
-
-	static int SkinScan(const char *pName, int IsDir, int DirType, void *pUser);
 };
 #endif

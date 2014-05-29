@@ -33,6 +33,13 @@ void dbg_assert(int test, const char *msg);
 #define dbg_assert(test,msg) dbg_assert_imp(__FILE__, __LINE__, test, msg)
 void dbg_assert_imp(const char *filename, int line, int test, const char *msg);
 
+
+#ifdef __clang_analyzer__
+#include <assert.h>
+#undef dbg_assert
+#define dbg_assert(test,msg) assert(test)
+#endif
+
 /*
 	Function: dbg_break
 		Breaks into the debugger.
@@ -212,6 +219,10 @@ IOHANDLE io_open(const char *filename, int flags);
 */
 unsigned io_read(IOHANDLE io, void *buffer, unsigned size);
 
+// H-Client
+unsigned io_read_line(IOHANDLE io, void *buffer, unsigned maxSize);
+//
+
 /*
 	Function: io_skip
 		Skips data in a file.
@@ -238,6 +249,18 @@ unsigned io_skip(IOHANDLE io, int size);
 		Number of bytes written.
 */
 unsigned io_write(IOHANDLE io, const void *buffer, unsigned size);
+
+/*
+	Function: io_write_newline
+		Writes newline to file.
+
+	Parameters:
+		io - Handle to the file.
+
+	Returns:
+		Number of bytes written.
+*/
+unsigned io_write_newline(IOHANDLE io);
 
 /*
 	Function: io_seek
@@ -388,6 +411,25 @@ int lock_try(LOCK lock);
 void lock_wait(LOCK lock);
 void lock_release(LOCK lock);
 
+
+/* Group: Semaphores */
+
+#if !defined(CONF_PLATFORM_MACOSX)
+	#if defined(CONF_FAMILY_UNIX)
+		#include <semaphore.h>
+		typedef sem_t SEMAPHORE;
+	#elif defined(CONF_FAMILY_WINDOWS)
+		typedef void* SEMAPHORE;
+	#else
+		#error missing sempahore implementation
+	#endif
+
+	void semaphore_init(SEMAPHORE *sem);
+	void semaphore_wait(SEMAPHORE *sem);
+	void semaphore_signal(SEMAPHORE *sem);
+	void semaphore_destroy(SEMAPHORE *sem);
+#endif
+
 /* Group: Timer */
 #ifdef __GNUC__
 /* if compiled with -pedantic-errors it will complain about long
@@ -425,7 +467,7 @@ int64 time_freq();
 	Returns:
 		The time as a UNIX timestamp
 */
-unsigned time_timestamp();
+int time_timestamp();
 
 /* Group: Network General */
 typedef struct
@@ -438,6 +480,7 @@ typedef struct
 enum
 {
 	NETADDR_MAXSTRSIZE = 1+(8*4+7)+1+1+5+1, // [XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX]:XXXXX
+
 	NETTYPE_INVALID = 0,
 	NETTYPE_IPV4 = 1,
 	NETTYPE_IPV6 = 2,
@@ -498,12 +541,13 @@ int net_addr_comp(const NETADDR *a, const NETADDR *b);
 		addr - Address to turn into a string.
 		string - Buffer to fill with the string.
 		max_length - Maximum size of the string.
+		add_port - add port to string or not
 
 	Remarks:
 		- The string will always be zero terminated
 
 */
-void net_addr_str(const NETADDR *addr, char *string, int max_length);
+void net_addr_str(const NETADDR *addr, char *string, int max_length, int add_port);
 
 /*
 	Function: net_addr_from_str
@@ -718,11 +762,6 @@ void str_copy(char *dst, const char *src, int dst_size);
 		Length of string in bytes excluding the zero termination.
 */
 int str_length(const char *str);
-
-/*
-	Function: str_irc_sanitize
-*/
-void str_irc_sanitize(char *str_in);
 
 /*
 	Function: str_format
@@ -967,38 +1006,6 @@ void str_hex(char *dst, int dst_size, const void *data, int data_size);
 */
 void str_timestamp(char *buffer, int buffer_size);
 
-/*
-    H-Client
-	Function: SetClipBoardText
-		Copies to clipboard content the string
-
-	Parameters:
-		pTest - Pointer to a buffer string.
-*/
-void SetClipboardText(const char *pText);
-/*
-    H-Client
-	Function: GetClipBoardText
-		Copies the clipboard content to string
-
-	Parameters:
-		dest - Pointer to a buffer that shall receive the text string.
-		size - Size of the buffer.
-*/
-void GetClipBoardText(char *dest, unsigned int size);
-
-/*
-    H-Client
-	Function: str_to_upper
-		Set all character to upper case
-
-	Parameters:
-		a - Pointer to a buffer that shall receive the text string.
-		length - Size of the buffer.
-*/
-void str_to_upper(char *a, int length);
-
-
 /* Group: Filesystem */
 
 /*
@@ -1166,25 +1173,6 @@ void mem_debug_dump(IOHANDLE file);
 
 void swap_endian(void *data, unsigned elem_size, unsigned num);
 
-/* Group: Debug levels */
-//by format
-enum {
-	DBG_FMT_RAW				= 1,	//raw output
-	DBG_FMT_TIME			= 2,	//show time
-	DBG_FMT_SYS				= 3,	//show sys
-	DBG_FMT_FULL			= 4		//show both
-};
-
-enum {
-	DBG_LEVEL_IMPORTANT			= 0,	//important always showed messages
-	DBG_LEVEL_ERROR				= 1,	//error messages
-	DBG_LEVEL_WARNING			= 2,	//warning messages
-	DBG_LEVEL_MSG				= 3,	//extra debug messages
-	DBG_LEVEL_INFO				= 4		//info messages
-};
-
-#define DBG_LEVEL_LOW DBG_LEVEL_IMPORTANT
-#define DBG_LEVEL_HIGH DBG_LEVEL_INFO
 
 typedef void (*DBG_LOGGER)(const char *line);
 void dbg_logger(DBG_LOGGER logger);
@@ -1229,6 +1217,7 @@ unsigned str_quickhash(const char *str);
 */
 void gui_messagebox(const char *title, const char *message);
 
+const char *str_utf8_skip_whitespaces(const char *str);
 
 /*
 	Function: str_utf8_rewind
@@ -1308,6 +1297,16 @@ int str_utf8_encode(char *ptr, int chr);
 */
 int str_utf8_check(const char *str);
 
+/*
+    H-Client
+	Function: str_to_upper
+		Set all character to upper case
+
+	Parameters:
+		a - Pointer to a buffer that shall receive the text string.
+		length - Size of the buffer.
+*/
+void str_to_upper(char *a, int length);
 #ifdef __cplusplus
 }
 #endif

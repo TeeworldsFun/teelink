@@ -14,18 +14,13 @@ public:
 
 	virtual void Reset();
 	virtual void Tick();
+	virtual void TickPaused();
 	virtual void Snap(int SnappingClient);
-
-	int m_Amount;       //H-Client
-	int m_Owner;        //H-Client
-	vec2 m_Vel;         //H-Client
 
 private:
 	int m_Type;
 	int m_Subtype;
 	int m_SpawnTick;
-	int m_DestroyTick;  //H-Client
-	float m_TimerOwnerTake; //H-Client
 };
 
 #endif

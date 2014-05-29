@@ -66,7 +66,7 @@ struct CDatafile
 	char *m_pData;
 };
 
-bool CDataFileReader::Open(class IStorageTW *pStorage, const char *pFilename, int StorageType)
+bool CDataFileReader::Open(class IStorage *pStorage, const char *pFilename, int StorageType)
 {
 	dbg_msg("datafile", "loading. filename='%s'", pFilename);
 
@@ -222,7 +222,7 @@ bool CDataFileReader::Open(class IStorageTW *pStorage, const char *pFilename, in
 	return true;
 }
 
-bool CDataFileReader::GetCrcSize(class IStorageTW *pStorage, const char *pFilename, int StorageType, unsigned *pCrc, unsigned *pSize)
+bool CDataFileReader::GetCrcSize(class IStorage *pStorage, const char *pFilename, int StorageType, unsigned *pCrc, unsigned *pSize)
 {
 	IOHANDLE File = pStorage->OpenFile(pFilename, IOFLAG_READ, StorageType);
 	if(!File)
@@ -441,10 +441,10 @@ CDataFileWriter::~CDataFileWriter()
 	m_pDatas = 0;
 }
 
-bool CDataFileWriter::Open(class IStorageTW *pStorage, const char *pFilename)
+bool CDataFileWriter::Open(class IStorage *pStorage, const char *pFilename)
 {
 	dbg_assert(!m_File, "a file already exists");
-	m_File = pStorage->OpenFile(pFilename, IOFLAG_WRITE, IStorageTW::TYPE_SAVE);
+	m_File = pStorage->OpenFile(pFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 	if(!m_File)
 		return false;
 

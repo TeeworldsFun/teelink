@@ -197,7 +197,7 @@ void CCharacterCore::Tick(bool UseInput)
 		// make sure that the hook doesn't go though the ground
 		bool GoingToHitGround = false;
 		bool GoingToRetract = false;
-		int Hit = m_pCollision->IntersectLine(m_HookPos, NewPos, &NewPos, 0, true); //H-Client: DDRace
+		int Hit = m_pCollision->IntersectLine(m_HookPos, NewPos, &NewPos, 0, true); // H-Client
 		if(Hit)
 		{
 			if(Hit&CCollision::COLFLAG_NOHOOK)
@@ -289,14 +289,6 @@ void CCharacterCore::Tick(bool UseInput)
 			// check if we are under the legal limit for the hook
 			if(length(NewVel) < m_pWorld->m_Tuning.m_HookDragSpeed || length(NewVel) < length(m_Vel))
 				m_Vel = NewVel; // no problem. apply
-
-            //Check that exist solid block
-            if (m_pCollision->GetCollisionAt(m_HookPos.x, m_HookPos.y) != CCollision::COLFLAG_SOLID)
-            {
-                m_HookedPlayer = -1;
-				m_HookState = HOOK_RETRACTED;
-				m_HookPos = m_Pos;
-            }
 
 		}
 
@@ -402,13 +394,6 @@ void CCharacterCore::Move()
 			}
 			LastPos = Pos;
 		}
-	}
-
-    int BlockIndex = m_pCollision->GetMineTeeBlockAt(m_Pos.x, m_Pos.y);
-	if (BlockIndex == BLOCK_AGUA || BlockIndex == BLOCK_LAVA)
-	{
-        m_Vel.y -= 0.51f;
-        m_Jumped &= ~2;
 	}
 
 	m_Pos = NewPos;

@@ -4,6 +4,8 @@
 #define ENGINE_GRAPHICS_H
 
 #include "kernel.h"
+#include <base/vmath.h>
+
 
 class CImageInfo
 {
@@ -55,7 +57,8 @@ public:
 	*/
 	enum
 	{
-		TEXLOAD_NORESAMPLE=1,
+		TEXLOAD_NORESAMPLE = 1,
+		TEXLOAD_NOMIPMAPS = 2,
 	};
 
 	int ScreenWidth() const { return m_ScreenWidth; }
@@ -74,13 +77,16 @@ public:
 	virtual void BlendNone() = 0;
 	virtual void BlendNormal() = 0;
 	virtual void BlendAdditive() = 0;
+	virtual void WrapNormal() = 0;
+	virtual void WrapClamp() = 0;
 	virtual int MemoryUsage() const = 0;
 
 	virtual int LoadPNG(CImageInfo *pImg, const char *pFilename, int StorageType) = 0;
 	virtual int UnloadTexture(int Index) = 0;
-	virtual int LoadTextureRaw(int Width, int Height, int Format, const void *pData, int StoreFormat, int Flags) = 0;
-	virtual int LoadTexture(const char *pFilename, int StorageType, int StoreFormat, int Flags) = 0;
-	virtual void TextureSet(int TextureID, int TextureID2 = -1) = 0;
+	virtual int LoadTextureRaw(int Width, int Height, int Format, const void *pData, int StoreFormat, int Flags, int forceTextureID = -1) = 0;
+	virtual int LoadTexture(const char *pFilename, int StorageType, int StoreFormat, int Flags, int forceTextureID = -1) = 0;
+	virtual int LoadTextureRawSub(int TextureID, int x, int y, int Width, int Height, int Format, const void *pData) = 0;
+	virtual void TextureSet(int TextureID) = 0;
 
 	struct CLineItem
 	{
@@ -98,20 +104,12 @@ public:
 	virtual void QuadsSetSubset(float TopLeftY, float TopLeftV, float BottomRightU, float BottomRightV) = 0;
 	virtual void QuadsSetSubsetFree(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3) = 0;
 
-	/*struct CQuadItem
+	struct CQuadItem
 	{
 		float m_X, m_Y, m_Width, m_Height;
 		CQuadItem() {}
 		CQuadItem(float x, float y, float w, float h) : m_X(x), m_Y(y), m_Width(w), m_Height(h) {}
-	};*/
-
-	struct CQuadItem //H-Client
-	{
-		float m_X, m_Y, m_Width, m_Height, m_Degrees;
-		CQuadItem() {}
-		CQuadItem(float x, float y, float w, float h, float d = 0.0f) : m_X(x), m_Y(y), m_Width(w), m_Height(h), m_Degrees(d) {}
 	};
-
 	virtual void QuadsDraw(CQuadItem *pArray, int Num) = 0;
 	virtual void QuadsDrawTL(const CQuadItem *pArray, int Num) = 0;
 
@@ -123,7 +121,7 @@ public:
 			: m_X0(x0), m_Y0(y0), m_X1(x1), m_Y1(y1), m_X2(x2), m_Y2(y2), m_X3(x3), m_Y3(y3) {}
 	};
 	virtual void QuadsDrawFreeform(const CFreeformItem *pArray, int Num) = 0;
-	virtual void QuadsText(float x, float y, float Size, float r, float g, float b, float a, const char *pText) = 0;
+	virtual void QuadsText(float x, float y, float Size, const char *pText) = 0;
 
 	struct CColorVertex
 	{
@@ -134,6 +132,7 @@ public:
 	};
 	virtual void SetColorVertex(const CColorVertex *pArray, int Num) = 0;
 	virtual void SetColor(float r, float g, float b, float a) = 0;
+	virtual void SetColor(vec4 color) = 0;
 
 	virtual void TakeScreenshot(const char *pFilename) = 0;
 	virtual void TakeScreenshotFree(const char *pFilename, bool tumbtail = 0) = 0; //H-Client
@@ -141,23 +140,20 @@ public:
 
 	virtual void Swap() = 0;
 
-	//H-Client
-    virtual int GetTextureWidth(int tid)=0;
-    virtual int GetTextureHeight(int tid)=0;
-	virtual void Quads3DEnd() = 0;
-	virtual void Texture3D(CQuadItem QuadItem, int zPro = 20) = 0;
-	virtual void Cube3D(CQuadItem QuadItem) = 0;
-	virtual int GetInvalidTexture() = 0;
-	virtual bool Tumbtail() const = 0;
-    virtual bool ShowInfoKills() const = 0;
-	virtual void ShowInfoKills(bool state) = 0;
+	virtual int GetInvalidTexture() = 0; // H-Client
+	virtual bool Tumbtail() const = 0; // H-Client
+
+	// syncronization
+	virtual void InsertSignal(class semaphore *pSemaphore) = 0;
+	virtual bool IsIdle() = 0;
+	virtual void WaitForIdle() = 0;
 };
 
 class IEngineGraphics : public IGraphics
 {
 	MACRO_INTERFACE("enginegraphics", 0)
 public:
-	virtual bool Init() = 0;
+	virtual int Init() = 0;
 	virtual void Shutdown() = 0;
 
 	virtual void Minimize() = 0;
@@ -169,5 +165,6 @@ public:
 };
 
 extern IEngineGraphics *CreateEngineGraphics();
+extern IEngineGraphics *CreateEngineGraphicsThreaded();
 
 #endif

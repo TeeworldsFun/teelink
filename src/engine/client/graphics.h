@@ -6,7 +6,7 @@
 class CGraphics_OpenGL : public IEngineGraphics
 {
 protected:
-	class IStorageTW *m_pStorage;
+	class IStorage *m_pStorage;
 	class IConsole *m_pConsole;
 
 	//
@@ -62,8 +62,7 @@ protected:
 	int m_FirstFreeTexture;
 	int m_TextureMemoryUsage;
 
-    bool m_DoScreenshotTumbtail; //H-Client
-    bool m_DoScreenShowInfoKills; //H-Client
+	bool m_DoScreenshotTumbtail; //H-Client
 
 	void Flush();
 	void AddVertices(int Count);
@@ -71,7 +70,6 @@ protected:
 
 	static unsigned char Sample(int w, int h, const unsigned char *pData, int u, int v, int Offset, int ScaleW, int ScaleH, int Bpp);
 	static unsigned char *Rescale(int Width, int Height, int NewWidth, int NewHeight, int Format, const unsigned char *pData);
-
 public:
 	CGraphics_OpenGL();
 
@@ -81,6 +79,9 @@ public:
 	virtual void BlendNone();
 	virtual void BlendNormal();
 	virtual void BlendAdditive();
+
+	virtual void WrapNormal();
+	virtual void WrapClamp();
 
 	virtual int MemoryUsage() const;
 
@@ -92,15 +93,16 @@ public:
 	virtual void LinesDraw(const CLineItem *pArray, int Num);
 
 	virtual int UnloadTexture(int Index);
-	virtual int LoadTextureRaw(int Width, int Height, int Format, const void *pData, int StoreFormat, int Flags);
+	virtual int LoadTextureRaw(int Width, int Height, int Format, const void *pData, int StoreFormat, int Flags, int forceTextureID = -1);
+	virtual int LoadTextureRawSub(int TextureID, int x, int y, int Width, int Height, int Format, const void *pData);
 
 	// simple uncompressed RGBA loaders
-	virtual int LoadTexture(const char *pFilename, int StorageType, int StoreFormat, int Flags);
+	virtual int LoadTexture(const char *pFilename, int StorageType, int StoreFormat, int Flags, int forceTextureID = -1);
 	virtual int LoadPNG(CImageInfo *pImg, const char *pFilename, int StorageType);
 
 	void ScreenshotDirect(const char *pFilename);
 
-	virtual void TextureSet(int TextureID, int TextureID2 = -1); //H-Client
+	virtual void TextureSet(int TextureID);
 
 	virtual void Clear(float r, float g, float b);
 
@@ -110,6 +112,7 @@ public:
 
 	virtual void SetColorVertex(const CColorVertex *pArray, int Num);
 	virtual void SetColor(float r, float g, float b, float a);
+	virtual void SetColor(vec4 color);
 
 	virtual void QuadsSetSubset(float TlU, float TlV, float BrU, float BrV);
 	virtual void QuadsSetSubsetFree(
@@ -119,21 +122,12 @@ public:
 	virtual void QuadsDraw(CQuadItem *pArray, int Num);
 	virtual void QuadsDrawTL(const CQuadItem *pArray, int Num);
 	virtual void QuadsDrawFreeform(const CFreeformItem *pArray, int Num);
-	virtual void QuadsText(float x, float y, float Size, float r, float g, float b, float a, const char *pText);
+	virtual void QuadsText(float x, float y, float Size, const char *pText);
 
-	//H-Client
-    virtual int GetTextureWidth(int tid);
-    virtual int GetTextureHeight(int tid);
-	virtual void Quads3DEnd();
-	virtual void Texture3D(CQuadItem QuadItem, int zPro = 20);
-	virtual void Cube3D(CQuadItem QuadItem);
-	virtual int GetInvalidTexture();
+	virtual int GetInvalidTexture(); // H-Client
+	virtual bool Tumbtail() const { return m_DoScreenshotTumbtail; } // H-Client
 
-	virtual bool Tumbtail() const { return m_DoScreenshotTumbtail; }
-	virtual bool ShowInfoKills() const { return m_DoScreenShowInfoKills; }
-	virtual void ShowInfoKills(bool state);
-
-	virtual bool Init();
+	virtual int Init();
 };
 
 class CGraphics_SDL : public CGraphics_OpenGL
@@ -142,11 +136,10 @@ class CGraphics_SDL : public CGraphics_OpenGL
 
 	int TryInit();
 	int InitWindow();
-
 public:
 	CGraphics_SDL();
 
-	virtual bool Init();
+	virtual int Init();
 	virtual void Shutdown();
 
 	virtual void Minimize();
@@ -160,6 +153,11 @@ public:
 	virtual void Swap();
 
 	virtual int GetVideoModes(CVideoMode *pModes, int MaxModes);
+
+	// syncronization
+	virtual void InsertSignal(semaphore *pSemaphore);
+	virtual bool IsIdle();
+	virtual void WaitForIdle();
 };
 
 #endif

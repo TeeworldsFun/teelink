@@ -5,6 +5,7 @@
 
 #include <engine/server.h>
 
+
 class CSnapIDPool
 {
 	enum
@@ -39,15 +40,34 @@ public:
 	void FreeID(int ID);
 };
 
+
+class CServerBan : public CNetBan
+{
+	class CServer *m_pServer;
+
+	template<class T> int BanExt(T *pBanPool, const typename T::CDataType *pData, int Seconds, const char *pReason);
+
+public:
+	class CServer *Server() const { return m_pServer; }
+
+	void InitServerBan(class IConsole *pConsole, class IStorage *pStorage, class CServer* pServer);
+
+	virtual int BanAddr(const NETADDR *pAddr, int Seconds, const char *pReason);
+	virtual int BanRange(const CNetRange *pRange, int Seconds, const char *pReason);
+
+	static void ConBanExt(class IConsole::IResult *pResult, void *pUser);
+};
+
+
 class CServer : public IServer
 {
 	class IGameServer *m_pGameServer;
 	class IConsole *m_pConsole;
-	class IStorageTW *m_pStorage;
+	class IStorage *m_pStorage;
 public:
 	class IGameServer *GameServer() { return m_pGameServer; }
 	class IConsole *Console() { return m_pConsole; }
-	class IStorageTW *Storage() { return m_pStorage; }
+	class IStorage *Storage() { return m_pStorage; }
 
 	enum
 	{
@@ -114,6 +134,7 @@ public:
 	CSnapIDPool m_IDPool;
 	CNetServer m_NetServer;
 	CEcon m_Econ;
+	CServerBan m_ServerBan;
 
 	IEngineMap *m_pMap;
 
@@ -149,6 +170,7 @@ public:
 	void Kick(int ClientID, const char *pReason);
 
 	void DemoRecorder_HandleAutoStart();
+	bool DemoRecorder_IsRecording();
 
 	//int Tick()
 	int64 TickStartTime(int Tick);
@@ -156,6 +178,7 @@ public:
 
 	int Init();
 
+	void SetRconCID(int ClientID);
 	bool IsAuthed(int ClientID);
 	int GetClientInfo(int ClientID, CClientInfo *pInfo);
 	void GetClientAddr(int ClientID, char *pAddrStr, int Size);
@@ -163,9 +186,10 @@ public:
 	const char *ClientClan(int ClientID);
 	int ClientCountry(int ClientID);
 	bool ClientIngame(int ClientID);
+	int MaxClients() const;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID);
-	virtual int SendMsgEx(CMsgPacker *pMsg, int Flags, int ClientID, bool System);
+	int SendMsgEx(CMsgPacker *pMsg, int Flags, int ClientID, bool System);
 
 	void DoSnapshot();
 
@@ -183,30 +207,24 @@ public:
 
 	void ProcessClientPacket(CNetChunk *pPacket);
 
-	void SendServerInfo(NETADDR *pAddr, int Token);
+	void SendServerInfo(const NETADDR *pAddr, int Token);
 	void UpdateServerInfo();
-
-	int BanAdd(NETADDR Addr, int Seconds, const char *pReason);
-	int BanRemove(NETADDR Addr);
 
 	void PumpNetwork();
 
 	char *GetMapName();
 	int LoadMap(const char *pMapName);
-	unsigned GetCurrentMapCRC() { return m_CurrentMapCrc; } //H-Client
 
 	void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
 	int Run();
 
 	static void ConKick(IConsole::IResult *pResult, void *pUser);
-	static void ConBan(IConsole::IResult *pResult, void *pUser);
-	static void ConUnban(IConsole::IResult *pResult, void *pUser);
-	static void ConBans(IConsole::IResult *pResult, void *pUser);
- 	static void ConStatus(IConsole::IResult *pResult, void *pUser);
+	static void ConStatus(IConsole::IResult *pResult, void *pUser);
 	static void ConShutdown(IConsole::IResult *pResult, void *pUser);
 	static void ConRecord(IConsole::IResult *pResult, void *pUser);
 	static void ConStopRecord(IConsole::IResult *pResult, void *pUser);
 	static void ConMapReload(IConsole::IResult *pResult, void *pUser);
+	static void ConLogout(IConsole::IResult *pResult, void *pUser);
 	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -219,9 +237,6 @@ public:
 	virtual void SnapFreeID(int ID);
 	virtual void *SnapNewItem(int Type, int ID, int Size);
 	void SnapSetStaticsize(int ItemType, int Size);
-
-	void InitBot(int ClientID, int BType); //H-Client
-	void ReloadMap() { m_MapReload = 1; }
 };
 
 #endif

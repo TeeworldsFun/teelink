@@ -24,16 +24,11 @@ public:
 	void PlayerDeath(vec2 Pos, int ClientID);
 	void PowerupShine(vec2 Pos, vec2 Size);
 
-    //H-Client
-    void BlockDestroy(vec2 Pos);
-	void Blood(vec2 Pos, vec2 Dir, int Type, int ClientID = -1);
+	// H-Client
 	void LaserTrail(vec2 Pos, vec2 Vel, vec4 color);
+	void Blood(vec2 Pos, vec2 Dir, int Type, int ClientID = -1);
 	void Unfreeze(vec2 Pos, vec2 Dir, float alpha);
-	void LightFlame(vec2 Pos);
-	void Tombstone(vec2 Pos);
-	void FireSplit(vec2 Pos, vec2 Dir);
-	void WaterSplit(vec2 Pos, vec2 Dir);
-	//
+    //
 
 	void Update();
 };

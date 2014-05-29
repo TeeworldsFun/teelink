@@ -8,7 +8,6 @@
 #include "entities/pickup.h"
 #include "gamecontroller.h"
 #include "gamecontext.h"
-#include <time.h> //H-Client
 
 
 IGameController::IGameController(class CGameContext *pGameServer)
@@ -100,82 +99,6 @@ bool IGameController::CanSpawn(int Team, vec2 *pOutPos)
 	// spectators can't spawn
 	if(Team == TEAM_SPECTATORS)
 		return false;
-
-    if (Team > TEAM_BLUE)
-    {
-        //H-Client
-        if ((g_Config.m_SvMonsters == 0 && Team >= TEAM_ENEMY_TEEPER && Team <= TEAM_ENEMY_SPIDERTEE) ||
-            (g_Config.m_SvAnimals == 0 && Team >= TEAM_ANIMAL_TEECOW && Team <= TEAM_ANIMAL_TEEPIG))
-            return false;
-
-        /*CMapItemLayerTilemap *pMap = GameServer()->Layers()->GameLayer();
-        CMapItemLayerTilemap *pLMap = GameServer()->Layers()->Lights();
-        CTile *pLTiles = GameServer()->Layers()->TileLights();
-
-        ivec2 AleatPos;
-        bool canSpawn = false;
-        int LIndex=0;
-        do
-        {
-            canSpawn = false;
-            AleatPos = ivec2(rand()%pMap->m_Width, rand()%pMap->m_Height);
-            LIndex = AleatPos.y*pMap->m_Width+AleatPos.x;
-            if (!(GameServer()->Collision()->GetCollisionAt(AleatPos.x>>5, AleatPos.y>>5)&CCollision::COLFLAG_SOLID))
-            {
-                if (Team >= TEAM_ENEMY_TEEPER && Team <= TEAM_ENEMY_SPIDERTEE)
-                {
-                    if (pLTiles[LIndex].m_Index == 0)
-                        continue;
-
-                    canSpawn = true;
-                }
-
-                else
-                {
-                    if (pLTiles[LIndex].m_Index != 0)
-                        continue;
-
-                    canSpawn = true;
-
-                    for (int i=-2;i<2; i++)
-                    {
-                        if (i==0)
-                            continue;
-
-                        if ((GameServer()->Collision()->GetCollisionAt((AleatPos.x+i)>>5, AleatPos.y>>5)&CCollision::COLFLAG_SOLID) ||
-                            (GameServer()->Collision()->GetCollisionAt(AleatPos.x>>5, (AleatPos.y+i)>>5)&CCollision::COLFLAG_SOLID))
-                        {
-                            canSpawn = false;
-                            break;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                dbg_msg("OUTPOSTEST", "No valido: %2.f -- %2.f ||| %d -- %d", AleatPos.x>>5, AleatPos.y>>5, pMap->m_Width,pMap->m_Height);
-            }
-        } while (!canSpawn);
-
-        *pOutPos = vec2(AleatPos.x>>5, AleatPos.y>>5);
-
-        dbg_msg("OUTPOSTEST", "Posicion Generada: %2.f -- %2.f ||| %d -- %d", pOutPos->x, pOutPos->y, pMap->m_Width,pMap->m_Height);
-
-        return true;*/
-
-        Eval.m_FriendlyTeam = Team;
-        if (Team >= TEAM_ENEMY_TEEPER && Team <= TEAM_ENEMY_SPIDERTEE)
-            EvaluateSpawnType(&Eval, TEAM_BLUE);
-        else
-            EvaluateSpawnType(&Eval, TEAM_RED);
-
-		if(!Eval.m_Got)
-		{
-			EvaluateSpawnType(&Eval, 0);
-			if(!Eval.m_Got)
-				EvaluateSpawnType(&Eval, 1+((Team+1)&1));
-		}
-    }
 
 	if(IsTeamplay())
 	{
@@ -276,18 +199,6 @@ const char *IGameController::GetTeamName(int Team)
 	{
 		if(Team == 0)
 			return "game";
-		else if(Team == TEAM_ENEMY_TEEPER)
-			return "teepers enemys";
-		else if(Team == TEAM_ENEMY_ZOMBITEE)
-			return "zombitee's enemys";
-		else if(Team == TEAM_ENEMY_SKELETEE)
-			return "skeletee's enemys";
-		else if(Team == TEAM_ENEMY_SPIDERTEE)
-			return "spidertee's enemys";
-		else if(Team == TEAM_ANIMAL_TEECOW)
-			return "teecow's animals";
-		else if(Team == TEAM_ANIMAL_TEEPIG)
-			return "teepig's animals";
 	}
 
 	return "spectators";
@@ -334,7 +245,11 @@ void IGameController::CycleMap()
 		return;
 
 	if(m_RoundCount < g_Config.m_SvRoundsPerMap-1)
+	{
+		if(g_Config.m_SvRoundSwap)
+			GameServer()->SwapTeams();
 		return;
+	}
 
 	// handle maprotation
 	const char *pMapRotation = g_Config.m_SvMaprotation;
@@ -366,8 +281,8 @@ void IGameController::CycleMap()
 		pNextMap = pMapRotation;
 
 	// cut out the next map
-	char aBuf[512];
-	for(int i = 0; i < 512; i++)
+	char aBuf[512] = {0};
+	for(int i = 0; i < 511; i++)
 	{
 		aBuf[i] = pNextMap[i];
 		if(IsSeparator(pNextMap[i]) || pNextMap[i] == 0)
@@ -436,11 +351,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 		if(IsTeamplay() && pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam())
 			pKiller->m_Score--; // teamkill
 		else
-		{
 			pKiller->m_Score++; // normal kill
-            if (pVictim->GetPlayer()->GetTeam() < TEAM_ANIMAL_TEECOW && pKiller->GetCharacter())
-                pKiller->GetCharacter()->m_Kills++;
-		}
 	}
 	if(Weapon == WEAPON_SELF)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
@@ -470,7 +381,7 @@ bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2)
 	if(ClientID1 == ClientID2)
 		return false;
 
-	if(IsTeamplay() || (str_find_nocase(GameServer()->GameType(), "mineetee") && g_Config.m_SvGameMode == 0))
+	if(IsTeamplay())
 	{
 		if(!GameServer()->m_apPlayers[ClientID1] || !GameServer()->m_apPlayers[ClientID2])
 			return false;
@@ -519,8 +430,12 @@ void IGameController::Tick()
 		}
 	}
 
+	// game is Paused
+	if(GameServer()->m_World.m_Paused)
+		++m_RoundStartTick;
+
 	// do team-balancing
-	if (IsTeamplay() && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60)
+	if(IsTeamplay() && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60)
 	{
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", "Balancing teams");
 
@@ -575,10 +490,17 @@ void IGameController::Tick()
 	}
 
 	// check for inactive players
-	if(g_Config.m_SvInactiveKickTime > 0 )
+	if(g_Config.m_SvInactiveKickTime > 0)
 	{
-		for(int i = 0; i < MAX_CLIENTS-MAX_BOTS; ++i)
+		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{
+		#ifdef CONF_DEBUG
+			if(g_Config.m_DbgDummies)
+			{
+				if(i >= MAX_CLIENTS-g_Config.m_DbgDummies)
+					break;
+			}
+		#endif
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsAuthed(i))
 			{
 				if(Server()->Tick() > GameServer()->m_apPlayers[i]->m_LastActionTick+g_Config.m_SvInactiveKickTime*Server()->TickSpeed()*60)
@@ -655,7 +577,7 @@ int IGameController::GetAutoTeam(int NotThisID)
 		return 0;
 
 	int aNumplayers[2] = {0,0};
-	for(int i = 0; i < MAX_CLIENTS-MAX_BOTS; i++)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(GameServer()->m_apPlayers[i] && i != NotThisID)
 		{
@@ -688,7 +610,7 @@ bool IGameController::CanJoinTeam(int Team, int NotThisID)
 		}
 	}
 
-	return (aNumplayers[0] + aNumplayers[1]) < g_Config.m_SvMaxClients-g_Config.m_SvSpectatorSlots;
+	return (aNumplayers[0] + aNumplayers[1]) < Server()->MaxClients()-g_Config.m_SvSpectatorSlots;
 }
 
 bool IGameController::CheckTeamBalance()
@@ -697,7 +619,7 @@ bool IGameController::CheckTeamBalance()
 		return true;
 
 	int aT[2] = {0, 0};
-	for(int i = 0; i < MAX_CLIENTS-MAX_BOTS; i++)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		CPlayer *pP = GameServer()->m_apPlayers[i];
 		if(pP && pP->GetTeam() != TEAM_SPECTATORS)
@@ -729,7 +651,7 @@ bool IGameController::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 	if (!IsTeamplay() || JoinTeam == TEAM_SPECTATORS || !g_Config.m_SvTeambalanceTime)
 		return true;
 
-	for(int i = 0; i < MAX_CLIENTS-MAX_BOTS; i++)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		CPlayer *pP = GameServer()->m_apPlayers[i];
 		if(pP && pP->GetTeam() != TEAM_SPECTATORS)
@@ -775,7 +697,7 @@ void IGameController::DoWincheck()
 			// gather some stats
 			int Topscore = 0;
 			int TopscoreCount = 0;
-			for(int i = 0; i < MAX_CLIENTS-MAX_BOTS; i++)
+			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
 				if(GameServer()->m_apPlayers[i])
 				{
@@ -806,10 +728,6 @@ int IGameController::ClampTeam(int Team)
 {
 	if(Team < 0)
 		return TEAM_SPECTATORS;
-
-    if (str_find_nocase(GameServer()->GameType(), "minetee") && Team > TEAM_BLUE)
-        return Team;
-
 	if(IsTeamplay())
 		return Team&1;
 	return 0;

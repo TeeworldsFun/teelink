@@ -352,4 +352,3 @@ void CVoting::CallvoteBan(int ClientID, const char *pReason, bool ForceVote)
 		Client()->Rcon(aBuf);
 	}
 }
-

@@ -7,8 +7,9 @@
 
 #include "editor.h"
 #include <game/generated/client_data.h>
-#include <game/client/render.h>
 #include <game/localization.h>
+#include <game/client/render.h>
+
 
 CLayerQuads::CLayerQuads()
 {
@@ -25,12 +26,15 @@ void CLayerQuads::Render()
 {
 	Graphics()->TextureSet(-1);
 	if(m_Image >= 0 && m_Image < m_pEditor->m_Map.m_lImages.size())
-		Graphics()->TextureSet(m_pEditor->m_Map.m_lImages[m_Image]->m_TexID);
+		Graphics()->TextureSet(m_pEditor->m_Map.m_lImages[m_Image]->m_Texture);
 
-	m_pEditor->RenderTools()->RenderQuads(m_lQuads.base_ptr(), m_lQuads.size(), LAYERRENDERFLAG_OPAQUE|LAYERRENDERFLAG_TRANSPARENT, m_pEditor->EnvelopeEval, m_pEditor);
+	Graphics()->BlendNone();
+	m_pEditor->RenderTools()->RenderQuads(m_lQuads.base_ptr(), m_lQuads.size(), LAYERRENDERFLAG_OPAQUE, m_pEditor->EnvelopeEval, m_pEditor);
+	Graphics()->BlendNormal();
+	m_pEditor->RenderTools()->RenderQuads(m_lQuads.base_ptr(), m_lQuads.size(), LAYERRENDERFLAG_TRANSPARENT, m_pEditor->EnvelopeEval, m_pEditor);
 }
 
-CQuad *CLayerQuads::NewQuad()
+CQuad *CLayerQuads::NewQuad(int _x, int _y)
 {
 	m_pEditor->m_Map.m_Modified = true;
 
@@ -40,7 +44,7 @@ CQuad *CLayerQuads::NewQuad()
 	q->m_ColorEnv = -1;
 	q->m_PosEnvOffset = 0;
 	q->m_ColorEnvOffset = 0;
-	int x = 0, y = 0;
+	int x = _x, y = _y;
 	q->m_aPoints[0].x = x;
 	q->m_aPoints[0].y = y;
 	q->m_aPoints[1].x = x+64;

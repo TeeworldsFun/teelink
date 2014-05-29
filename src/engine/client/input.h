@@ -21,8 +21,6 @@ public:
 
 	virtual void Init();
 
-    virtual bool MousePressed(int index); //H-Client
-    virtual void MousePos(int *x, int *y); //H-Client
 	virtual void MouseRelative(float *x, float *y);
 	virtual void MouseModeAbsolute();
 	virtual void MouseModeRelative();

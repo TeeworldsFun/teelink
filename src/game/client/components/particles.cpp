@@ -8,7 +8,7 @@
 #include <game/client/render.h>
 #include <game/gamecore.h>
 #include "particles.h"
-#include "camera.h"
+//#include "camera.h" // H-Client
 
 CParticles::CParticles()
 {
@@ -16,9 +16,8 @@ CParticles::CParticles()
 	m_RenderTrail.m_pParts = this;
 	m_RenderExplosions.m_pParts = this;
 	m_RenderGeneral.m_pParts = this;
-	m_RenderHClientBlood.m_pParts = this;
-	m_RenderHClientFreeze.m_pParts = this;
-	m_RenderHClientTumbstone.m_pParts = this;
+	m_RenderHClientBlood.m_pParts = this; // H-Client
+	m_RenderHClientFreeze.m_pParts = this; // H-Client
 }
 
 
@@ -47,8 +46,12 @@ void CParticles::Add(int Group, CParticle *pPart)
 		if(pInfo->m_Paused)
 			return;
 	}
+	else
+	{
+		if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED)
+			return;
+	}
 
-    //m_FirstFree >= MAX_PARTICLES
 	if (m_FirstFree == -1)
 		return;
 
@@ -107,6 +110,8 @@ void CParticles::Update(float TimePassed)
                 Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, 0.1f, NULL, &coll);
                 if (coll && !m_aParticles[i].m_Collide)
                 {
+                    Collision()->IntersectLine(m_aParticles[i].m_LastPos, m_aParticles[i].m_Pos, 0x0, &m_aParticles[i].m_Pos, false);
+
                     vec2 Dir = normalize(m_aParticles[i].m_Vel);
 
                     CParticle p;
@@ -116,7 +121,7 @@ void CParticles::Update(float TimePassed)
                     p.m_Vel = vec2(0.0,0.0f);
                     p.m_LifeSpan = 30.0f + frandom()*0.3f;
                     p.m_StartSize = 5.0f + frandom()*22.0f;
-                    p.m_EndSize = 0.0f;
+                    p.m_EndSize = 5.0f + frandom()*22.0f;
                     p.m_Rot = frandom()*pi*2;
                     p.m_Rotspeed = 0.0f;
                     p.m_Gravity = 0.0f;
@@ -136,9 +141,9 @@ void CParticles::Update(float TimePassed)
                 Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, 0.1f+0.9f*frandom(), NULL);
 
 			m_aParticles[i].m_Vel = Vel* (1.0f/TimePassed);
+
 			m_aParticles[i].m_Life += TimePassed;
 			m_aParticles[i].m_Rot += TimePassed * m_aParticles[i].m_Rotspeed;
-
 
 			// check particle death
 			if(m_aParticles[i].m_Life > m_aParticles[i].m_LifeSpan)
@@ -180,7 +185,10 @@ void CParticles::OnRender()
 			Update((float)((t-LastTime)/(double)time_freq())*pInfo->m_Speed);
 	}
 	else
-		Update((float)((t-LastTime)/(double)time_freq()));
+	{
+		if(m_pClient->m_Snap.m_pGameInfoObj && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
+			Update((float)((t-LastTime)/(double)time_freq()));
+	}
 
 	LastTime = t;
 }
@@ -191,8 +199,6 @@ void CParticles::RenderGroup(int Group)
 	//gfx_blend_additive();
 	if (Group == GROUP_HCLIENT_FREEZE)
         Graphics()->TextureSet(g_pData->m_aImages[IMAGE_UNFREEZE_EFFECT].m_Id);
-    else if (Group == GROUP_HCLIENT_TOMBSTONE)
-        Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MINETEE_FX_TOMBSTONE].m_Id);
     else
         Graphics()->TextureSet(g_pData->m_aImages[IMAGE_PARTICLES].m_Id);
 
@@ -210,23 +216,19 @@ void CParticles::RenderGroup(int Group)
             int Nw = 32;
             int Nh = 32;
 
-	        if (!Collision()->CheckPoint(vec2(Nx+16.0f, Ny+16.0f)))
+	        if (!Collision()->CheckPoint(vec2(Nx, Ny)))
 	        {
 	            m_aParticles[i].m_Life = m_aParticles[i].m_LifeSpan+1;
 	            i = m_aParticles[i].m_NextPart;
 	            continue;
 	        }
 
-            if (Collision()->CheckPoint(vec2(Nx+32.0f+16.0f, Ny+16.0f)))
-                Nw += 32;
-            if (Collision()->CheckPoint(vec2(Nx-32.0f+16.0f, Ny+16.0f)))
-                Nx -= 32;
-            if (Collision()->CheckPoint(vec2(Nx+16.0f, Ny+32.0f+16.0f)))
-                Nh += 32;
-            if (Collision()->CheckPoint(vec2(Nx+16.0f, Ny-32.0f+16.0f)))
-                Ny -= 32;
+            if (Collision()->CheckPoint(vec2(Nx+32.0f, Ny))) { Nw += 32; }
+            if (Collision()->CheckPoint(vec2(Nx-32.0f, Ny))) { Nx -= 32; Nw += 32; }
+            if (Collision()->CheckPoint(vec2(Nx, Ny+32.0f))) { Nh += 32; }
+            if (Collision()->CheckPoint(vec2(Nx, Ny-32.0f))) { Ny -= 32; Nh += 32; }
 
-            vec2 Center = m_pClient->m_pCamera->m_Center;
+            //vec2 Center = m_pClient->m_pCamera->m_Center;
 
 			// set clipping
 			float Points[4];
@@ -258,8 +260,6 @@ void CParticles::RenderGroup(int Group)
 			m_aParticles[i].m_Color.a); // pow(a, 0.75f) *
 
         IGraphics::CQuadItem QuadItem(p.x, p.y, Size, Size);
-        if (Group == GROUP_HCLIENT_TOMBSTONE)
-            QuadItem = IGraphics::CQuadItem(p.x, p.y-Size/2, Size, Size);
 
         Graphics()->QuadsDraw(&QuadItem, 1);
 

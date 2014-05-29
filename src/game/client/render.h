@@ -3,10 +3,8 @@
 #ifndef GAME_CLIENT_RENDER_H
 #define GAME_CLIENT_RENDER_H
 
-#include <engine/client.h>
 #include <base/vmath.h>
 #include <game/mapitems.h>
-#include <game/collision.h>
 #include "ui.h"
 
 
@@ -25,7 +23,6 @@ public:
 
 	int m_Texture;
 	int m_TextureDamage;
-
 	vec4 m_ColorBody;
 	vec4 m_ColorFeet;
 	float m_Size;
@@ -49,8 +46,8 @@ typedef void (*ENVELOPE_EVAL)(float TimeOffset, int Env, float *pChannels, void 
 class CRenderTools
 {
 public:
-	class CUI *m_pUI;
 	class IGraphics *m_pGraphics;
+	class CUI *m_pUI;
 
 	class IGraphics *Graphics() const { return m_pGraphics; }
 	class CUI *UI() const { return m_pUI; }
@@ -60,7 +57,7 @@ public:
 	void SelectSprite(struct CDataSprite *pSprite, int Flags=0, int sx=0, int sy=0);
 	void SelectSprite(int id, int Flags=0, int sx=0, int sy=0);
 
-	void DrawSprite(float x, float y, float size, bool mode3D = false);
+	void DrawSprite(float x, float y, float size);
 
 	// rects
 	void DrawRoundRect(float x, float y, float w, float h, float r);
@@ -77,9 +74,7 @@ public:
 	// map render methods (gc_render_map.cpp)
 	static void RenderEvalEnvelope(CEnvPoint *pPoints, int NumPoints, int Channels, float Time, float *pResult);
 	void RenderQuads(CQuad *pQuads, int NumQuads, int Flags, ENVELOPE_EVAL pfnEval, void *pUser);
-	void RenderTilemap(CTile *pGameTiles, CTile *pTiles, int w, int h, float Scale, vec4 Color, int RenderFlags, ENVELOPE_EVAL pfnEval, void *pUser, int ColorEnv, int ColorEnvOffset, int TileMineTee = 0, bool Animated = false, void *pEffects = 0x0);
-	void UpdateLights(CCollision *pCollision, CTile *pTiles, CTile *pLights, int w, int h, int LightLevel = 0);
-	void RenderTile(int Index, vec2 Pos, float Size, float Alpha = 1.0f, float Rot = 0.0f);
+	void RenderTilemap(CTile *pGameTiles, CTile *pTiles, int w, int h, float Scale, vec4 Color, int RenderFlags, ENVELOPE_EVAL pfnEval, void *pUser, int ColorEnv, int ColorEnvOffset);
 
 	// helpers
 	void MapscreenToWorld(float CenterX, float CenterY, float ParallaxX, float ParallaxY,

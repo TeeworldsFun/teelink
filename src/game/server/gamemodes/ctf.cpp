@@ -98,7 +98,7 @@ bool CGameControllerCTF::CanBeMovedOnBalance(int ClientID)
 		for(int fi = 0; fi < 2; fi++)
 		{
 			CFlag *F = m_apFlags[fi];
-			if(F->m_pCarryingCharacter == Character)
+			if(F && F->m_pCarryingCharacter == Character)
 				return false;
 		}
 	}
@@ -259,6 +259,8 @@ void CGameControllerCTF::Tick()
 						else
 							GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_PL, c);
 					}
+					// demo record entry
+					GameServer()->CreateSoundGlobal(SOUND_CTF_GRAB_EN, -2);
 					break;
 				}
 			}

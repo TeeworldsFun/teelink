@@ -2,11 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_COMPONENTS_CHAT_H
 #define GAME_CLIENT_COMPONENTS_CHAT_H
-#include <engine/textrender.h>
 #include <engine/shared/ringbuffer.h>
 #include <game/client/component.h>
 #include <game/client/lineinput.h>
-#include <list> //H-Client
+#include <list>
 
 class CChat : public CComponent
 {
@@ -24,11 +23,11 @@ class CChat : public CComponent
 		int m_ClientID;
 		int m_Team;
 		int m_NameColor;
-		int m_Type; //H-Client
 		char m_aName[64];
 		char m_aText[512];
-		char m_aChan[64]; //H-Client
 		bool m_Highlighted;
+
+		int m_Type; //H-Client
 	};
 
 	CLine m_aLines[MAX_LINES];
@@ -46,8 +45,6 @@ class CChat : public CComponent
     std::list<CChat::CChatEmote> m_vChatEmotes;
 
 	void AssignChatEmote(const char *emote, int sc_id);
-	int m_ChatRoom;
-	//
 
 	// chat
 	enum
@@ -55,7 +52,11 @@ class CChat : public CComponent
 		MODE_NONE=0,
 		MODE_ALL,
 		MODE_TEAM,
-		MODE_IRC,
+
+		CHAT_SERVER=0,
+		CHAT_HIGHLIGHT,
+		CHAT_CLIENT,
+		CHAT_NUM,
 	};
 
 	int m_Mode;
@@ -67,16 +68,22 @@ class CChat : public CComponent
 	char m_aCompletionBuffer[256];
 	int m_PlaceholderOffset;
 	int m_PlaceholderLength;
-	char *m_pHistoryEntry;
-	TStaticRingBuffer<char, 64*1024, CRingBufferBase::FLAG_RECYCLE> m_History;
+
+	struct CHistoryEntry
+	{
+		int m_Team;
+		char m_aText[1];
+	};
+	CHistoryEntry *m_pHistoryEntry;
+	TStaticRingBuffer<CHistoryEntry, 64*1024, CRingBufferBase::FLAG_RECYCLE> m_History;
+	int m_PendingChatCounter;
+	int64 m_LastChatSend;
+	int64 m_aLastSoundPlayed[CHAT_NUM];
 
 	static void ConSay(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayTeam(IConsole::IResult *pResult, void *pUserData);
-	static void ConSayIrc(IConsole::IResult *pResult, void *pUserData); //H-Client
 	static void ConChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConShowChat(IConsole::IResult *pResult, void *pUserData);
-
-	void HighlightText(const char *pText, vec4 dfcolor, CTextCursor *pCursor); //H-Client
 
 public:
 	CChat();
@@ -84,7 +91,6 @@ public:
 	bool IsActive() const { return m_Mode != MODE_NONE; }
 
 	void AddLine(int ClientID, int Team, const char *pLine);
-	void AddLine(const char *pFrom, const char *pUser, const char *pLine);
 
 	void EnableMode(int Team);
 
@@ -96,7 +102,6 @@ public:
 	virtual void OnRender();
 	virtual void OnRelease();
 	virtual void OnMessage(int MsgType, void *pRawMsg);
-	virtual void OnMessageIrc(const char *pFrom, const char *pUser, const char *pText);
 	virtual bool OnInput(IInput::CEvent Event);
 };
 #endif

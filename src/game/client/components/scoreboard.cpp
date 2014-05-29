@@ -72,13 +72,13 @@ void CScoreboard::RenderGoals(float x, float y, float w)
 	//Graphics()->QuadsEnd();
 	/**H-Client**/
 	//Title
-	RenderTools()->DrawUIRect(&rTitle, vec4(0.5f, 0.5f, 0.5f, 0.5f), 0, 0.0f);
+	RenderTools()->DrawUIRect(&rTitle, HexToVec4(g_Config.m_hcContainerHeaderBackgroundColor), 0, 0.0f);
 	rTitle.Margin(10.0f, &rTitle);
 	float textWidth = TextRender()->TextWidth(0, 32.0f, CurrentServerInfo.m_aName, str_length(CurrentServerInfo.m_aName));
 	TextRender()->Text(0, rTitle.x + rTitle.w/2 - textWidth/2, rTitle.y, 32.0f, CurrentServerInfo.m_aName, -1);
 
 	//Extra Info
-	RenderTools()->DrawUIRect(&rExtraInfo, vec4(0.25f, 0.25f, 0.25f, 0.5f), CUI::CORNER_B, 10.0f);
+	RenderTools()->DrawUIRect(&rExtraInfo, HexToVec4(g_Config.m_hcContainerBackgroundColor), CUI::CORNER_B, 10.0f);
 	rExtraInfo.Margin(10.0f, &rExtraInfo);
 	/**/
 
@@ -189,11 +189,11 @@ void CScoreboard::RenderSpectators(float x, float y, float w)
 	Graphics()->TextureSet(-1);
 
     area.HSplitTop(40.0f, &rTitle, &rExtraInfo);
-	RenderTools()->DrawUIRect(&rTitle, vec4(0.3f, 0.3f, 0.3f, 0.5f), CUI::CORNER_T, 10.0f);
+	RenderTools()->DrawUIRect(&rTitle, HexToVec4(g_Config.m_hcContainerHeaderBackgroundColor), CUI::CORNER_T, 10.0f);
 	rTitle.Margin(5.0f, &rTitle);
 
 	// spectator names
-	RenderTools()->DrawUIRect(&rExtraInfo, vec4(0.1f, 0.1f, 0.1f, 0.5f), 0, 0.0f);
+	RenderTools()->DrawUIRect(&rExtraInfo, HexToVec4(g_Config.m_hcContainerBackgroundColor), 0, 0.0f);
 	y += 45.0f;
 	char aBuffer[1024*4];
 	aBuffer[0] = 0;
@@ -223,6 +223,190 @@ void CScoreboard::RenderSpectators(float x, float y, float w)
 	TextRender()->Text(0, rTitle.x, rTitle.y-3.0f, 28.0f, aBuffer, -1);
 }
 
+void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const char *pTitle)
+{
+	if(Team == TEAM_SPECTATORS)
+		return;
+
+    float h = 760.0f;
+	CUIRect area;
+	area.x = x; area.y = y;
+	area.w = w; area.h = h;
+
+	Graphics()->BlendNormal();
+	Graphics()->TextureSet(-1);
+
+	// render title
+	CUIRect rTitle;
+	area.HSplitTop(60.0f, &rTitle, &area);
+	float TitleFontsize = 40.0f;
+
+    if(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)
+        pTitle = Localize("Game over");
+    else
+        pTitle = Localize("Score board");
+
+    RenderTools()->DrawUIRect(&rTitle, HexToVec4(g_Config.m_hcContainerHeaderBackgroundColor), CUI::CORNER_T, 10.0f);
+
+
+	rTitle.Margin(10.0f, &rTitle);
+
+	char aBuf[128] = {0};
+    if(m_pClient->m_Snap.m_pGameDataObj)
+    {
+        int Score = Team == TEAM_RED ? m_pClient->m_Snap.m_pGameDataObj->m_TeamscoreRed : m_pClient->m_Snap.m_pGameDataObj->m_TeamscoreBlue;
+        str_format(aBuf, sizeof(aBuf), "%d", Score);
+    }
+
+	float tw = TextRender()->TextWidth(0, TitleFontsize, aBuf, -1);
+	CUIRect rTitlePoints;
+	rTitle.VSplitRight(tw+5.0f, 0x0, &rTitlePoints);
+	TextRender()->Text(0, rTitlePoints.x, rTitlePoints.y-5.0f, TitleFontsize, aBuf, -1);
+
+    float LineHeight = 40.0f;
+    float TeeSizeMod = 0.4f;
+    float Spacing = 0.0f;
+    float HeadlineFontsize = 12.0f;
+    float FontSize = 14.0f;
+    int part = 0;
+    CTextCursor Cursor;
+
+    CUIRect parts[4];
+    area.VSplitMid(&parts[0], &parts[2]);
+    parts[0].VSplitMid(&parts[0], &parts[1]);
+    parts[2].VSplitMid(&parts[2], &parts[3]);
+
+    float ScoreOffset, ScoreLength;
+    float TeeOffset, TeeLength;
+    float NameOffset, NameLength;
+    float PingOffset, PingLength;
+    float CountryOffset, CountryLength;
+    float ClanOffset, ClanLength;
+
+    int nPlayers = 0;
+    bool fi = false;
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+	    if (!fi || (i%16) == 0)
+	    {
+	        if (fi)
+                part++;
+
+            x = parts[part].x;
+            y = parts[part].y;
+
+	        ScoreOffset = x+10.0f; ScoreLength = 60.0f;
+            TeeOffset = parts[part].x+90.0f; TeeLength = 60*TeeSizeMod;
+            NameOffset = TeeOffset+TeeLength; NameLength = 200.0f-TeeLength;
+            PingOffset = x+390.0f; PingLength = 65.0f;
+            CountryOffset = PingOffset-(LineHeight-Spacing-TeeSizeMod); CountryLength = (LineHeight-Spacing-TeeSizeMod*3.0f)*2.0f;
+            ClanOffset = x+230.0f; ClanLength = 230.0f-CountryLength;
+
+            // render headlines
+            CUIRect rHeadLines, rLabel;
+            parts[part].HSplitTop(40.0f, &rHeadLines, &parts[part]);
+            RenderTools()->DrawUIRect(&rHeadLines, HexToVec4(g_Config.m_hcListHeaderBackgroundColor), 0, 0.0f);
+            rHeadLines.Margin(5.0f,&rHeadLines);
+
+            y += 50.0f;
+
+            rHeadLines.VSplitLeft(80.0f, &rLabel, &rHeadLines);
+            TextRender()->Text(0, rLabel.x, rLabel.y, HeadlineFontsize, Localize("Score"), -1);
+
+            rHeadLines.VSplitLeft(200.0f, &rLabel, &rHeadLines);
+            TextRender()->Text(0, rLabel.x, rLabel.y, HeadlineFontsize, Localize("Name"), -1);
+
+            rHeadLines.VSplitLeft(150.0f, &rLabel, &rHeadLines);
+            TextRender()->Text(0, rLabel.x, rLabel.y, HeadlineFontsize, Localize("Clan"), -1);
+
+            rHeadLines.VSplitLeft(80.0f, &rLabel, &rHeadLines);
+            TextRender()->Text(0, rLabel.x, rLabel.y, HeadlineFontsize, Localize("Ping"), -1);
+
+            int corner = 0;
+            if (part==0) corner = CUI::CORNER_BL;
+            else if (part==3) corner = CUI::CORNER_BR;
+            vec4 baColor = HexToVec4(g_Config.m_hcContainerBackgroundColor);
+            RenderTools()->DrawUIRect(&parts[part], vec4(baColor.r, baColor.g, baColor.b, part%2==0?0.5f:0.65f), corner, 10.0f);
+
+            fi = true;
+	    }
+
+		// make sure that we render the correct team
+		const CNetObj_PlayerInfo *pInfo = m_pClient->m_Snap.m_paInfoByDDTeam[i];
+		if(!pInfo)
+			continue;
+
+        nPlayers++;
+
+		// background so it's easy to find the local player or the followed one in spectator mode
+		if(pInfo->m_Local || (m_pClient->m_Snap.m_SpecInfo.m_Active && pInfo->m_ClientID == m_pClient->m_Snap.m_SpecInfo.m_SpectatorID))
+		{
+			Graphics()->TextureSet(-1);
+			Graphics()->QuadsBegin();
+			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.25f);
+			RenderTools()->DrawRoundRectExt(x, y, parts[part].w, LineHeight, 0.0f, 0);
+			Graphics()->QuadsEnd();
+		}
+
+		// score
+		str_format(aBuf, sizeof(aBuf), "%d", clamp(pInfo->m_Score, -999, 999));
+		tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+		TextRender()->SetCursor(&Cursor, ScoreOffset+ScoreLength-tw, y+Spacing+3.0f, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
+		Cursor.m_LineWidth = ScoreLength;
+		TextRender()->TextEx(&Cursor, aBuf, -1);
+
+		// avatar
+		CTeeRenderInfo TeeInfo = m_pClient->m_aClients[pInfo->m_ClientID].m_RenderInfo;
+		TeeInfo.m_Size *= TeeSizeMod;
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), vec2(TeeOffset+TeeLength/2, y+LineHeight/2-3.0f));
+
+		// name
+        if (g_Config.m_hcColorClan && m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_aClan[0] != 0 && str_comp_nocase(m_pClient->m_aClients[pInfo->m_ClientID].m_aClan, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_aClan) == 0) //H-Client
+            TextRender()->TextColor(0.7f, 0.7f, 0.2f, 1.0f);
+		TextRender()->SetCursor(&Cursor, NameOffset, y+Spacing+3.0f, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
+		Cursor.m_LineWidth = NameLength;
+		TextRender()->TextEx(&Cursor, m_pClient->m_aClients[pInfo->m_ClientID].m_aName, -1);
+		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+		// clan
+		tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[pInfo->m_ClientID].m_aClan, -1);
+		TextRender()->SetCursor(&Cursor, ClanOffset+ClanLength/2-tw/2-5.0f, y+Spacing+3.0f, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
+		Cursor.m_LineWidth = ClanLength;
+		TextRender()->TextEx(&Cursor, m_pClient->m_aClients[pInfo->m_ClientID].m_aClan, -1);
+
+		// country flag
+		Graphics()->TextureSet(m_pClient->m_pCountryFlags->GetByCountryCode(m_pClient->m_aClients[pInfo->m_ClientID].m_Country)->m_Texture);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.5f);
+		IGraphics::CQuadItem QuadItem(CountryOffset, y+(Spacing+TeeSizeMod*5.0f)/2.0f, CountryLength, LineHeight-Spacing-TeeSizeMod*5.0f);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsEnd();
+
+		// ping
+        //H-Client
+        const int maxLatency = 200;
+        vec3 Rgb =  HslToRgb(vec3(1.0f, 1.0f, 0.5f));
+        if (pInfo->m_Latency <= maxLatency)
+            Rgb = HslToRgb(vec3((((maxLatency - pInfo->m_Latency) * 0.35f) / maxLatency), 1.0f, 0.5f));
+        TextRender()->TextColor(Rgb.r, Rgb.g, Rgb.b, 1.0f);
+        //
+
+		str_format(aBuf, sizeof(aBuf), "%d", clamp(pInfo->m_Latency, 0, 1000));
+		tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+		TextRender()->SetCursor(&Cursor, PingOffset+PingLength-tw, y+Spacing+3.0f, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
+		Cursor.m_LineWidth = PingLength;
+		TextRender()->TextEx(&Cursor, aBuf, -1);
+		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+		y += LineHeight+Spacing;
+	}
+
+	//Title
+    char aTitle[128]={0};
+    str_format(aTitle, sizeof(aTitle), "%s [%d]", pTitle, nPlayers);
+	TextRender()->Text(0, rTitle.x, rTitle.y-5.0f, TitleFontsize, aTitle, -1);
+}
+
 void CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const char *pTitle)
 {
 	if(Team == TEAM_SPECTATORS)
@@ -250,7 +434,7 @@ void CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const ch
 		else
 			pTitle = Localize("Score board");
 
-        RenderTools()->DrawUIRect(&rTitle, vec4(0.5f, 0.5f, 0.5f, 0.5f), CUI::CORNER_T, 10.0f);
+        RenderTools()->DrawUIRect(&rTitle, HexToVec4(g_Config.m_hcContainerHeaderBackgroundColor), CUI::CORNER_T, 10.0f);
 	}
 	else
 	{
@@ -307,7 +491,7 @@ void CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const ch
 	// render headlines
 	CUIRect rHeadLines, rLabel;
 	area.HSplitTop(40.0f, &rHeadLines, &area);
-	RenderTools()->DrawUIRect(&rHeadLines, vec4(0.1f, 0.1f, 0.1f, 0.75f), 0, 0.0f);
+	RenderTools()->DrawUIRect(&rHeadLines, HexToVec4(g_Config.m_hcListHeaderBackgroundColor), 0, 0.0f);
 	rHeadLines.Margin(5.0f,&rHeadLines);
 
 	y += 50.0f;
@@ -325,7 +509,7 @@ void CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const ch
     rHeadLines.VSplitLeft(80.0f, &rLabel, &rHeadLines);
 	TextRender()->Text(0, rLabel.x, rLabel.y, HeadlineFontsize, Localize("Ping"), -1);
 
-    RenderTools()->DrawUIRect(&area, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_B, 10.0f);
+    RenderTools()->DrawUIRect(&area, HexToVec4(g_Config.m_hcContainerBackgroundColor), CUI::CORNER_B, 10.0f);
 
 	// render player entries
 	float FontSize = 24.0f;
@@ -437,8 +621,8 @@ void CScoreboard::RenderLocalTime()
 	Graphics()->BlendNormal();
 	Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.4f);
-	RenderTools()->DrawRoundRectExt(0.0f, 210.0f, 190.0f, 75.0f, 15.0f, CUI::CORNER_R);
+	Graphics()->SetColor(HexToVec4(g_Config.m_hcContainerBackgroundColor));
+	RenderTools()->DrawRoundRectExt(0.0f, 180.0f, 190.0f, 75.0f, 15.0f, CUI::CORNER_R);
 	Graphics()->QuadsEnd();
 
 	//draw the text
@@ -446,8 +630,8 @@ void CScoreboard::RenderLocalTime()
     time_t rawtime = time(NULL);
     struct tm *timeinfo = localtime(&rawtime);
     strftime(aBuf,80,"%I:%M:%S %p",timeinfo);
-    TextRender()->Text(0, 10.0f, 220.0f, 20.0f, Localize("LOCAL TIME"), -1);
-	TextRender()->Text(0, 40.0f, 245.0f, 20.0f, aBuf, -1);
+    TextRender()->Text(0, 10.0f, 190.0f, 20.0f, Localize("LOCAL TIME"), -1);
+	TextRender()->Text(0, 40.0f, 215.0f, 20.0f, aBuf, -1);
 }
 
 void CScoreboard::RenderRecordingNotification()
@@ -459,7 +643,7 @@ void CScoreboard::RenderRecordingNotification()
 	Graphics()->BlendNormal();
 	Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.4f);
+	Graphics()->SetColor(HexToVec4(g_Config.m_hcContainerBackgroundColor));
 	RenderTools()->DrawRoundRectExt(0.0f, 150.0f, 180.0f, 50.0f, 15.0f, CUI::CORNER_R);
 	Graphics()->QuadsEnd();
 
@@ -498,9 +682,15 @@ void CScoreboard::OnRender()
 	{
 		if(!(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS))
 		{
-		    RenderScoreboard(Width/2-w/2, 270.0f, w, 0, 0);
+            // H-Client: DDNet
+            CServerInfo SInfo;
+            Client()->GetServerInfo(&SInfo);
+		    if (SInfo.m_MaxPlayers > 16)
+                RenderScoreboard64(10.0f, 270.0f, Width-20.0f, 0, 0);
+            else
+                RenderScoreboard(Width/2-w/2, 270.0f, w, 0, 0);
 
-		    if (s_NeedUpdate)
+		    if (Client()->State() != IClient::STATE_DEMOPLAYBACK && s_NeedUpdate)
 		    {
                 CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(g_Config.m_UiServerAddress); //H-Client
                 if (m_pClient->m_Snap.m_paInfoByScore[0]->m_ClientID != m_pClient->m_Snap.m_LocalClientID)

@@ -20,7 +20,7 @@ public:
 
 	void TryRespawn();
 	void Respawn();
-	void SetTeam(int Team);
+	void SetTeam(int Team, bool DoChatMsg=true);
 	int GetTeam() const { return m_Team; };
 	int GetCID() const { return m_ClientID; };
 
@@ -49,8 +49,6 @@ public:
 	int m_SpectatorID;
 
 	bool m_IsReady;
-
-	bool m_MineTeeSync; //H-Client
 
 	//
 	int m_Vote;
@@ -97,12 +95,6 @@ public:
 		int m_Min;
 		int m_Max;
 	} m_Latency;
-
-    //H-Client: Dynamic Envirioment
-    int m_MineTeeTeam;
-    int m_CurrentStateMapSize;
-    bool m_MapStateChecked;
-    //
 
 private:
 	CCharacter *m_pCharacter;

@@ -2,8 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <base/math.h>
 
-#include <engine/serverbrowser.h> //H-Client
-
 #include <engine/shared/config.h>
 
 #include <game/collision.h>
@@ -12,7 +10,6 @@
 #include <game/client/components/chat.h>
 #include <game/client/components/menus.h>
 #include <game/client/components/scoreboard.h>
-#include <game/client/components/players.h> //H-Client
 
 #include "controls.h"
 
@@ -89,17 +86,13 @@ void CControls::OnConsoleInit()
 	Console()->Register("+hook", "", CFGFLAG_CLIENT, ConKeyInputState, &m_InputData.m_Hook, "Hook");
 	Console()->Register("+fire", "", CFGFLAG_CLIENT, ConKeyInputCounter, &m_InputData.m_Fire, "Fire");
 
-    Console()->Register("+showhookcoll", "", CFGFLAG_CLIENT, ConKeyInputState, &m_ShowHookColl, "Show Hook Collision");
+	Console()->Register("+showhookcoll", "", CFGFLAG_CLIENT, ConKeyInputState, &m_ShowHookColl, "Show Hook Collision");
 
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 1}; Console()->Register("+weapon1", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to hammer or Slot1"); }
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 2}; Console()->Register("+weapon2", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to gun or Slot2"); }
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 3}; Console()->Register("+weapon3", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to shotgun or Slot3"); }
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 4}; Console()->Register("+weapon4", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to grenade or Slot4"); }
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 5}; Console()->Register("+weapon5", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to rifle or Slot5"); }
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 6}; Console()->Register("+weapon6", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to Slot6"); }
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 7}; Console()->Register("+weapon7", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to Slot7"); }
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 8}; Console()->Register("+weapon8", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to Slot8"); }
-	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 9}; Console()->Register("+weapon9", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to Slot9"); }
+	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 1}; Console()->Register("+weapon1", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to hammer"); }
+	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 2}; Console()->Register("+weapon2", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to gun"); }
+	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 3}; Console()->Register("+weapon3", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to shotgun"); }
+	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 4}; Console()->Register("+weapon4", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to grenade"); }
+	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 5}; Console()->Register("+weapon5", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to rifle"); }
 
 	{ static CInputSet s_Set = {this, &m_InputData.m_NextWeapon, 0}; Console()->Register("+nextweapon", "", CFGFLAG_CLIENT, ConKeyInputNextPrevWeapon, (void *)&s_Set, "Switch to next weapon"); }
 	{ static CInputSet s_Set = {this, &m_InputData.m_PrevWeapon, 0}; Console()->Register("+prevweapon", "", CFGFLAG_CLIENT, ConKeyInputNextPrevWeapon, (void *)&s_Set, "Switch to previous weapon"); }
@@ -135,12 +128,6 @@ int CControls::SnapInput(int *pData)
     if (m_pClient->m_pControls->m_ShowHookColl)
         m_InputData.m_PlayerFlags |= PLAYERFLAG_AIM;
 
-    if (m_pClient->m_pPlayers->IsBGPaint())
-        m_InputData.m_PlayerFlags |= PLAYERFLAG_BGPAINT;
-    if (m_pClient->m_pPlayers->IsFGPaint())
-        m_InputData.m_PlayerFlags |= PLAYERFLAG_FGPAINT;
-    //
-
 	if(m_LastData.m_PlayerFlags != m_InputData.m_PlayerFlags)
 		Send = true;
 
@@ -159,13 +146,6 @@ int CControls::SnapInput(int *pData)
 	}
 	else
 	{
-	    //H-Client: DDRace
-        bool isFreeze = false;
-        //CServerInfo SInfo;
-        //Client()->GetServerInfo(&SInfo);
-        //if (m_pClient->m_Snap.m_pLocalCharacter && str_find_nocase(SInfo.m_aGameType, "ddrace") && m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == WEAPON_NINJA && m_pClient->m_Snap.m_pLocalCharacter->m_Armor < 10)
-        //    isFreeze = true;
-        //
 
 		m_InputData.m_TargetX = (int)m_MousePos.x;
 		m_InputData.m_TargetY = (int)m_MousePos.y;
@@ -177,15 +157,10 @@ int CControls::SnapInput(int *pData)
 
 		// set direction
 		m_InputData.m_Direction = 0;
-		if (!isFreeze) //H-Client: DDRace
-		{
-            if(m_InputDirectionLeft && !m_InputDirectionRight)
-                m_InputData.m_Direction = -1;
-            if(!m_InputDirectionLeft && m_InputDirectionRight)
-                m_InputData.m_Direction = 1;
-        }
-        else
-            m_InputData.m_Jump = 0;
+		if(m_InputDirectionLeft && !m_InputDirectionRight)
+			m_InputData.m_Direction = -1;
+		if(!m_InputDirectionLeft && m_InputDirectionRight)
+			m_InputData.m_Direction = 1;
 
 		// stress testing
 		if(g_Config.m_DbgStress)
@@ -197,7 +172,7 @@ int CControls::SnapInput(int *pData)
 			m_InputData.m_Jump = ((int)t);
 			m_InputData.m_Fire = ((int)(t*10));
 			m_InputData.m_Hook = ((int)(t*2))&1;
-			m_InputData.m_WantedWeapon = ((int)t)%(NUM_WEAPONS+NUM_BLOCKS);
+			m_InputData.m_WantedWeapon = ((int)t)%NUM_WEAPONS;
 			m_InputData.m_TargetX = (int)(sinf(t*3)*100.0f);
 			m_InputData.m_TargetY = (int)(cosf(t*3)*100.0f);
 		}
@@ -230,7 +205,7 @@ int CControls::SnapInput(int *pData)
 void CControls::OnRender()
 {
 	// update target pos
-	if(m_pClient->m_Snap.m_pGameInfoObj && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED || m_pClient->m_Snap.m_SpecInfo.m_Active))
+	if(m_pClient->m_Snap.m_pGameInfoObj && !m_pClient->m_Snap.m_SpecInfo.m_Active)
 		m_TargetPos = m_pClient->m_LocalCharacterPos + m_MousePos;
 	else if(m_pClient->m_Snap.m_SpecInfo.m_Active && m_pClient->m_Snap.m_SpecInfo.m_UsePosition)
 		m_TargetPos = m_pClient->m_Snap.m_SpecInfo.m_Position + m_MousePos;
@@ -240,7 +215,8 @@ void CControls::OnRender()
 
 bool CControls::OnMouseMove(float x, float y)
 {
-	if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED)
+	if((m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED) ||
+		(m_pClient->m_Snap.m_SpecInfo.m_Active && m_pClient->m_pChat->IsActive()))
 		return false;
 
 	m_MousePos += vec2(x, y); // TODO: ugly

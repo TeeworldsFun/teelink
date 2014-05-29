@@ -5,7 +5,6 @@
 #include <engine/textrender.h>
 #include <engine/serverbrowser.h> //H-Client
 #include <engine/storage.h> //H-Client
-#include <engine/client/irc.h> //H-Client
 #include <engine/shared/config.h>
 
 #include <game/generated/protocol.h>
@@ -51,12 +50,11 @@ void CHud::RenderGameTimer()
 {
     CServerInfo Info;
     Client()->GetServerInfo(&Info);
-    if (str_find_nocase(Info.m_aGameType, "minetee"))
-        return;
 
     static int LastChangeTick = 0;
     if(LastChangeTick != Client()->PredGameTick())
     {
+        m_DDRaceTick += 100/Client()->GameTickSpeed();
         m_DDRaceTick += 100/Client()->GameTickSpeed();
         LastChangeTick = Client()->PredGameTick();
     }
@@ -188,7 +186,7 @@ void CHud::RenderScoreHud()
 			int aPos[2] = { 1, 2 };
 			const CNetObj_PlayerInfo *apPlayerInfo[2] = { 0, 0 };
 			int i = 0;
-			for(int t = 0; t < 2 && i < MAX_CLIENTS-MAX_BOTS && m_pClient->m_Snap.m_paInfoByScore[i]; ++i)
+			for(int t = 0; t < 2 && i < MAX_CLIENTS && m_pClient->m_Snap.m_paInfoByScore[i]; ++i)
 			{
 				if(m_pClient->m_Snap.m_paInfoByScore[i]->m_Team != TEAM_SPECTATORS)
 				{
@@ -201,7 +199,7 @@ void CHud::RenderScoreHud()
 			// search local player info if not a spectator, nor within top2 scores
 			if(Local == -1 && m_pClient->m_Snap.m_pLocalInfo && m_pClient->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS)
 			{
-				for(; i < MAX_CLIENTS-MAX_BOTS && m_pClient->m_Snap.m_paInfoByScore[i]; ++i)
+				for(; i < MAX_CLIENTS && m_pClient->m_Snap.m_paInfoByScore[i]; ++i)
 				{
 					if(m_pClient->m_Snap.m_paInfoByScore[i]->m_Team != TEAM_SPECTATORS)
 						++aPos[1];
@@ -292,7 +290,7 @@ void CHud::RenderFps()
 	if(g_Config.m_ClShowfps)
 	{
 		// calculate avg. fps
-		float FPS = 1.0f / Client()->FrameTime();
+		float FPS = 1.0f / Client()->RenderFrameTime();
 		m_AverageFPS = (m_AverageFPS*(1.0f-(1.0f/m_AverageFPS))) + (FPS*(1.0f/m_AverageFPS));
 		char Buf[512];
 		str_format(Buf, sizeof(Buf), "%d", (int)m_AverageFPS);
@@ -393,7 +391,7 @@ void CHud::RenderVoting()
         //Search a Preview
         found=false;
         char aBuf[512];
-        if(Storage()->FindFile(aMap, "mappreviews", IStorageTW::TYPE_ALL, aBuf, sizeof(aBuf)))
+        if(Storage()->FindFile(aMap, "mappreviews", IStorage::TYPE_ALL, aBuf, sizeof(aBuf)))
             found = true;
 
         if(!found) //Try other way...
@@ -405,7 +403,7 @@ void CHud::RenderVoting()
                     aMap[i] = '_';
             }
 
-            if (Storage()->FindFile(aMap, "mappreviews", IStorageTW::TYPE_ALL, aBuf, sizeof(aBuf)))
+            if (Storage()->FindFile(aMap, "mappreviews", IStorage::TYPE_ALL, aBuf, sizeof(aBuf)))
                 found = true;
         }
         else
@@ -622,27 +620,16 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
         int h = 0;
         if (!str_find_nocase(Info.m_aGameType, "race") && !str_find_nocase(Info.m_aGameType, "ictf") && !str_find_nocase(Info.m_aGameType, "idm") && !str_find_nocase(Info.m_aGameType, "itdm") && pCharacter->m_Weapon != WEAPON_HAMMER)
         {
-            if (pCharacter->m_Weapon >= NUM_WEAPONS && str_find_nocase(Info.m_aGameType, "minetee"))
-            {
-                Graphics()->TextureSet(m_pClient->m_pMapimages->Get(Layers()->MineTeeLayer()->m_Image));
-                vec2 BlockPos = vec2(x,y+33);
-                int ActiveBlock = pCharacter->m_Weapon - NUM_WEAPONS;
+            Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+            IGraphics::CQuadItem QuadItem(x,y+32,10,10);
 
-                RenderTools()->RenderTile(ActiveBlock, BlockPos, 8.0f);
-            }
-            else
-            {
-                Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
-                IGraphics::CQuadItem QuadItem(x,y+32,10,10);
-
-                h = min(pCharacter->m_AmmoCount, 10);
-                // if weaponstage is active, put a "glow" around the stage ammo
-                Graphics()->QuadsBegin();
-                    RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[pCharacter->m_Weapon%NUM_WEAPONS].m_pSpriteProj);
-                    Graphics()->SetColor(1.0f, 1.0f, 1.0f, h/10.0f);
-                    Graphics()->QuadsDrawTL(&QuadItem, 1);
-                Graphics()->QuadsEnd();
-            }
+            h = min(pCharacter->m_AmmoCount, 10);
+            // if weaponstage is active, put a "glow" around the stage ammo
+            Graphics()->QuadsBegin();
+                RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[pCharacter->m_Weapon%NUM_WEAPONS].m_pSpriteProj);
+                Graphics()->SetColor(1.0f, 1.0f, 1.0f, h/10.0f);
+                Graphics()->QuadsDrawTL(&QuadItem, 1);
+            Graphics()->QuadsEnd();
         }
 
         Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
@@ -765,21 +752,8 @@ void CHud::OnRender()
 
 		RenderGameTimer();
 		RenderSuddenDeath();
-		RenderIRCNotifications();
 
-        CServerInfo Info;
-        Client()->GetServerInfo(&Info);
-        if (str_find_nocase(Info.m_aGameType, "minetee"))
-        {
-            RenderInventoryHud();
-            RenderSyncState();
-        }
-        else
-        {
-            RenderScoreHud();
-            if (str_find_nocase(Info.m_aGameType, "CTF-BREAK"))
-                RenderSyncState();
-        }
+        RenderScoreHud();
 		RenderWarmupTimer();
 		RenderFps();
 		if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
@@ -881,7 +855,7 @@ void CHud::RenderSelectorSpectatorHud()
 	}
 
     GotNewSpectatorID = false;
-    for(int i = m_pClient->m_Snap.m_SpecInfo.m_SpectatorID + 1; i < MAX_CLIENTS-MAX_BOTS; i++)
+    for(int i = m_pClient->m_Snap.m_SpecInfo.m_SpectatorID + 1; i < MAX_CLIENTS; i++)
     {
         if(!m_pClient->m_Snap.m_paPlayerInfos[i] || m_pClient->m_Snap.m_paPlayerInfos[i]->m_Team == TEAM_SPECTATORS)
             continue;
@@ -936,145 +910,6 @@ void CHud::RenderSelectorSpectatorHud()
 	}
 }
 
-void CHud::RenderInventoryHud()
-{
-    if (m_pClient->m_pChat->IsActive() || !m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_LocalClientID].m_Active)
-        return;
-
-    Graphics()->TextureSet(-1);
-    Graphics()->QuadsBegin();
-
-    //draw outbox
-    const float outboxSize = 250.0f;
-    //Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.6f);
-    //RenderTools()->DrawRoundRectExt(m_Width/2-outboxSize/2, m_Height-30.f, outboxSize, 50.0f, 5.0f, CUI::CORNER_ALL);
-
-    //draw outbox
-    if (m_pClient->m_pPlayers->IsBGPaint())
-        Graphics()->SetColor(1.0f, 0.5f, 0.25f, 0.6f);
-    else if (m_pClient->m_pPlayers->IsFGPaint())
-        Graphics()->SetColor(0.25f, 0.5f, 1.0f, 0.6f);
-    else
-        Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.6f);
-    RenderTools()->DrawRoundRectExt((m_Width/2-outboxSize/2)+2.5f, m_Height-33.0f, outboxSize-10.0f, 30.0f, 5.0f, CUI::CORNER_ALL);
-
-    //draw cells
-    const float cellSize = (outboxSize-9.0f-35.0f)/9.0f;
-    Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.6f);
-    for (int i=0; i<9; i++)
-    {
-        if (i != m_pClient->m_Inventory.m_Selected)
-            Graphics()->SetColor(0.5f, 0.5f, 0.5f, 0.8f);
-        else
-            Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.8f);
-
-        RenderTools()->DrawRoundRectExt((m_Width/2-outboxSize/2)+5.0f+3.0f+(i*cellSize)+(3.0f*i), m_Height-30.0f, cellSize, 14.0f, 0.0f, 0);
-
-        if (i != m_pClient->m_Inventory.m_Selected)
-            Graphics()->SetColor(0.5f, 0.5f, 0.5f, 0.4f);
-        else
-            Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.4f);
-
-        RenderTools()->DrawRoundRectExt((m_Width/2-outboxSize/2)+5.0f+3.0f+(i*cellSize)+(3.0f*i), m_Height-(30.0f-14.0f), cellSize, 10.0f, 0.0f, 0);
-    }
-
-    Graphics()->QuadsEnd();
-
-    //draw items
-    char buff[4];
-    Graphics()->TextureSet(m_pClient->m_pMapimages->Get(Layers()->MineTeeLayer()->m_Image));
-    for (int i=0; i<9; i++)
-    {
-        int item = m_pClient->m_Inventory.m_Items[i];
-        int ammo = m_pClient->m_Inventory.m_Ammo[i];
-        if (item == NUM_WEAPONS+NUM_BLOCKS)
-            continue;
-
-        float x = (m_Width/2-outboxSize/2)+5.0f+3.0f+(i*cellSize)+(3.0f*i);
-        float y = m_Height-30.f;
-
-        if (item >= NUM_WEAPONS)
-        {
-            Graphics()->TextureSet(m_pClient->m_pMapimages->Get(Layers()->MineTeeLayer()->m_Image));
-            RenderTools()->RenderTile((item-NUM_WEAPONS)%NUM_BLOCKS, vec2(x+7.5f, y+3.5f), 8.0f);
-        }
-        else
-        {
-            Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
-            Graphics()->QuadsBegin();
-                RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[item%NUM_WEAPONS].m_pSpriteBody);
-                Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-                IGraphics::CQuadItem QuadItem(x,y,24,16);
-                Graphics()->QuadsDrawTL(&QuadItem, 1);
-            Graphics()->QuadsEnd();
-        }
-
-        str_format(buff, sizeof(buff), "%i", ammo);
-        float TWidth = TextRender()->TextWidth(0, 8.0f, buff, -1);
-        TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.85f);
-        TextRender()->Text(0x0, (x+cellSize/2-TWidth/2), (y+14.0f)+5.0f-6.0f, 8.0f, buff, -1);
-        TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-    }
-}
-
-
-void CHud::RenderSyncState()
-{
-
-    if (Client()->MapSyncTotalsize() < 0)
-        return;
-
-    char aBuf[255];
-    CUIRect MainView;
-    MainView.w = 115.0f;
-    MainView.h = 45.0f;
-    MainView.x = m_Width/2-MainView.w/2;
-    MainView.y = m_Height/2-MainView.h/2;
-
-    // render background
-    RenderTools()->DrawUIRect(&MainView, vec4(1.0f, 1.0f, 1.0f, 0.65f), CUI::CORNER_ALL, 5.0f);
-    MainView.Margin(5.0f, &MainView);
-	RenderTools()->DrawUIRect(&MainView, vec4(0, 0, 0, 1.0f), 0, 0);
-
-	MainView.Margin(3.0f, &MainView);
-
-	//Render Title
-    TextRender()->TextColor(1.0f, 0.39f, 0.0f, 0.95f);
-    TextRender()->Text(0x0, MainView.x, MainView.y, 8.0f, "Synchronizing Map...", -1);
-    TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-	//Render Progress
-	CUIRect Progress;
-	MainView.HSplitBottom(15.0f, &MainView, &Progress);
-    float SizeBlock = (Progress.w-55)/10;
-    float SizeVBlock = (Progress.w-55)/9;
-    int NumEBlocks = (((Progress.w-55)*Client()->MapSyncAmount())/Client()->MapSyncTotalsize())/SizeVBlock;
-    CUIRect PBlock;
-    PBlock.w = SizeBlock;
-    PBlock.h = Progress.h-10;
-    PBlock.y = Progress.y+5;
-    for (int i=0; i<10; i++)
-    {
-        int CornerType = 0;
-        PBlock.x = Progress.x+(i*SizeBlock)+((i+1)*5.0f);
-
-        if (i == 0)
-            CornerType = CUI::CORNER_L;
-        else if (i == 9)
-            CornerType = CUI::CORNER_R;
-
-        if (i <= NumEBlocks)
-            RenderTools()->DrawUIRect(&PBlock, vec4(1.0f, 1.0f, 1.0f, 0.5f), CornerType, 5.0f);
-        else
-            RenderTools()->DrawUIRect(&PBlock, vec4(0.85f, 0.85f, 0.85f, 0.2f), CornerType, 5.0f);
-    }
-
-    float Prog = (Client()->MapSyncAmount()*100.0f)/Client()->MapSyncTotalsize();
-    str_format(aBuf, sizeof(aBuf), "%.2f%c", Prog, '%');
-    Progress.y+=4.0f;
-    UI()->DoLabel(&Progress, aBuf, 6.f, 0, -1);
-    //
-}
 
 void CHud::RenderRecord()
 {
@@ -1118,54 +953,6 @@ void CHud::RenderRecord()
 	}
 
 	 TextRender()->TextColor(1.0f,1.0f,1.0f,1.0f);
-}
-
-void CHud::RenderIRCNotifications()
-{
-    if (!g_Config.m_hcIrcNoti || m_pClient->Irc()->GetState() != IIrc::STATE_CONNECTED)
-        return;
-
-    int nrooms=0;
-    for (int i=0; i<m_pClient->Irc()->GetNumComs(); i++)
-    {
-        CIrcCom *pCom = m_pClient->Irc()->GetCom(i);
-        if (!pCom || pCom->m_NumUnreadMsg <= 0)
-            continue;
-
-        nrooms++;
-    }
-
-    if (nrooms <= 0)
-        return;
-
-    CUIRect PRec;
-    PRec.x = m_Width-80.0f; PRec.y=m_Height/2;
-    PRec.w = 80.0f; PRec.h = 8.0f*nrooms;
-    RenderTools()->DrawUIRect(&PRec, vec4(0.0f, 0.0f, 0.0f, 0.15f), CUI::CORNER_L, 5.0f);
-
-    char aBuf[124];
-    nrooms = 0;
-    for (int i=0; i<m_pClient->Irc()->GetNumComs(); i++)
-    {
-        CIrcCom *pCom = m_pClient->Irc()->GetCom(i);
-        if (!pCom || pCom->m_NumUnreadMsg <= 0)
-            continue;
-
-        if (pCom->GetType() == CIrcCom::TYPE_CHANNEL)
-        {
-            CComChan *pChan = static_cast<CComChan*>(pCom);
-            str_format(aBuf, sizeof(aBuf), "[%d] %s", pCom->m_NumUnreadMsg, pChan->m_Channel);
-        }
-        else
-        {
-            CComQuery *pQuery = static_cast<CComQuery*>(pCom);
-            str_format(aBuf, sizeof(aBuf), "[%d] %s", pCom->m_NumUnreadMsg, pQuery->m_User);
-        }
-
-
-        TextRender()->Text(0, m_Width-70.0f, m_Height/2+(8.0f*nrooms), 6, aBuf, -1);
-        nrooms++;
-    }
 }
 
 void CHud::OnMessage(int MsgType, void *pRawMsg)

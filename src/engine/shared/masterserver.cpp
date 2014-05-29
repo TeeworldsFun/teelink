@@ -17,6 +17,7 @@ public:
 	struct CMasterInfo
 	{
 		char m_aHostname[128];
+		int m_Count; // H-Client: DDNet
 		NETADDR m_Addr;
 		bool m_Valid;
 
@@ -33,7 +34,7 @@ public:
 	CMasterInfo m_aMasterServers[MAX_MASTERSERVERS];
 	int m_State;
 	IEngine *m_pEngine;
-	IStorageTW *m_pStorage;
+	IStorage *m_pStorage;
 
 	CMasterServer()
 	{
@@ -115,7 +116,7 @@ public:
 	virtual void Init()
 	{
 		m_pEngine = Kernel()->RequestInterface<IEngine>();
-		m_pStorage = Kernel()->RequestInterface<IStorageTW>();
+		m_pStorage = Kernel()->RequestInterface<IStorage>();
 	}
 
 	virtual void SetDefault()
@@ -131,7 +132,7 @@ public:
 			return -1;
 
 		// try to open file
-		IOHANDLE File = m_pStorage->OpenFile("masters.cfg", IOFLAG_READ, IStorageTW::TYPE_SAVE);
+		IOHANDLE File = m_pStorage->OpenFile("masters.cfg", IOFLAG_READ, IStorage::TYPE_SAVE);
 		if(!File)
 			return -1;
 
@@ -184,7 +185,7 @@ public:
 			return -1;
 
 		// try to open file
-		IOHANDLE File = m_pStorage->OpenFile("masters.cfg", IOFLAG_WRITE, IStorageTW::TYPE_SAVE);
+		IOHANDLE File = m_pStorage->OpenFile("masters.cfg", IOFLAG_WRITE, IStorage::TYPE_SAVE);
 		if(!File)
 			return -1;
 
@@ -192,18 +193,30 @@ public:
 		{
 			char aAddrStr[NETADDR_MAXSTRSIZE];
 			if(m_aMasterServers[i].m_Addr.type != NETTYPE_INVALID)
-				net_addr_str(&m_aMasterServers[i].m_Addr, aAddrStr, sizeof(aAddrStr));
+				net_addr_str(&m_aMasterServers[i].m_Addr, aAddrStr, sizeof(aAddrStr), true);
 			else
 				aAddrStr[0] = 0;
 			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), "%s %s\n", m_aMasterServers[i].m_aHostname, aAddrStr);
-
+			str_format(aBuf, sizeof(aBuf), "%s %s", m_aMasterServers[i].m_aHostname, aAddrStr);
 			io_write(File, aBuf, str_length(aBuf));
+			io_write_newline(File);
 		}
 
 		io_close(File);
 		return 0;
 	}
+
+	// H-Client: DDNet
+    virtual int GetCount(int Index)
+	{
+		return m_aMasterServers[Index].m_Count;
+	}
+
+	virtual void SetCount(int Index, int Count)
+	{
+		m_aMasterServers[Index].m_Count = Count;
+	}
+	//
 };
 
 IEngineMasterServer *CreateEngineMasterServer() { return new CMasterServer; }

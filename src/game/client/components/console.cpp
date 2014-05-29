@@ -25,7 +25,6 @@
 #include <game/client/render.h>
 #include <game/client/components/controls.h>
 #include <game/client/components/menus.h>
-#include <game/client/components/serveradmin.h>
 
 #include "console.h"
 
@@ -406,18 +405,6 @@ void CGameConsole::OnRender()
 		float x = 3;
 		float y = ConsoleHeight - RowHeight - 5.0f;
 
-	    //H-Client
-        static bool mousePress = false;
-        static float copyStart = -1.0f;
-        static float copyEnd = -1.0f;
-        static int copyIndexStart = -1;
-        static int copyIndexEnd = -1;
-        static int selectedLine = -1;
-        static CUIRect textRect;
-        textRect.h = FontSize+3.0f;
-        static std::string sText;
-        //
-
 		CRenderInfo Info;
 		Info.m_pSelf = this;
 		Info.m_WantedCompletion = pConsole->m_CompletionChosen;
@@ -447,12 +434,6 @@ void CGameConsole::OnRender()
 
 		x = Cursor.m_X;
 
-		// render console input (wrap line)
-		int Lines = TextRender()->TextLineCount(0, FontSize, pConsole->m_Input.GetString(), Screen.w - 10.0f - x);
-		y -= (Lines - 1) * FontSize;
-		TextRender()->SetCursor(&Cursor, x, y, FontSize, TEXTFLAG_RENDER);
-		Cursor.m_LineWidth = Screen.w - 10.0f - x;
-
 		//hide rcon password
 		char aInputString[256];
 		str_copy(aInputString, pConsole->m_Input.GetString(), sizeof(aInputString));
@@ -462,19 +443,22 @@ void CGameConsole::OnRender()
 				aInputString[i] = '*';
 		}
 
-        //H-Client
-        if (copyIndexStart != -1)
-        {
-            textRect.x = copyStart;
-            textRect.w = copyEnd-copyStart;
-            RenderTools()->DrawUIRect(&textRect, vec4(0.0f,0.0f,1.0f,1.0f), 0, 0.0f);
-        }
-        //
+		// render console input (wrap line)
+		TextRender()->SetCursor(&Cursor, x, y, FontSize, 0);
+		Cursor.m_LineWidth = Screen.w - 10.0f - x;
+		TextRender()->TextEx(&Cursor, aInputString, pConsole->m_Input.GetCursorOffset());
+		TextRender()->TextEx(&Cursor, aInputString+pConsole->m_Input.GetCursorOffset(), -1);
+		int Lines = Cursor.m_LineCount;
+
+		y -= (Lines - 1) * FontSize;
+		TextRender()->SetCursor(&Cursor, x, y, FontSize, TEXTFLAG_RENDER);
+		Cursor.m_LineWidth = Screen.w - 10.0f - x;
 
 		TextRender()->TextEx(&Cursor, aInputString, pConsole->m_Input.GetCursorOffset());
 		static float MarkerOffset = TextRender()->TextWidth(0, FontSize, "|", -1)/3;
 		CTextCursor Marker = Cursor;
 		Marker.m_X -= MarkerOffset;
+		Marker.m_LineWidth = -1;
 		TextRender()->TextEx(&Marker, "|", -1);
 		TextRender()->TextEx(&Cursor, aInputString+pConsole->m_Input.GetCursorOffset(), -1);
 
@@ -509,7 +493,6 @@ void CGameConsole::OnRender()
 		float LineOffset = 1.0f;
 		for(int Page = 0; Page <= pConsole->m_BacklogActPage; ++Page, OffsetY = 0.0f)
 		{
-		    int lineNum=0;
 			while(pEntry)
 			{
 				// get y offset (calculate it if we haven't yet)
@@ -529,86 +512,11 @@ void CGameConsole::OnRender()
 				//	just render output from actual backlog page (render bottom up)
 				if(Page == pConsole->m_BacklogActPage)
 				{
-                    //H-Client: Copy
-                    int mx, my;
-                    Input()->MousePos(&mx, &my);
-                    Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
-                    mx = (mx/(float)Graphics()->ScreenWidth())*Screen.w;
-                    my = (my/(float)Graphics()->ScreenHeight())*Screen.h;
-
-                    int strWidth = TextRender()->TextWidth(Cursor.m_pFont, FontSize, sText.c_str(), sText.length());
-                    CUIRect seltextRect = {0, y-OffsetY, strWidth, FontSize+3.0f};
-
-                    if (my > seltextRect.y && my < seltextRect.y+seltextRect.h)
-                    {
-                        if (selectedLine == -1)
-                            sText = pEntry->m_aText;
-
-                        float offacumx = 0;
-                        float charwi = 0;
-                        int i=0;
-                        for (i=0; i<sText.length(); i++)
-                        {
-                            char toAn[2] = { sText.at(i), '\0' };
-                            charwi = TextRender()->TextWidth(0, FontSize, toAn, 1);
-                            if (mx >= offacumx && mx <= offacumx+charwi)
-                                break;
-
-                            offacumx+=charwi;
-                        }
-
-                        if (mousePress && copyStart == -1)
-                        {
-                            textRect.y = seltextRect.y;
-                            textRect.h = seltextRect.h;
-                            copyStart = offacumx;
-                            copyEnd = offacumx+charwi;
-                            copyIndexStart = i;
-                            copyIndexEnd = i+1;
-                            selectedLine = lineNum;
-                        }
-                        if (mousePress && copyStart != -1)
-                        {
-                            copyEnd = offacumx;
-                            if (copyEnd < copyStart)
-                            {
-                                copyEnd = copyStart;
-                                copyIndexEnd = copyIndexStart;
-                            }
-                            else
-                                copyIndexEnd = i;
-                        }
-
-                        if (Input()->MousePressed(1))
-                        {
-                            mousePress = true;
-                        }
-                    }
-
-                    if (!Input()->MousePressed(1) && mousePress)
-                    {
-                        if (copyIndexStart != -1 && !sText.empty() && copyIndexEnd <= sText.length())
-                        {
-                            SetClipboardText(sText.substr(copyIndexStart, copyIndexEnd-copyIndexStart).c_str());
-                            dbg_msg("Clipboard", "Copied '%s' to clipboard...", sText.substr(copyIndexStart, copyIndexEnd-copyIndexStart).c_str());
-                        }
-
-                        copyStart = -1.0f;
-                        copyEnd = -1.0f;
-                        copyIndexStart = -1;
-                        copyIndexEnd = -1;
-                        selectedLine = -1;
-                        sText.clear();
-                        mousePress = false;
-                    }
-                    //
-
 					TextRender()->SetCursor(&Cursor, 0.0f, y-OffsetY, FontSize, TEXTFLAG_RENDER);
 					Cursor.m_LineWidth = Screen.w-10.0f;
 					TextRender()->TextEx(&Cursor, pEntry->m_aText, -1);
 				}
 				pEntry = pConsole->m_Backlog.Prev(pEntry);
-				lineNum++;
 			}
 
 			//	actual backlog page number is too high, render last available page (current checked one, render top down)
@@ -714,19 +622,13 @@ void CGameConsole::Dump(int Type)
 
 	str_timestamp(aDate, sizeof(aDate));
 	str_format(aFilename, sizeof(aFilename), "dumps/%s_dump_%s.txt", Type==CONSOLETYPE_REMOTE?"remote_console":"local_console", aDate);
-	IOHANDLE io = Storage()->OpenFile(aFilename, IOFLAG_WRITE, IStorageTW::TYPE_SAVE);
+	IOHANDLE io = Storage()->OpenFile(aFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 	if(io)
 	{
-		#if defined(CONF_FAMILY_WINDOWS)
-			static const char Newline[] = "\r\n";
-		#else
-			static const char Newline[] = "\n";
-		#endif
-
 		for(CInstance::CBacklogEntry *pEntry = pConsole->m_Backlog.First(); pEntry; pEntry = pConsole->m_Backlog.Next(pEntry))
 		{
 			io_write(io, pEntry->m_aText, str_length(pEntry->m_aText));
-			io_write(io, Newline, sizeof(Newline)-1);
+			io_write_newline(io);
 		}
 		io_close(io);
 	}
@@ -782,17 +684,7 @@ void CGameConsole::PrintLine(int Type, const char *pLine)
 	if(Type == CONSOLETYPE_LOCAL)
 		m_LocalConsole.PrintLine(pLine);
 	else if(Type == CONSOLETYPE_REMOTE)
-	{
 		m_RemoteConsole.PrintLine(pLine);
-
-        //H-Client
-        if (m_pClient->m_pServerAdmin->IsActive())
-        {
-            if (str_find_nocase(pLine, "Wrong password"))
-                m_pClient->m_pServerAdmin->SetError(pLine);
-        }
-        //
-	}
 }
 
 void CGameConsole::OnConsoleInit()

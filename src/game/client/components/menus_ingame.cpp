@@ -8,8 +8,6 @@
 #include <engine/graphics.h>
 #include <engine/serverbrowser.h>
 #include <engine/textrender.h>
-#include <engine/storage.h> //H-Client: Ghost
-#include <engine/keys.h> //H-Client: Ghost
 #include <engine/shared/config.h>
 
 #include <game/generated/protocol.h>
@@ -24,13 +22,12 @@
 #include "menus.h"
 #include "motd.h"
 #include "voting.h"
-#include "ghost.h" //H-Client: Ghost
 
 void CMenus::RenderGame(CUIRect MainView)
 {
 	CUIRect Button, ButtonBar;
 	MainView.HSplitTop(45.0f, &ButtonBar, &MainView);
-	RenderTools()->DrawUIRect(&ButtonBar, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+	RenderTools()->DrawUIRect(&ButtonBar, HexToVec4(g_Config.m_hcContainerBackgroundColor), CUI::CORNER_ALL, 10.0f);
 
 	// button bar
 	ButtonBar.HSplitTop(10.0f, 0, &ButtonBar);
@@ -110,40 +107,16 @@ void CMenus::RenderGame(CUIRect MainView)
 		else
 			Client()->DemoRecorder_Stop();
 	}
-
-    CServerInfo Info;
-    Client()->GetServerInfo(&Info);
-    if (str_find_nocase(Info.m_aGameType, "race"))
-    {
-        ms_ColorTabbarActive = vec4(1,1,1,0.85f);
-        ms_ColorTabbarInactive = vec4(1,1,1,0.15f);
-
-        ButtonBar.VSplitLeft(100.0f, 0, &ButtonBar);
-        ButtonBar.VSplitLeft(150.0f, &Button, &ButtonBar);
-        static int s_GhostButton=0;
-        if(DoButton_MenuTab(&s_GhostButton, Localize("Ghost"), g_Config.m_UiSubPage==SUBPAGE_GHOST, &Button, 0))
-        {
-            if (g_Config.m_UiSubPage == SUBPAGE_GHOST)
-                g_Config.m_UiSubPage = 0;
-            else
-                g_Config.m_UiSubPage = SUBPAGE_GHOST;
-        }
-        ms_ColorTabbarActive = vec4(0,0,0,0.85f);
-        ms_ColorTabbarInactive = vec4(0,0,0,0.15f);
-
-        if (g_Config.m_UiSubPage == SUBPAGE_GHOST)
-            RenderGhost(MainView);
-    }
 }
 
 void CMenus::RenderPlayers(CUIRect MainView)
 {
 	CUIRect Button, ButtonBar, Options, Player;
-	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+	RenderTools()->DrawUIRect(&MainView, HexToVec4(g_Config.m_hcContainerBackgroundColor), CUI::CORNER_ALL, 10.0f);
 
 	// player options
 	MainView.Margin(10.0f, &Options);
-	RenderTools()->DrawUIRect(&Options, vec4(1.0f, 1.0f, 1.0f, 0.25f), CUI::CORNER_ALL, 10.0f);
+	RenderTools()->DrawUIRect(&Options, HexToVec4(g_Config.m_hcSubcontainerBackgroundColor), CUI::CORNER_ALL, 10.0f);
 	Options.Margin(10.0f, &Options);
 	Options.HSplitTop(50.0f, &Button, &Options);
 	UI()->DoLabelScaled(&Button, Localize("Player options"), 34.0f, -1);
@@ -185,7 +158,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 
 		Options.HSplitTop(28.0f, &ButtonBar, &Options);
 		if(Count++%2 == 0)
-			RenderTools()->DrawUIRect(&ButtonBar, vec4(1.0f, 1.0f, 1.0f, 0.25f), CUI::CORNER_ALL, 10.0f);
+			RenderTools()->DrawUIRect(&ButtonBar, HexToVec4(g_Config.m_hcListItemOddColor), CUI::CORNER_ALL, 10.0f);
 		ButtonBar.VSplitRight(220.0f, &Player, &ButtonBar);
 
 		// player info
@@ -210,15 +183,18 @@ void CMenus::RenderPlayers(CUIRect MainView)
 		ButtonBar.VSplitLeft(Width, &Button, &ButtonBar);
 		Button.VSplitLeft((Width-Button.h)/4.0f, 0, &Button);
 		Button.VSplitLeft(Button.h, &Button, 0);
-		if(DoButton_Toggle(&s_aPlayerIDs[Index][0], m_pClient->m_aClients[Index].m_ChatIgnore, &Button))
-			m_pClient->m_aClients[Index].m_ChatIgnore ^= 1;
+		if(g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[Index].m_Friend)
+			DoButton_Toggle(&s_aPlayerIDs[Index][0], 1, &Button, false);
+		else
+			if(DoButton_Toggle(&s_aPlayerIDs[Index][0], m_pClient->m_aClients[Index].m_ChatIgnore, &Button, true))
+				m_pClient->m_aClients[Index].m_ChatIgnore ^= 1;
 
 		// friend button
 		ButtonBar.VSplitLeft(20.0f, &Button, &ButtonBar);
 		ButtonBar.VSplitLeft(Width, &Button, &ButtonBar);
 		Button.VSplitLeft((Width-Button.h)/4.0f, 0, &Button);
 		Button.VSplitLeft(Button.h, &Button, 0);
-		if(DoButton_Toggle(&s_aPlayerIDs[Index][1], m_pClient->m_aClients[Index].m_Friend, &Button))
+		if(DoButton_Toggle(&s_aPlayerIDs[Index][1], m_pClient->m_aClients[Index].m_Friend, &Button, true))
 		{
 			if(m_pClient->m_aClients[Index].m_Friend)
 				m_pClient->Friends()->RemoveFriend(m_pClient->m_aClients[Index].m_aName, m_pClient->m_aClients[Index].m_aClan);
@@ -289,7 +265,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	Client()->GetServerInfo(&CurrentServerInfo);
 
 	// render background
-	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+	RenderTools()->DrawUIRect(&MainView, HexToVec4(g_Config.m_hcContainerBackgroundColor), CUI::CORNER_ALL, 10.0f);
 
 	CUIRect View, ServerInfo, GameInfo, Motd;
 
@@ -304,7 +280,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	// serverinfo
 	View.HSplitTop(View.h/2/UI()->Scale()-5.0f, &ServerInfo, &Motd);
 	ServerInfo.VSplitLeft(View.w/2/UI()->Scale()-5.0f, &ServerInfo, &GameInfo);
-	RenderTools()->DrawUIRect(&ServerInfo, vec4(1,1,1,0.25f), CUI::CORNER_ALL, 10.0f);
+	RenderTools()->DrawUIRect(&ServerInfo, HexToVec4(g_Config.m_hcSubcontainerBackgroundColor), CUI::CORNER_ALL, 10.0f);
 
 	ServerInfo.Margin(5.0f, &ServerInfo);
 
@@ -348,7 +324,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 
 	// gameinfo
 	GameInfo.VSplitLeft(10.0f, 0x0, &GameInfo);
-	RenderTools()->DrawUIRect(&GameInfo, vec4(1,1,1,0.25f), CUI::CORNER_ALL, 10.0f);
+	RenderTools()->DrawUIRect(&GameInfo, HexToVec4(g_Config.m_hcSubcontainerBackgroundColor), CUI::CORNER_ALL, 10.0f);
 
 	GameInfo.Margin(5.0f, &GameInfo);
 
@@ -382,7 +358,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 
 	// motd
 	Motd.HSplitTop(10.0f, 0, &Motd);
-	RenderTools()->DrawUIRect(&Motd, vec4(1,1,1,0.25f), CUI::CORNER_ALL, 10.0f);
+	RenderTools()->DrawUIRect(&Motd, HexToVec4(g_Config.m_hcSubcontainerBackgroundColor), CUI::CORNER_ALL, 10.0f);
 	Motd.Margin(5.0f, &Motd);
 	y = 0.0f;
 	x = 5.0f;
@@ -451,7 +427,6 @@ void CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
 	m_CallvoteSelectedPlayer = Selected != -1 ? aPlayerIDs[Selected] : -1;
 }
 
-
 void CMenus::RenderServerControl(CUIRect MainView)
 {
     static int s_VoteOpt = 0; //H-Client
@@ -461,9 +436,9 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	// render background
 	CUIRect Bottom, Extended, TabBar, Button;
 	MainView.HSplitTop(20.0f, &Bottom, &MainView);
-	RenderTools()->DrawUIRect(&Bottom, ms_ColorTabbarActive, CUI::CORNER_T, 10.0f);
+	RenderTools()->DrawUIRect(&Bottom, HexToVec4(g_Config.m_hcContainerBackgroundColor), CUI::CORNER_T, 10.0f);
 	MainView.HSplitTop(20.0f, &TabBar, &MainView);
-	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_B, 10.0f);
+	RenderTools()->DrawUIRect(&MainView, HexToVec4(g_Config.m_hcContainerBackgroundColor), CUI::CORNER_B, 10.0f);
 	MainView.Margin(10.0f, &MainView);
 	MainViewM.Margin(10.0f, &MainViewM);
 	MainView.HSplitBottom(90.0f, &MainView, &Extended);
@@ -701,277 +676,3 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	}
 }
 
-//H-Client: Ghost
-int CMenus::GhostlistFetchCallback(const char *pName, int IsDir, int StorageType, void *pUser)
-{
-	CMenus *pSelf = (CMenus *)pUser;
-	int Length = str_length(pName);
-	if((pName[0] == '.' && (pName[1] == 0 ||
-		(pName[1] == '.' && pName[2] == 0))) ||
-		(!IsDir && (Length < 4 || str_comp(pName+Length-4, ".gho"))))
-		return 0;
-
-	CGhost::CGhostHeader Header;
-	if(!pSelf->m_pClient->m_pGhost->GetInfo(pName, &Header))
-		return 0;
-
-	CGhostItem Item;
-	str_copy(Item.m_aFilename, pName, sizeof(Item.m_aFilename));
-	str_copy(Item.m_aPlayer, Header.m_aOwner, sizeof(Item.m_aPlayer));
-	Item.m_Time = Header.m_Time;
-	Item.m_Active = false;
-	Item.m_ID = pSelf->m_lGhosts.add(Item);
-
-	return 0;
-}
-
-void CMenus::GhostlistPopulate()
-{
-	m_OwnGhost = 0;
-	m_lGhosts.clear();
-	Storage()->ListDirectory(IStorageTW::TYPE_ALL, "ghosts", GhostlistFetchCallback, this);
-
-	for(int i = 0; i < m_lGhosts.size(); i++)
-	{
-		if(str_comp(m_lGhosts[i].m_aPlayer, g_Config.m_PlayerName) == 0 && (!m_OwnGhost || m_lGhosts[i] < *m_OwnGhost))
-			m_OwnGhost = &m_lGhosts[i];
-	}
-
-	if(m_OwnGhost)
-	{
-		m_OwnGhost->m_ID = -1;
-		m_OwnGhost->m_Active = true;
-		m_pClient->m_pGhost->Load(m_OwnGhost->m_aFilename, -1);
-	}
-}
-
-void CMenus::RenderGhost(CUIRect MainView)
-{
-	// render background
-	MainView.HSplitTop(10.0f, 0, &MainView);
-	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
-
-	MainView.Margin(10.0f, &MainView);
-
-	CUIRect Headers, Status;
-	CUIRect View = MainView;
-
-	View.HSplitTop(17.0f, &Headers, &View);
-	View.HSplitBottom(28.0f, &View, &Status);
-
-	// split of the scrollbar
-	RenderTools()->DrawUIRect(&Headers, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f);
-	Headers.VSplitRight(20.0f, &Headers, 0);
-
-	struct CColumn
-	{
-		int m_Id;
-		CLocConstString m_Caption;
-		float m_Width;
-		CUIRect m_Rect;
-		CUIRect m_Spacer;
-	};
-
-	enum
-	{
-		COL_ACTIVE=0,
-		COL_NAME,
-		COL_TIME,
-	};
-
-	static CColumn s_aCols[] = {
-		{-1,			" ",		            2.0f,		{0}, {0}},
-		{COL_ACTIVE,	" ",		            30.0f,		{0}, {0}},
-		{COL_NAME,		Localize("Name"),		300.0f,		{0}, {0}},
-		{COL_TIME,		Localize("Time"),		200.0f,		{0}, {0}},
-	};
-
-	int NumCols = sizeof(s_aCols)/sizeof(CColumn);
-
-	// do layout
-	for(int i = 0; i < NumCols; i++)
-	{
-		Headers.VSplitLeft(s_aCols[i].m_Width, &s_aCols[i].m_Rect, &Headers);
-
-		if(i+1 < NumCols)
-			Headers.VSplitLeft(2, &s_aCols[i].m_Spacer, &Headers);
-	}
-
-	// do headers
-	for(int i = 0; i < NumCols; i++)
-		DoButton_GridHeader(s_aCols[i].m_Caption, s_aCols[i].m_Caption, 0, &s_aCols[i].m_Rect);
-
-	RenderTools()->DrawUIRect(&View, vec4(0,0,0,0.15f), 0, 0);
-
-	CUIRect Scroll;
-	View.VSplitRight(15, &View, &Scroll);
-
-	int NumGhosts = m_lGhosts.size();
-
-	int Num = (int)(View.h/s_aCols[0].m_Rect.h) + 1;
-	static int s_ScrollBar = 0;
-	static float s_ScrollValue = 0;
-
-	Scroll.HMargin(5.0f, &Scroll);
-	s_ScrollValue = DoScrollbarV(&s_ScrollBar, &Scroll, s_ScrollValue);
-
-	int ScrollNum = NumGhosts-Num+1;
-	if(ScrollNum > 0)
-	{
-		if(Input()->KeyPresses(KEY_MOUSE_WHEEL_UP))
-			s_ScrollValue -= 1.0f/ScrollNum;
-		if(Input()->KeyPresses(KEY_MOUSE_WHEEL_DOWN))
-			s_ScrollValue += 1.0f/ScrollNum;
-	}
-	else
-		ScrollNum = 0;
-
-	static int s_SelectedIndex = 0;
-	for(int i = 0; i < m_NumInputEvents; i++)
-	{
-		int NewIndex = -1;
-		if(m_aInputEvents[i].m_Flags&IInput::FLAG_PRESS)
-		{
-			if(m_aInputEvents[i].m_Key == KEY_DOWN) NewIndex = s_SelectedIndex + 1;
-			if(m_aInputEvents[i].m_Key == KEY_UP) NewIndex = s_SelectedIndex - 1;
-		}
-		if(NewIndex > -1 && NewIndex < NumGhosts)
-		{
-			//scroll
-			float IndexY = View.y - s_ScrollValue*ScrollNum*s_aCols[0].m_Rect.h + NewIndex*s_aCols[0].m_Rect.h;
-			int Scroll = View.y > IndexY ? -1 : View.y+View.h < IndexY+s_aCols[0].m_Rect.h ? 1 : 0;
-			if(Scroll)
-			{
-				if(Scroll < 0)
-				{
-					int NumScrolls = (View.y-IndexY+s_aCols[0].m_Rect.h-1.0f)/s_aCols[0].m_Rect.h;
-					s_ScrollValue -= (1.0f/ScrollNum)*NumScrolls;
-				}
-				else
-				{
-					int NumScrolls = (IndexY+s_aCols[0].m_Rect.h-(View.y+View.h)+s_aCols[0].m_Rect.h-1.0f)/s_aCols[0].m_Rect.h;
-					s_ScrollValue += (1.0f/ScrollNum)*NumScrolls;
-				}
-			}
-
-			s_SelectedIndex = NewIndex;
-		}
-	}
-
-	if(s_ScrollValue < 0) s_ScrollValue = 0;
-	if(s_ScrollValue > 1) s_ScrollValue = 1;
-
-	// set clipping
-	UI()->ClipEnable(&View);
-
-	CUIRect OriginalView = View;
-	View.y -= s_ScrollValue*ScrollNum*s_aCols[0].m_Rect.h;
-
-	int NewSelected = -1;
-
-	for (int i = 0; i < NumGhosts; i++)
-	{
-		const CGhostItem *pItem = &m_lGhosts[i];
-		CUIRect Row;
-		CUIRect SelectHitBox;
-
-		View.HSplitTop(17.0f, &Row, &View);
-		SelectHitBox = Row;
-
-		// make sure that only those in view can be selected
-		if(Row.y+Row.h > OriginalView.y && Row.y < OriginalView.y+OriginalView.h)
-		{
-			if(i == s_SelectedIndex)
-			{
-				CUIRect r = Row;
-				r.Margin(1.5f, &r);
-				RenderTools()->DrawUIRect(&r, vec4(1,1,1,0.5f), 0, 4.0f);
-			}
-
-			// clip the selection
-			if(SelectHitBox.y < OriginalView.y) // top
-			{
-				SelectHitBox.h -= OriginalView.y-SelectHitBox.y;
-				SelectHitBox.y = OriginalView.y;
-			}
-			else if(SelectHitBox.y+SelectHitBox.h > OriginalView.y+OriginalView.h) // bottom
-				SelectHitBox.h = OriginalView.y+OriginalView.h-SelectHitBox.y;
-
-			if(UI()->DoButtonLogic(pItem, "", 0, &SelectHitBox))
-			{
-				NewSelected = i;
-			}
-		}
-
-		for(int c = 0; c < NumCols; c++)
-		{
-			CUIRect Button;
-			Button.x = s_aCols[c].m_Rect.x;
-			Button.y = Row.y;
-			Button.h = Row.h;
-			Button.w = s_aCols[c].m_Rect.w;
-
-			int Id = s_aCols[c].m_Id;
-
-			if(Id == COL_ACTIVE)
-			{
-				if(pItem->m_Active)
-				{
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
-					Graphics()->QuadsBegin();
-					RenderTools()->SelectSprite(SPRITE_OOP + 7);
-					IGraphics::CQuadItem QuadItem(Button.x+Button.w/2, Button.y+Button.h/2, 20.0f, 20.0f);
-					Graphics()->QuadsDraw(&QuadItem, 1);
-
-					Graphics()->QuadsEnd();
-				}
-			}
-			else if(Id == COL_NAME)
-			{
-				CTextCursor Cursor;
-				TextRender()->SetCursor(&Cursor, Button.x, Button.y, 12.0f * UI()->Scale(), TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
-				Cursor.m_LineWidth = Button.w;
-
-				char aBuf[128];
-				bool Own = m_OwnGhost && pItem == m_OwnGhost;
-				str_format(aBuf, sizeof(aBuf), "%s%s", pItem->m_aPlayer, Own?" (own)":"");
-				TextRender()->TextEx(&Cursor, aBuf, -1);
-			}
-			else if(Id == COL_TIME)
-			{
-				CTextCursor Cursor;
-				TextRender()->SetCursor(&Cursor, Button.x, Button.y, 12.0f * UI()->Scale(), TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
-				Cursor.m_LineWidth = Button.w;
-
-				char aBuf[64];
-				str_format(aBuf, sizeof(aBuf), "%02d:%06.3f", (int)pItem->m_Time/60, pItem->m_Time-((int)pItem->m_Time/60*60));
-				TextRender()->TextEx(&Cursor, aBuf, -1);
-			}
-		}
-	}
-
-	if(NewSelected != -1)
-		s_SelectedIndex = NewSelected;
-
-	CGhostItem *pGhost = &m_lGhosts[s_SelectedIndex];
-
-	UI()->ClipDisable();
-
-	RenderTools()->DrawUIRect(&Status, vec4(1,1,1,0.25f), CUI::CORNER_B, 5.0f);
-	Status.Margin(5.0f, &Status);
-
-	CUIRect Button;
-	Status.VSplitRight(120.0f, &Status, &Button);
-
-	static int s_GhostButton = 0;
-	const char *pText = pGhost->m_Active ? "Deactivate" : "Activate";
-
-	if(DoButton_Menu(&s_GhostButton, Localize(pText), 0, &Button) || (NewSelected != -1 && Input()->MouseDoubleClick()))
-	{
-		if(pGhost->m_Active)
-			m_pClient->m_pGhost->Unload(pGhost->m_ID);
-		else
-			m_pClient->m_pGhost->Load(pGhost->m_aFilename, pGhost->m_ID);
-		pGhost->m_Active ^= 1;
-	}
-}

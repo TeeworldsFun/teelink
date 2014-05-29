@@ -29,7 +29,7 @@
 == %s kazandı!
 
 -Page %d-
-== -Page %d-
+== -Sayfa %d-
 
 Abort
 == İptal
@@ -47,25 +47,25 @@ All
 == Hepsi
 
 Alpha
-== Alfa
+== Şeffaflık
 
 Always show name plates
-== İsim etiketlerini herzaman göster
+== Oyuncu isimlerini her zaman göster
 
 Are you sure that you want to delete the demo?
-== Bu demo dosyasını silmek istediğinize eminmisiniz?
+== Demo dosyasını silmek istediğinize emin misiniz?
 
 Are you sure that you want to quit?
-== Çıkmak istediğinize eminmisiniz?
+== Çıkmak istediğinize emin misiniz?
 
 Are you sure that you want to remove the player from your friends list?
 == Bu oyuncuyu arkadaş listenizden kaldırmak istediğinize emin misiniz?
 
 As this is the first time you launch the game, please enter your nick name below. It's recommended that you check the settings to adjust them to your liking before joining a server.
-== Oyunu ilk açışınız olduğundan takma adınızı giriniz. Bir oyuna katılmadan evvel ayarlara bakmanız ve isteğinize göre özelleştirmeniz önerilir.
+== Oyunu ilk açışınız olduğundan dolayı takma adınızı giriniz. Bir oyuna katılmadan önce ayarları incelemeniz ve isteklerinize göre özelleştirmeniz önerilir.
 
 Automatically record demos
-== Otomatik olarak demo kaydet
+== Demoları otomatik olarak kaydet
 
 Automatically take game over screenshot
 == Otomatik olarak oyun bitişinde ekran görüntüsü al
@@ -86,7 +86,7 @@ Change settings
 == Ayarları değiştir
 
 Chat
-== Chat
+== Sohbet
 
 Clan
 == Clan
@@ -95,7 +95,7 @@ Client
 == İstemci
 
 Close
-== Kapa
+== Kapat
 
 Compatible version
 == Uyumlu versiyon
@@ -107,7 +107,7 @@ Connecting to
 == Bağlanılıyor
 
 Connection Problems...
-== Bağlantı Hatası...
+== Bağlantı Hataları...
 
 Console
 == Konsol
@@ -122,16 +122,16 @@ Country
 == Ülke
 
 Crc:
-== Crc :
+== Crc:
 
 Created:
-== Hazırlandı :
+== Yaratıldı:
 
 Current
 == Şimdiki
 
 Current version: %s
-== Mevcut versyon : %s
+== Mevcut versiyon: %s
 
 Custom colors
 == Özel renkler
@@ -144,6 +144,9 @@ Delete demo
 
 Demo details
 == Demo ayrıntıları
+
+Demofile: %s
+== Demo dosyası
 
 Demos
 == Demolar
@@ -164,7 +167,7 @@ Draw!
 == Berabere!
 
 Dynamic Camera
-== Dinamik kamera
+== Dinamik Kamera
 
 Emoticon
 == Yüz ifadesi
@@ -224,7 +227,7 @@ Game type
 == Oyun türü
 
 Game types:
-== Oyun türü:
+== Oyun türleri:
 
 General
 == Genel
@@ -239,7 +242,7 @@ Hammer
 == Çekiç
 
 Has people playing
-== Oynayan insan bulunduran
+== Insan bulunduran
 
 High Detail
 == High Detail
@@ -302,10 +305,10 @@ Map:
 == Harita:
 
 Max Screenshots
-== Maksimum Ekran Alıntısı
+== Maksimum Ekran Alıntısı Sayısı
 
 Max demos
-== Maksimum Demo
+== Maksimum Demo Sayısı
 
 Maximum ping:
 == Maximum ping
@@ -365,7 +368,7 @@ No servers match your filter criteria
 == Filtre kriterlerinize uygun sunucu bulunamadı
 
 Ok
-== Ok
+== Tamam
 
 Open
 == Aç
@@ -387,6 +390,9 @@ Pistol
 
 Play
 == Oynat
+
+Play background music
+== Arkaplan müziğini çal
 
 Player
 == Oyuncu
@@ -410,7 +416,7 @@ Quick search:
 == Hızlı Arama :
 
 Quit
-== Çıkmak
+== Çıkış
 
 Quit anyway?
 == Çıkmak istediğinize emin misiniz?
@@ -455,13 +461,13 @@ Reset filter
 == Filitreleri varsayılanlara getir
 
 Reset to defaults
-== Réinitialiser
+== Varsayılanlara getir
 
 Rifle
-== Laser
+== Lazer
 
 Round
-== Round
+== Raund
 
 Sample rate
 == Sample rate
@@ -515,7 +521,7 @@ Show ingame HUD
 == Oyun içi HUD ı göster
 
 Show name plates
-== İsim etiketlerini göster
+== Oyuncu isimlerini göster
 
 Show only supported
 == Desteklenmeyen çözünürlükleri gizle
@@ -538,6 +544,12 @@ Sound volume
 Spectate
 == İzle
 
+Spectate next
+== Sıradakini izle
+
+Spectate previous
+== Öncekini izle
+
 Spectator mode
 == İzleyici modu
 
@@ -552,6 +564,9 @@ Standard map
 
 Stop record
 == Kaydı durdur
+
+Strict gametype filter
+== Sıkı oyun türü filtresi
 
 Sudden Death
 == Ani ölüm
@@ -578,7 +593,7 @@ The server is running a non-standard tuning on a pure game type.
 == Bu sunucu standart olmayan bir ayarı saf bir oyun türünde kullanıyor.
 
 There's an unsaved map in the editor, you might want to save it before you quit the game.
-== Editörde kaydedilmemiş bir harita var, kapatmadan evvel kaydetmek isteyebilirsiniz.
+== Editörde kaydedilmemiş bir harita var, kapatmadan önce kaydetmek isteyebilirsiniz.
 
 Time limit
 == Süre limiti
@@ -614,7 +629,7 @@ V-Sync
 == V-Sync
 
 Version
-== Versyon
+== Sürüm
 
 Version:
 == Versyon :
@@ -626,10 +641,10 @@ Vote description:
 == Açıklama :
 
 Vote no
-== Hayır oyu ver
+== Olumsuz oy ver
 
 Vote yes
-== Evet oyu ver
+== Olumlu oy ver
 
 Voting
 == Oylama
@@ -641,7 +656,7 @@ Weapon
 == Silah
 
 Welcome to Teeworlds
-== Teeworlds'e hoşgeldin
+== Teeworlds'e hoşgeldiniz
 
 Yes
 == Evet
@@ -650,30 +665,27 @@ You must restart the game for all settings to take effect.
 == Bütün ayarların aktif olması için oyunu yeniden başlatmalısınız.
 
 Your skin
-== Your skin
+== Sizin görünüşünüz
 
 no limit
 == limit yok
 
 ##### needs translation #####
 
-Demofile: %s
-== 
-
-Play background music
+Game paused
 == 
 
 Player country:
 == 
 
-Spectate next
+Respawn
 == 
 
-Spectate previous
-== 
-
-Strict gametype filter
+Show only chat messages from friends
 == 
 
 ##### old translations #####
+
+﻿
+== ## translated strings #####
 

@@ -23,9 +23,6 @@ public:
 
 	CCamera();
 	virtual void OnRender();
-
-private:
-    float m_TimeEffect;
 };
 
 #endif

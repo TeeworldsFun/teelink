@@ -15,7 +15,7 @@ public:
 	CNetObj_PlayerInput m_LastData;
 	int m_InputDirectionLeft;
 	int m_InputDirectionRight;
-	bool m_ShowHookColl;
+	bool m_ShowHookColl; // H-Client
 
 	CControls();
 

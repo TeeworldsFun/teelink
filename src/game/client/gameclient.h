@@ -8,9 +8,8 @@
 #include <engine/console.h>
 #include <game/layers.h>
 #include <game/gamecore.h>
+#include <game/teamscore.h>
 #include "render.h"
-#include <vector>
-#include <string>
 
 class CGameClient : public IGameClient
 {
@@ -40,16 +39,14 @@ class CGameClient : public IGameClient
 	class IClient *m_pClient;
 	class ISound *m_pSound;
 	class IConsole *m_pConsole;
-	class IStorageTW *m_pStorage;
+	class IStorage *m_pStorage;
 	class IDemoPlayer *m_pDemoPlayer;
 	class IDemoRecorder *m_pDemoRecorder;
 	class IServerBrowser *m_pServerBrowser;
-	class IServerManager *m_pServerManager; //H-Client
-	class IAutoUpdate *m_pAutoUpdate; //H-Client
-	class INews *m_pNews; //H-Client
-	class IIrc *m_pIrc; //H-Client
 	class IEditor *m_pEditor;
 	class IFriends *m_pFriends;
+	class IGeoIP *m_pGeoIP; //H-Client
+    class ITexturePack *m_pTexturePack; //H-Client
 
 	CLayers m_Layers;
 	class CCollision m_Collision;
@@ -77,21 +74,19 @@ public:
 	class CUI *UI() { return &m_UI; }
 	class ISound *Sound() const { return m_pSound; }
 	class IInput *Input() const { return m_pInput; }
-	class IStorageTW *Storage() const { return m_pStorage; }
+	class IStorage *Storage() const { return m_pStorage; }
 	class IConsole *Console() { return m_pConsole; }
 	class ITextRender *TextRender() const { return m_pTextRender; }
 	class IDemoPlayer *DemoPlayer() const { return m_pDemoPlayer; }
 	class IDemoRecorder *DemoRecorder() const { return m_pDemoRecorder; }
 	class IServerBrowser *ServerBrowser() const { return m_pServerBrowser; }
-	class IServerManager *ServerManager() const { return m_pServerManager; } //H-Client
-	class IAutoUpdate *AutoUpdate() const { return m_pAutoUpdate; } //H-Client
-	class INews *News() const { return m_pNews; } //H-Client
-	class IIrc *Irc() const { return m_pIrc; } //H-Client
 	class CRenderTools *RenderTools() { return &m_RenderTools; }
 	class CLayers *Layers() { return &m_Layers; };
 	class CCollision *Collision() { return &m_Collision; };
 	class IEditor *Editor() { return m_pEditor; }
 	class IFriends *Friends() { return m_pFriends; }
+	class IGeoIP *GeoIP() const { return m_pGeoIP; } //H-Client
+	class ITexturePack *TexturePack() const { return m_pTexturePack; } //H-Client
 
 	int NetobjNumCorrections() { return m_NetObjHandler.NumObjCorrections(); }
 	const char *NetobjCorrectedOn() { return m_NetObjHandler.CorrectedObjOn(); }
@@ -100,36 +95,6 @@ public:
 	bool m_NewTick;
 	bool m_NewPredictedTick;
 	int m_FlagDropTick[2];
-
-    //H-CLient: TODO: move this
-	struct {
-	    int m_Items[NUM_ITEMS_INVENTORY];
-	    int m_Ammo[NUM_ITEMS_INVENTORY];
-        int m_Selected;
-	} m_Inventory;
-
-	std::vector<std::string> m_vMaps; //H-Client Maps
-	struct KillInfo
-	{
-	    int m_X;
-	    int m_Y;
-	    char m_aName[MAX_NAME_LENGTH];
-	    bool m_isDead;
-
-        KillInfo()
-        {
-            m_aName[0] = 0;
-            m_isDead = false;
-        }
-        KillInfo(vec2 pos, char name[], bool isdead)
-        {
-            m_X = pos.x;
-            m_Y = pos.y;
-            str_copy(m_aName, name, strlen(m_aName));
-            m_isDead = isdead;
-        }
-	};
-    std::list<KillInfo> m_KillInfo;
 
 	// TODO: move this
 	CTuningParams m_Tuning;
@@ -166,6 +131,7 @@ public:
 		const CNetObj_PlayerInfo *m_paPlayerInfos[MAX_CLIENTS];
 		const CNetObj_PlayerInfo *m_paInfoByScore[MAX_CLIENTS];
 		const CNetObj_PlayerInfo *m_paInfoByTeam[MAX_CLIENTS];
+		const CNetObj_PlayerInfo *m_paInfoByDDTeam[MAX_CLIENTS];
 
 		int m_LocalClientID;
 		int m_NumPlayers;
@@ -224,23 +190,23 @@ public:
 		bool m_ChatIgnore;
 		bool m_Friend;
 
-		//H-Client
-		struct CTeeRenderFreeze
-		{
+		void UpdateRenderInfo();
+		void Reset();
+
+        //H-Client
+        struct CTeeRenderFreeze
+        {
             bool m_Freezed;
             float m_TimerFreeze;
             float m_Alpha;
 
             void Reset() { m_Freezed = false; m_TimerFreeze = 0; m_Alpha = 0.0f; }
-		} m_FreezedState;
+        } m_FreezedState;
 
-		bool m_InWater;
-		vec2 m_LastPos;
-		float m_BlurEffectTimer;
-        //
-
-		void UpdateRenderInfo();
-		void Reset();
+        bool m_hasEndlessHook;
+        bool m_hasSuperJump;
+        bool m_hasJetPack;
+        int m_Score; // H-Client: DDNet
 	};
 
 	CClientData m_aClients[MAX_CLIENTS];
@@ -257,7 +223,6 @@ public:
 	virtual void OnConsoleInit();
 	virtual void OnStateChange(int NewState, int OldState);
 	virtual void OnMessage(int MsgId, CUnpacker *pUnpacker);
-	virtual void OnMessageIrc(const char *pFrom, const char *pUser, const char *pText);
 	virtual void OnNewSnapshot();
 	virtual void OnPredict();
 	virtual void OnActivateEditor();
@@ -271,7 +236,6 @@ public:
 	virtual const char *GetItemName(int Type);
 	virtual const char *Version();
 	virtual const char *NetVersion();
-	virtual const char *HClientNetVersion(); //H-Client
 
 
 	// actions
@@ -299,19 +263,15 @@ public:
 	class CVoting *m_pVoting;
 	class CScoreboard *m_pScoreboard;
 	class CItems *m_pItems;
-	class CPlayers *m_pPlayers;
+	class CMapLayers *m_pMapLayersBackGround;
+	class CMapLayers *m_pMapLayersForeGround;
 
-    //H-Client
-	class CServerAdmin *m_pServerAdmin;
-	class CGhost *m_pGhost; //Ghost
-
-	bool m_TakeInitScreenShot;
-	int IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos);
-	int LoadBackgroundMap(const char *map);
-	//
+    class CTeamsCore m_Teams; // H-Client: DDNet
+	bool m_TakeInitScreenShot; // H-Client
+	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2& NewPos2, int ownID); // H-Client
 
 private:
-    bool m_DDRaceMsgSent; //H-Client: DDRace
+	bool m_DDRaceMsgSent; //H-Client: DDRace
 };
 
 
@@ -338,8 +298,26 @@ inline vec3 HslToRgb(vec3 HSL)
 	}
 }
 
+// H-Client
+inline vec4 HexToVec4(const char *hex)
+{
+    char phex[3];
+    float values[4];
+    int i, o;
+    for (i=0,o=0; i<8; i+=2,o++)
+    {
+        phex[0]=hex[i];
+        phex[1]=hex[i+1];
+        phex[2]=0;
+        float nn = strtol(phex, NULL, 16);
+        values[o]=nn/255.0f;
+    }
+
+    return vec4(values[0], values[1], values[2], values[3]);
+}
+//
+
 
 extern const char *Localize(const char *Str);
-int SearchMapsCallback(const char *pName, int IsDir, int StorageType, void *pUser); //H-Client
 
 #endif

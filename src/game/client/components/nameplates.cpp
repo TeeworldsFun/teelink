@@ -21,7 +21,16 @@ void CNamePlates::RenderNameplate(
 
 	vec2 Position = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pPlayerChar->m_X, pPlayerChar->m_Y), IntraTick);
 
-    //H-Client
+    // H-Client: DDNet
+    bool OtherTeam;
+
+	if (m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_Team == TEAM_SPECTATORS && m_pClient->m_Snap.m_SpecInfo.m_SpectatorID == SPEC_FREEVIEW)
+		OtherTeam = false;
+	else if (m_pClient->m_Snap.m_SpecInfo.m_Active && m_pClient->m_Snap.m_SpecInfo.m_SpectatorID != SPEC_FREEVIEW)
+		OtherTeam = m_pClient->m_Teams.Team(pPlayerInfo->m_ClientID) != m_pClient->m_Teams.Team(m_pClient->m_Snap.m_SpecInfo.m_SpectatorID);
+	else
+		OtherTeam = m_pClient->m_Teams.Team(pPlayerInfo->m_ClientID) != m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientID);
+    // H-Client
     CServerInfo Info;
     Client()->GetServerInfo(&Info);
     //
@@ -39,6 +48,7 @@ void CNamePlates::RenderNameplate(
 
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.5f*a);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, a);
+
 		if(g_Config.m_ClNameplatesTeamcolors && m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS)
 		{
 			if(pPlayerInfo->m_Team == TEAM_RED)
@@ -47,7 +57,7 @@ void CNamePlates::RenderNameplate(
 				TextRender()->TextColor(0.7f, 0.7f, 1.0f, a);
 		}
 
-		//H-Client
+        //H-Client
         if (g_Config.m_hcColorClan && m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_aClan[0] != 0 && str_comp_nocase(m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_aClan, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_aClan) == 0)
             TextRender()->TextColor(0.7f, 0.7f, 0.2f, a);
         //
@@ -61,30 +71,24 @@ void CNamePlates::RenderNameplate(
 			TextRender()->Text(0, Position.x, Position.y-90, 28.0f, aBuf, -1);
 		}
 
-		TextRender()->TextColor(1,1,1,1);
+        TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 	}
-    //H-Client: Render DDRace Freeze Info
 	else if (g_Config.m_hcUseHUD && str_find_nocase(Info.m_aGameType, "ddrace") && m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_FreezedState.m_Freezed)
     {
+		// H-Client
         CNetObj_Character Prev;
         CNetObj_Character Player;
         Prev = *pPrevChar;
         Player = *pPlayerChar;
 
         // use preditect players if needed
-        if(pPlayerInfo->m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+        if((pPlayerInfo->m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK) && !(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
         {
-            if(!m_pClient->m_Snap.m_pLocalCharacter || (m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
-            {
-            }
-            else
-            {
-                // apply predicted results
-                m_pClient->m_PredictedChar.Write(&Player);
-                m_pClient->m_PredictedPrevChar.Write(&Prev);
-                IntraTick = Client()->PredIntraGameTick();
-            }
+            // apply predicted results
+            m_pClient->m_PredictedChar.Write(&Player);
+            m_pClient->m_PredictedPrevChar.Write(&Prev);
+            IntraTick = Client()->PredIntraGameTick();
         }
 
         Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), IntraTick);
@@ -99,7 +103,7 @@ void CNamePlates::RenderNameplate(
         TextRender()->TextColor(1.0f, 0.39f, 0.0f, 0.95f);
         TextRender()->Text(0x0, Position.x-Width/2, Position.y-45.0f, 14.0f, aBuf, -1);
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-	}
+    }
 }
 
 void CNamePlates::OnRender()

@@ -4,7 +4,7 @@
 #define ENGINE_CLIENT_SERVERBROWSER_H
 
 #include <engine/serverbrowser.h>
-#include <base/tl/array.h>
+#include <base/tl/array.h> // H-Client
 
 class CServerBrowser : public IServerBrowser
 {
@@ -14,34 +14,22 @@ public:
 	public:
 		NETADDR m_Addr;
 		int64 m_RequestTime;
+		bool m_Is64;
 		int m_GotInfo;
 		CServerInfo m_Info;
 
 		CServerEntry *m_pNextIp; // ip hashed list
+
 		CServerEntry *m_pPrevReq; // request list
 		CServerEntry *m_pNextReq;
 	};
 
 	enum
 	{
-		MAX_FAVORITES=256
+		MAX_FAVORITES=2048
 	};
 
 	CServerBrowser();
-
-    //H-Client
-	IStorageTW *m_pStorage;
-	IStorageTW *Storage() { return m_pStorage; }
-
-	array<CServerInfoReg> m_lServInfo;
-	unsigned int m_NumServInfoRegs;
-
-    bool SaveServerInfo();
-    bool LoadServerInfo();
-    void UpdateServerInfo(const char *address);
-    CServerInfoReg* GetServerInfoReg(const char *address);
-	//
-
 
 	// interface functions
 	void Refresh(int Type);
@@ -65,6 +53,24 @@ public:
 
 	void SetBaseInfo(class CNetClient *pClient, const char *pNetVersion);
 
+    // H-Client: DDNet
+	void RequestImpl64(const NETADDR &Addr, CServerEntry *pEntry) const;
+	void QueueRequest(CServerEntry *pEntry);
+	CServerEntry *Find(const NETADDR &Addr);
+
+    //H-Client
+	IStorage *m_pStorage;
+	IStorage *Storage() { return m_pStorage; }
+
+	array<CServerInfoReg> m_lServInfo;
+	unsigned int m_NumServInfoRegs;
+
+    bool SaveServerInfo();
+    bool LoadServerInfo();
+    void UpdateServerInfo(const char *address);
+    CServerInfoReg* GetServerInfoReg(const char *address);
+	//
+
 private:
 	CNetClient *m_pNetClient;
 	IMasterServer *m_pMasterServer;
@@ -84,6 +90,12 @@ private:
 	CServerEntry *m_pFirstReqServer; // request list
 	CServerEntry *m_pLastReqServer;
 	int m_NumRequests;
+	int m_MasterServerCount;
+
+	//used instead of g_Config.br_max_requests to get more servers
+	int m_CurrentMaxRequests;
+
+	int m_LastPacketTick;
 
 	int m_NeedRefresh;
 
@@ -115,11 +127,9 @@ private:
 	void Sort();
 	int SortHash() const;
 
-	CServerEntry *Find(const NETADDR &Addr);
 	CServerEntry *Add(const NETADDR &Addr);
 
 	void RemoveRequest(CServerEntry *pEntry);
-	void QueueRequest(CServerEntry *pEntry);
 
 	void RequestImpl(const NETADDR &Addr, CServerEntry *pEntry) const;
 

@@ -10,11 +10,10 @@
 #include <game/generated/client_data.h>
 #include <game/generated/protocol.h>
 #include <game/layers.h>
-
-#include <game/client/components/skins.h> //H-Client
-
 #include "animstate.h"
 #include "render.h"
+
+#include <game/client/components/skins.h> //H-Client
 
 static float gs_SpriteWScale;
 static float gs_SpriteHScale;
@@ -78,24 +77,15 @@ void CRenderTools::SelectSprite(CDataSprite *pSpr, int Flags, int sx, int sy)
 
 void CRenderTools::SelectSprite(int Id, int Flags, int sx, int sy)
 {
-	if(Id < 0 || Id > g_pData->m_NumSprites)
+	if(Id < 0 || Id >= g_pData->m_NumSprites)
 		return;
 	SelectSprite(&g_pData->m_aSprites[Id], Flags, sx, sy);
 }
 
-void CRenderTools::DrawSprite(float x, float y, float Size, bool mode3D)
+void CRenderTools::DrawSprite(float x, float y, float Size)
 {
-	if (mode3D)
-	{
-	    IGraphics::CQuadItem QuadItem(-((Size*gs_SpriteWScale)/2), -((Size*gs_SpriteHScale)/2), Size*gs_SpriteWScale, Size*gs_SpriteHScale);
-	    Graphics()->Texture3D(QuadItem, 7);
-	}
-
-	else
-	{
-	    IGraphics::CQuadItem QuadItem(x, y, Size*gs_SpriteWScale, Size*gs_SpriteHScale);
-        Graphics()->QuadsDraw(&QuadItem, 1);
-	}
+	IGraphics::CQuadItem QuadItem(x, y, Size*gs_SpriteWScale, Size*gs_SpriteHScale);
+	Graphics()->QuadsDraw(&QuadItem, 1);
 }
 
 void CRenderTools::DrawRoundRectExt(float x, float y, float w, float h, float r, int Corners)
@@ -358,7 +348,7 @@ void CRenderTools::RenderTilemapGenerateSkip(class CLayers *pLayers)
 				CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTmap->m_Data);
 				for(int y = 0; y < pTmap->m_Height; y++)
 				{
-					for(int x = 1; x < pTmap->m_Width; x++)
+					for(int x = 1; x < pTmap->m_Width;)
 					{
 						int sx;
 						for(sx = 1; x+sx < pTmap->m_Width && sx < 255; sx++)
@@ -367,10 +357,8 @@ void CRenderTools::RenderTilemapGenerateSkip(class CLayers *pLayers)
 								break;
 						}
 
-                        if (pTmap == pLayers->Lights() || pTmap == pLayers->MineTeeLayer() || pTmap == pLayers->MineTeeFGLayer() || pTmap == pLayers->MineTeeBGLayer())
-                            pTiles[y*pTmap->m_Width+x].m_Skip = 0;
-                        else
-                            pTiles[y*pTmap->m_Width+x].m_Skip = sx-1;
+						pTiles[y*pTmap->m_Width+x].m_Skip = sx-1;
+						x += sx;
 					}
 				}
 			}

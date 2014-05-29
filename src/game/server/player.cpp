@@ -21,9 +21,6 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
-
-	m_MineTeeTeam = 0; //H-Client
-    m_MineTeeSync = false; //H-Client
 }
 
 CPlayer::~CPlayer()
@@ -63,24 +60,37 @@ void CPlayer::Tick()
 		}
 	}
 
-	if(!m_pCharacter && m_Team == TEAM_SPECTATORS && m_SpectatorID == SPEC_FREEVIEW)
-		m_ViewPos -= vec2(clamp(m_ViewPos.x-m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y-m_LatestActivity.m_TargetY, -400.0f, 400.0f));
-
-	if(!m_pCharacter && m_DieTick+Server()->TickSpeed()*3 <= Server()->Tick())
-		m_Spawning = true;
-
-	if(m_pCharacter)
+	if(!GameServer()->m_World.m_Paused)
 	{
-		if(m_pCharacter->IsAlive())
-			m_ViewPos = m_pCharacter->m_Pos;
-		else
+		if(!m_pCharacter && m_Team == TEAM_SPECTATORS && m_SpectatorID == SPEC_FREEVIEW)
+			m_ViewPos -= vec2(clamp(m_ViewPos.x-m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y-m_LatestActivity.m_TargetY, -400.0f, 400.0f));
+
+		if(!m_pCharacter && m_DieTick+Server()->TickSpeed()*3 <= Server()->Tick())
+			m_Spawning = true;
+
+		if(m_pCharacter)
 		{
-			delete m_pCharacter;
-			m_pCharacter = 0;
+			if(m_pCharacter->IsAlive())
+			{
+				m_ViewPos = m_pCharacter->m_Pos;
+			}
+			else
+			{
+				delete m_pCharacter;
+				m_pCharacter = 0;
+			}
 		}
+		else if(m_Spawning && m_RespawnTick <= Server()->Tick())
+			TryRespawn();
 	}
-	else if(m_Spawning && m_RespawnTick <= Server()->Tick())
-		TryRespawn();
+	else
+	{
+		++m_RespawnTick;
+		++m_DieTick;
+		++m_ScoreStartTick;
+		++m_LastActionTick;
+		++m_TeamChangeTick;
+ 	}
 }
 
 void CPlayer::PostTick()
@@ -88,7 +98,7 @@ void CPlayer::PostTick()
 	// update latency value
 	if(m_PlayerFlags&PLAYERFLAG_SCOREBOARD)
 	{
-		for(int i = 0; i < MAX_CLIENTS-MAX_BOTS; ++i)
+		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 				m_aActLatency[i] = GameServer()->m_apPlayers[i]->m_Latency.m_Min;
@@ -231,7 +241,7 @@ void CPlayer::Respawn()
 		m_Spawning = true;
 }
 
-void CPlayer::SetTeam(int Team)
+void CPlayer::SetTeam(int Team, bool DoChatMsg)
 {
 	// clamp the team
 	Team = GameServer()->m_pController->ClampTeam(Team);
@@ -239,13 +249,17 @@ void CPlayer::SetTeam(int Team)
 		return;
 
 	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "'%s' joined the %s", Server()->ClientName(m_ClientID), GameServer()->m_pController->GetTeamName(Team));
-	GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	if(DoChatMsg)
+	{
+		str_format(aBuf, sizeof(aBuf), "'%s' joined the %s", Server()->ClientName(m_ClientID), GameServer()->m_pController->GetTeamName(Team));
+		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	}
 
 	KillCharacter();
 
 	m_Team = Team;
 	m_LastActionTick = Server()->Tick();
+	m_SpectatorID = SPEC_FREEVIEW;
 	// we got to wait 0.5 secs before respawning
 	m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", m_ClientID, Server()->ClientName(m_ClientID), m_Team);
@@ -267,28 +281,6 @@ void CPlayer::SetTeam(int Team)
 void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
-
-    if (str_find_nocase(GameServer()->GameType(),"minetee") && m_Team > TEAM_BLUE)
-    {
-        int Time = -1;
-        Time = (Server()->Tick()-GameServer()->m_pController->GetRoundStartTick()) / (float)Server()->TickSpeed();
-        bool MineTeeIsDay = (static_cast<int>(Time/300)%2)?false:true;
-        if (300 < 0)
-            MineTeeIsDay = true;
-
-        if (!MineTeeIsDay)
-        {
-            int Teams[2] = { TEAM_ANIMAL_TEECOW, TEAM_ANIMAL_TEEPIG };
-            m_Team = Teams[rand()%2];
-        }
-        else
-        {
-            int Teams[3] = { TEAM_ENEMY_TEEPER, TEAM_ENEMY_ZOMBITEE, TEAM_ENEMY_SKELETEE };
-            m_Team = Teams[rand()%3];
-        }
-
-        GameServer()->UpdateBotInfo(m_ClientID, m_Team);
-    }
 
 	if(!GameServer()->m_pController->CanSpawn(m_Team, &SpawnPos))
 		return;

@@ -19,7 +19,7 @@ protected:
 	class ITextRender *TextRender() const { return m_pClient->TextRender(); }
 	class IClient *Client() const { return m_pClient->Client(); }
 	class IInput *Input() const { return m_pClient->Input(); }
-	class IStorageTW *Storage() const { return m_pClient->Storage(); }
+	class IStorage *Storage() const { return m_pClient->Storage(); }
 	class CUI *UI() const { return m_pClient->UI(); }
 	class ISound *Sound() const { return m_pClient->Sound(); }
 	class CRenderTools *RenderTools() const { return m_pClient->RenderTools(); }
@@ -27,11 +27,9 @@ protected:
 	class IDemoPlayer *DemoPlayer() const { return m_pClient->DemoPlayer(); }
 	class IDemoRecorder *DemoRecorder() const { return m_pClient->DemoRecorder(); }
 	class IServerBrowser *ServerBrowser() const { return m_pClient->ServerBrowser(); }
-	class IServerManager *ServerManager() const { return m_pClient->ServerManager(); } //H-Client
-	class IAutoUpdate *AutoUpdate() const { return m_pClient->AutoUpdate(); } //H-Client
-	class IIrc *Irc() const { return m_pClient->Irc(); } //H-Client
 	class CLayers *Layers() const { return m_pClient->Layers(); }
 	class CCollision *Collision() const { return m_pClient->Collision(); }
+	class IGeoIP *GeoIP() const { return m_pClient->GeoIP(); } //H-Client
 public:
 	virtual ~CComponent() {}
 
@@ -43,7 +41,6 @@ public:
 	virtual void OnRelease() {};
 	virtual void OnMapLoad() {};
 	virtual void OnMessage(int Msg, void *pRawMsg) {}
-	virtual void OnMessageIrc(const char *pFrom, const char *pUser, const char *pText) {}
 	virtual bool OnMouseMove(float x, float y) { return false; }
 	virtual bool OnInput(IInput::CEvent e) { return false; }
 };

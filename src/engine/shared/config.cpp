@@ -8,7 +8,7 @@ CConfiguration g_Config;
 
 class CConfig : public IConfig
 {
-	IStorageTW *m_pStorage;
+	IStorage *m_pStorage;
 	IOHANDLE m_ConfigFile;
 
 	struct CCallback
@@ -46,7 +46,7 @@ public:
 
 	virtual void Init()
 	{
-		m_pStorage = Kernel()->RequestInterface<IStorageTW>();
+		m_pStorage = Kernel()->RequestInterface<IStorage>();
 		Reset();
 	}
 
@@ -76,7 +76,7 @@ public:
 	{
 		if(!m_pStorage)
 			return;
-		m_ConfigFile = m_pStorage->OpenFile("settings.cfg", IOFLAG_WRITE, IStorageTW::TYPE_SAVE);
+		m_ConfigFile = m_pStorage->OpenFile("settings.cfg", IOFLAG_WRITE, IStorage::TYPE_SAVE);
 
 		if(!m_ConfigFile)
 			return;
@@ -111,13 +111,8 @@ public:
 	{
 		if(!m_ConfigFile)
 			return;
-#if defined(CONF_FAMILY_WINDOWS)
-		static const char Newline[] = "\r\n";
-#else
-		static const char Newline[] = "\n";
-#endif
 		io_write(m_ConfigFile, pLine, str_length(pLine));
-		io_write(m_ConfigFile, Newline, sizeof(Newline)-1);
+		io_write_newline(m_ConfigFile);
 	}
 };
 

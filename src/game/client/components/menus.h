@@ -40,12 +40,12 @@ class CMenus : public CComponent
 
 	int DoButton_DemoPlayer(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 	int DoButton_Sprite(const void *pID, int ImageID, int SpriteID, int Checked, const CUIRect *pRect, int Corners);
-	int DoButton_Toggle(const void *pID, int Checked, const CUIRect *pRect);
-	int DoButton_Menu(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
-	int DoButton_MenuTab(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Corners);
+	int DoButton_Toggle(const void *pID, int Checked, const CUIRect *pRect, bool Active);
+	int DoButton_Menu(const void *pID, const char *pText, int Checked, const CUIRect *pRect, vec4 color = vec4(-1,0,0,0));
+	int DoButton_MenuTab(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Corners, int Align = 0, bool Background = true);
 	int DoButton_MenuTabIcon(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Corners, int imgID, float size, int sprID = -1);
 
-	int DoButton_CheckBox_Common(const void *pID, const char *pText, const char *pBoxText, const CUIRect *pRect);
+	int DoButton_CheckBox_Common(const void *pID, const char *pText, const char *pBoxText, const CUIRect *pRect, bool Checked = false);
 	int DoButton_CheckBox(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 	int DoButton_CheckBox_Number(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 
@@ -58,12 +58,6 @@ class CMenus : public CComponent
 	int DoButton_Icon(int ImageId, int SpriteId, const CUIRect *pRect);
 	int DoButton_GridHeader(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 
-    //H-Client
-    int DoButton_Menu_Common(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
-    int DoButton_File(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
-    vec4 GetButtonColor(const void *pID, int Checked);
-    //
-
 	//static void ui_draw_browse_icon(int what, const CUIRect *r);
 	//static void ui_draw_grid_header(const void *id, const char *text, int checked, const CUIRect *r, const void *extra);
 
@@ -71,7 +65,7 @@ class CMenus : public CComponent
 	static void ui_draw_checkbox(const void *id, const char *text, int checked, const CUIRect *r, const void *extra);
 	static void ui_draw_checkbox_number(const void *id, const char *text, int checked, const CUIRect *r, const void *extra);
 	*/
-	int DoEditBox(void *pID, const CUIRect *pRect, char *pStr, unsigned StrSize, float FontSize, float *Offset, bool Hidden=false, int Corners=CUI::CORNER_ALL, bool ASCII = false);
+	int DoEditBox(void *pID, const CUIRect *pRect, char *pStr, unsigned StrSize, float FontSize, float *Offset, bool Hidden=false, int Corners=CUI::CORNER_ALL);
 	//static int ui_do_edit_box(void *id, const CUIRect *rect, char *str, unsigned str_size, float font_size, bool hidden=false);
 
 	float DoScrollbarV(const void *pID, const CUIRect *pRect, float Current);
@@ -81,6 +75,8 @@ class CMenus : public CComponent
 
 	//static int ui_do_key_reader(void *id, const CUIRect *rect, int key);
 	void UiDoGetButtons(int Start, int Stop, CUIRect View);
+
+	float *ButtonFade(const void *pID, float Seconds, int Checked);
 
 	struct CListboxItem
 	{
@@ -95,8 +91,6 @@ class CMenus : public CComponent
 	CListboxItem UiDoListboxNextItem(const void *pID, bool Selected = false);
 	CListboxItem UiDoListboxNextRow();
 	int UiDoListboxEnd(float *pScrollValue, bool *pItemActivated);
-
-    float *ButtonFade(const void *pID, float Seconds, int Checked);
 
 	//static void demolist_listdir_callback(const char *name, int is_dir, void *user);
 	//static void demolist_list_callback(const CUIRect *rect, int index, void *user);
@@ -122,43 +116,19 @@ class CMenus : public CComponent
 	enum
 	{
 		PAGE_NEWS=1,
-		PAGE_IRC,
 		PAGE_GAME,
 		PAGE_PLAYERS,
 		PAGE_SERVER_INFO,
 		PAGE_CALLVOTE,
-		PAGE_SERVERS,
-		PAGE_LOCAL_SERVERS,
-		//PAGE_INTERNET,
-		//PAGE_LAN,
-		//PAGE_FAVORITES,
+		PAGE_INTERNET,
+		PAGE_LAN,
+		PAGE_FAVORITES,
 		PAGE_DEMOS,
 		PAGE_SETTINGS,
 		PAGE_SYSTEM,
-
-		//H-Client
-		SUBPAGE_GHOST,
-        SUBPAGE_INTERNET,
-        SUBPAGE_LAN,
-        SUBPAGE_FAVORITES,
-        SUBPAGE_HEROIAMARELO,
-        SUBPAGE_TEEWORLDS,
-
-        PANEL_SERVERS = 1,
-        PANEL_CHAT,
-	};
-
-	enum
-	{
-        DIALOG_NONE=0,
-        DIALOG_FILE,
-
-        MAX_PATH_LENGTH = 512,
 	};
 
 	int m_GamePage;
-	int m_GameSubPage; //H-Client
-	int m_GamePagePanel; //H-Client
 	int m_Popup;
 	int m_ActivePage;
 	bool m_MenuActive;
@@ -193,6 +163,8 @@ class CMenus : public CComponent
 	bool m_NeedRestartSound;
 	bool m_NeedSendinfo;
 	int m_SettingPlayerPage;
+
+	bool m_NeedUpdateThemesList; // H-Client
 
 	//
 	bool m_EscapePressed;
@@ -271,7 +243,6 @@ class CMenus : public CComponent
 	//void render_loading(float percent);
 	int RenderMenubar(CUIRect r);
 	void RenderNews(CUIRect MainView);
-	void RenderIrc(CUIRect MainView);
 
 	// found in menus_demo.cpp
 	void RenderDemoPlayer(CUIRect MainView);
@@ -287,7 +258,6 @@ class CMenus : public CComponent
 
 	// found in menus_browser.cpp
 	int m_SelectedIndex;
-	int m_OldSelectedIndex; //H-Client
 	int m_ScrollOffset;
 	void RenderServerbrowserServerList(CUIRect View);
 	void RenderServerbrowserServerDetail(CUIRect View);
@@ -307,24 +277,13 @@ class CMenus : public CComponent
 	void RenderSettingsSound(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
 
-	// found in menus_manager.cpp
-	void RenderServerManager(CUIRect MainView);
-	void RenderServersList(CUIRect MainView);
-	void RenderFileDialog();
-	void AddFileDialogEntry(int Index, CUIRect *pView);
-
-	//H-Client
-	void RenderSettingsHClient(CUIRect MainView);
-	void RenderLaser(vec2 From, vec2 Pos);
-
-	static int s_CheckSave;
-	//
-
-	//for manus_manager.cpp
-	int m_SelectedLocalServer;
-	int m_SelectedLocalExecServer;
+	void RenderSettingsHClient(CUIRect MainView); // H-Client
+	void RenderSettingsTheme(CUIRect MainView); // H-Client
+	void RenderLaser(vec2 From, vec2 Pos); // H-Client
 
 	void SetActive(bool Active);
+
+	static int DeleteMapPreviewCacheCallback(const char *pName, int IsDir, int StorageType, void *pUser); // H-Client
 public:
 	void RenderBackground();
 
@@ -335,7 +294,6 @@ public:
 	CMenus();
 
 	void RenderLoading();
-	void RenderUpdating(const char *pCaption, int current=0, int total=0); //H-Client
 
 	bool IsActive() const { return m_MenuActive; }
 
@@ -350,84 +308,5 @@ public:
     //H-Client
 	void DeleteMapPreviewCache();
 	int GetImageMapPreview(const char *sMap, bool reload = false);
-
-	int m_FileDialogStorageType;
-	const char *m_pFileDialogTitle;
-	const char *m_pFileDialogButtonText;
-	void (*m_pfnFileDialogFunc)(const char *pFileName, int StorageType, void *pUser);
-	void *m_pFileDialogUser;
-	char m_aFileDialogFileName[MAX_PATH_LENGTH];
-	char m_aFileDialogCurrentFolder[MAX_PATH_LENGTH];
-	char m_aFileDialogCurrentLink[MAX_PATH_LENGTH];
-	char *m_pFileDialogPath;
-	bool m_aFileDialogActivate;
-	int m_FileDialogFileType;
-	float m_FileDialogScrollValue;
-	int m_FilesSelectedIndex;
-	char m_FileDialogNewFolderName[64];
-	char m_FileDialogErrString[64];
-
-	enum
-	{
-		FILETYPE_CFG,
-	};
-
-	char m_aFileName[512];
-	char m_aFileSaveName[512];
-	bool m_ValidSaveFilename;
-
-	struct CFilelistItem
-	{
-		char m_aFilename[128];
-		char m_aName[128];
-		bool m_IsDir;
-		bool m_IsLink;
-		int m_StorageType;
-
-		bool operator<(const CFilelistItem &Other) { return !str_comp(m_aFilename, "..") ? true : !str_comp(Other.m_aFilename, "..") ? false :
-														m_IsDir && !Other.m_IsDir ? true : !m_IsDir && Other.m_IsDir ? false :
-														str_comp_filenames(m_aFilename, Other.m_aFilename) < 0; }
-	};
-	sorted_array<CFilelistItem> m_FileList;
-	int m_FilesStartAt;
-	int m_FilesCur;
-	int m_FilesStopAt;
-
-	//H-Client: Ghost
-	struct CGhostItem
-	{
-		char m_aFilename[256];
-		char m_aPlayer[MAX_NAME_LENGTH];
-
-		float m_Time;
-
-		bool m_Active;
-		int m_ID;
-
-		bool operator<(const CGhostItem &Other) { return m_Time < Other.m_Time; }
-		bool operator==(const CGhostItem &Other) { return m_ID == Other.m_ID; }
-	};
-
-	sorted_array<CGhostItem> m_lGhosts;
-	CGhostItem *m_OwnGhost;
-	void GhostlistPopulate();
-	//
-	int GetCurrentPopup() const { return m_Popup; }
-	int GetCurrentGamePage() { return m_GamePage; }
-	//
-
-private:
-    //H-Client
-    int m_Dialog;
-    static int DeleteMapPreviewCacheCallback(const char *pName, int IsDir, int StorageType, void *pUser);
-
-    void FilelistPopulate(int StorageType);
-    void InvokeFileDialog(int StorageType, int FileType, const char *pTitle, const char *pButtonText, const char *pBasePath, const char *pDefaultName, void (*pfnFunc)(const char *pFileName, int StorageType, void *pUser), void *pUser);
-
-    static void CallbackOpenConfig(const char *pFileName, int StorageType, void *pUser);
-    void RenderGhost(CUIRect MainView); //Ghost
-    static int GhostlistFetchCallback(const char *pName, int IsDir, int StorageType, void *pUser); //Ghost
-    //
 };
-
 #endif

@@ -78,25 +78,13 @@ void CProjectile::Tick()
 		else if(TargetChr)
 			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
 
-        if (Collide)
-        {
-            if (GameServer()->Collision()->GetMineTeeBlockAt(CurPos.x+m_Direction.x*8.0f, CurPos.y+m_Direction.y*8.0f) == BLOCK_TNT)
-            {
-                CNetMsg_Sv_TileChangeExt TileInfo;
-                TileInfo.m_Size = -1;
-                TileInfo.m_Index = -1;
-                TileInfo.m_X = static_cast<int>(CurPos.x/32.0f);
-                TileInfo.m_Y = static_cast<int>(CurPos.y/32.0f);
-                TileInfo.m_Act = TILE_DESTROY;
-                Server()->SendPackMsg(&TileInfo, MSGFLAG_VITAL, -1);
-
-                GameServer()->CreateExplosion(CurPos, m_Owner, WEAPON_WORLD, false);
-                GameServer()->CreateSound(CurPos, SOUND_GRENADE_EXPLODE);
-            }
-        }
-
 		GameServer()->m_World.DestroyEntity(this);
 	}
+}
+
+void CProjectile::TickPaused()
+{
+	++m_StartTick;
 }
 
 void CProjectile::FillInfo(CNetObj_Projectile *pProj)

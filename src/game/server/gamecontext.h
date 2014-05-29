@@ -48,12 +48,16 @@ class CGameContext : public IGameServer
 	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneDump(IConsole::IResult *pResult, void *pUserData);
+	static void ConPause(IConsole::IResult *pResult, void *pUserData);
 	static void ConChangeMap(IConsole::IResult *pResult, void *pUserData);
 	static void ConRestart(IConsole::IResult *pResult, void *pUserData);
 	static void ConBroadcast(IConsole::IResult *pResult, void *pUserData);
 	static void ConSay(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetTeamAll(IConsole::IResult *pResult, void *pUserData);
+	static void ConSwapTeams(IConsole::IResult *pResult, void *pUserData);
+	static void ConShuffleTeams(IConsole::IResult *pResult, void *pUserData);
+	static void ConLockTeams(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConForceVote(IConsole::IResult *pResult, void *pUserData);
@@ -69,7 +73,6 @@ public:
 	IServer *Server() const { return m_pServer; }
 	class IConsole *Console() { return m_pConsole; }
 	CCollision *Collision() { return &m_Collision; }
-	CLayers *Layers() { return &m_Layers; }
 	CTuningParams *Tuning() { return &m_Tuning; }
 
 	CGameContext();
@@ -85,6 +88,8 @@ public:
 
 	// helper functions
 	class CCharacter *GetPlayerChar(int ClientID);
+
+	int m_LockTeams;
 
 	// voting
 	void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
@@ -120,7 +125,7 @@ public:
 	void CreateDeath(vec2 Pos, int Who);
 	void CreateSound(vec2 Pos, int Sound, int Mask=-1);
 	void CreateSoundGlobal(int Sound, int Target=-1);
-    void CreateTombstone(vec2 Pos); //H-Client
+
 
 	enum
 	{
@@ -141,6 +146,9 @@ public:
 	//
 	void CheckPureTuning();
 	void SendTuningParams(int ClientID);
+
+	//
+	void SwapTeams();
 
 	// engine events
 	virtual void OnInit();
@@ -166,10 +174,6 @@ public:
 	virtual const char *GameType();
 	virtual const char *Version();
 	virtual const char *NetVersion();
-	virtual const char *HClientNetVersion(); //H-Client
-	virtual void CreateBot(int ClientID); //H-Client
-	virtual void UpdateBotInfo(int ClientID, int TEnemy); //H-Client
-	bool IsClientBot(int ClientID); //H-Client
 };
 
 inline int CmaskAll() { return -1; }

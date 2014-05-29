@@ -14,7 +14,7 @@
 
 #include <game/client/components/camera.h>
 #include <game/client/components/mapimages.h>
-#include <game/client/components/effects.h> //H-Client
+
 
 #include "maplayers.h"
 
@@ -22,27 +22,34 @@ CMapLayers::CMapLayers(int t)
 {
 	m_Type = t;
 	m_pLayers = 0;
-	m_EnvStart = 0;
+	m_CurrentLocalTick = 0;
+	m_LastLocalTick = 0;
+	m_EnvelopeUpdate = false;
 }
 
 void CMapLayers::OnInit()
 {
-    m_MineTeeIsDay = false;
 	m_pLayers = Layers();
-	m_EnvStart = time_get();
 }
 
-void CMapLayers::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup, bool isBkg)
+void CMapLayers::EnvelopeUpdate()
+{
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	{
+		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
+		m_CurrentLocalTick = pInfo->m_CurrentTick;
+		m_LastLocalTick = pInfo->m_CurrentTick;
+		m_EnvelopeUpdate = true;
+	}
+}
+
+
+void CMapLayers::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup)
 {
 	float Points[4];
-
 	RenderTools()->MapscreenToWorld(CenterX, CenterY, pGroup->m_ParallaxX/100.0f, pGroup->m_ParallaxY/100.0f,
 		pGroup->m_OffsetX, pGroup->m_OffsetY, Graphics()->ScreenAspect(), (Graphics()->Tumbtail())?4.0f:1.0f, Points);
-
-    if (Graphics()->ShowInfoKills() && !isBkg)
-        Graphics()->MapScreen(0, 0, Collision()->GetWidth()*32, Collision()->GetHeight()*32);
-    else
-        Graphics()->MapScreen(Points[0], Points[1], Points[2], Points[3]);
+	Graphics()->MapScreen(Points[0], Points[1], Points[2], Points[3]);
 }
 
 void CMapLayers::EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser)
@@ -70,41 +77,49 @@ void CMapLayers::EnvelopeEval(float TimeOffset, int Env, float *pChannels, void 
 
 	CMapItemEnvelope *pItem = (CMapItemEnvelope *)pThis->m_pLayers->Map()->GetItem(Start+Env, 0, 0);
 
-	static float Time = 0;
+	static float s_Time = 0.0f;
+	static float s_LastLocalTime = pThis->Client()->LocalTime();
 	if(pThis->Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		const IDemoPlayer::CInfo *pInfo = pThis->DemoPlayer()->BaseInfo();
-		static int LastLocalTick = pInfo->m_CurrentTick;
 
-		if(!pInfo->m_Paused)
-			Time += (pInfo->m_CurrentTick-LastLocalTick) / (float)pThis->Client()->GameTickSpeed() * pInfo->m_Speed;
+		if(!pInfo->m_Paused || pThis->m_EnvelopeUpdate)
+		{
+			if(pThis->m_CurrentLocalTick != pInfo->m_CurrentTick)
+			{
+				pThis->m_LastLocalTick = pThis->m_CurrentLocalTick;
+				pThis->m_CurrentLocalTick = pInfo->m_CurrentTick;
+			}
 
-		pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, Time+TimeOffset, pChannels);
+			s_Time = mix(pThis->m_LastLocalTick / (float)pThis->Client()->GameTickSpeed(),
+						pThis->m_CurrentLocalTick / (float)pThis->Client()->GameTickSpeed(),
+						pThis->Client()->IntraGameTick());
+		}
 
-		LastLocalTick = pInfo->m_CurrentTick;
-	}
-	else if (pThis->Client()->State() == IClient::STATE_OFFLINE)
-	{
-        //static float LastLocalTick = 0;
-        Time = (time_get()-pThis->m_EnvStart)/(float)time_freq();
-        //Time += AnimateTime-LastLocalTick;
-		pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, Time+TimeOffset, pChannels);
-		//LastLocalTick = AnimateTime;
+		pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, s_Time+TimeOffset, pChannels);
 	}
 	else
 	{
-		if(pThis->m_pClient->m_Snap.m_pGameInfoObj)
-			Time = (pThis->Client()->GameTick()-pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick) / (float)pThis->Client()->GameTickSpeed();
-		pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, Time+TimeOffset, pChannels);
+		if(pThis->m_pClient->m_Snap.m_pGameInfoObj && !(pThis->m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
+		{
+			if(pItem->m_Version < 2 || pItem->m_Synchronized)
+			{
+				s_Time = mix((pThis->Client()->PrevGameTick()-pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick) / (float)pThis->Client()->GameTickSpeed(),
+							(pThis->Client()->GameTick()-pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick) / (float)pThis->Client()->GameTickSpeed(),
+							pThis->Client()->IntraGameTick());
+			}
+			else
+				s_Time += pThis->Client()->LocalTime()-s_LastLocalTime;
+		}
+		pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, s_Time+TimeOffset, pChannels);
+		s_LastLocalTime = pThis->Client()->LocalTime();
 	}
 }
 
 void CMapLayers::OnRender()
 {
-	if (Client()->State() != IClient::STATE_OFFLINE && Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
-    else if (Client()->State() == IClient::STATE_OFFLINE && !Client()->BackgroundLoaded())
-        return;
 
 	CUIRect Screen;
 	Graphics()->GetScreen(&Screen.x, &Screen.y, &Screen.w, &Screen.h);
@@ -113,10 +128,16 @@ void CMapLayers::OnRender()
 	//float center_x = gameclient.camera->center.x;
 	//float center_y = gameclient.camera->center.y;
 
+    // H-Client
     CMapItemLayerTilemap *pGTMap = m_pLayers->GameLayer();
     CTile *pGameTiles = (CTile *)m_pLayers->Map()->GetData(pGTMap->m_Data);
 
+    CServerInfo Info;
+    Client()->GetServerInfo(&Info);
+    //
+
 	bool PassedGameLayer = false;
+
 	for(int g = 0; g < m_pLayers->NumGroups(); g++)
 	{
 		CMapItemGroup *pGroup = m_pLayers->GetGroup(g);
@@ -138,7 +159,7 @@ void CMapLayers::OnRender()
 				(int)((x1-x0)*Graphics()->ScreenWidth()), (int)((y1-y0)*Graphics()->ScreenHeight()));
 		}
 
-		MapScreenToGroup(Center.x, Center.y, pGroup, g==0);
+		MapScreenToGroup(Center.x, Center.y, pGroup);
 
 		for(int l = 0; l < pGroup->m_NumLayers; l++)
 		{
@@ -178,19 +199,14 @@ void CMapLayers::OnRender()
 				Client()->GetServerInfo(&CurrentServerInfo);
 				char aFilename[256];
 				str_format(aFilename, sizeof(aFilename), "dumps/tilelayer_dump_%s-%d-%d-%dx%d.txt", CurrentServerInfo.m_aMap, g, l, pTMap->m_Width, pTMap->m_Height);
-				IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_WRITE, IStorageTW::TYPE_SAVE);
+				IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 				if(File)
 				{
-					#if defined(CONF_FAMILY_WINDOWS)
-						static const char Newline[] = "\r\n";
-					#else
-						static const char Newline[] = "\n";
-					#endif
 					for(int y = 0; y < pTMap->m_Height; y++)
 					{
 						for(int x = 0; x < pTMap->m_Width; x++)
 							io_write(File, &(pTiles[y*pTMap->m_Width + x].m_Index), sizeof(pTiles[y*pTMap->m_Width + x].m_Index));
-						io_write(File, Newline, sizeof(Newline)-1);
+						io_write_newline(File);
 					}
 					io_close(File);
 				}
@@ -212,39 +228,24 @@ void CMapLayers::OnRender()
 					Graphics()->BlendNone();
 					vec4 Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
 
-                    CServerInfo Info;
-                    Client()->GetServerInfo(&Info);
-                    int MineTeeLayer = 0;
-
-                    if (str_find_nocase(Info.m_aGameType, "minetee") || str_find_nocase(Info.m_aGameType, "ctf-break"))
+                    if (pGameTiles && g_Config.m_ddrShowHiddenWays && str_find_nocase(Info.m_aGameType, "race"))
                     {
-                        if (pTMap == m_pLayers->MineTeeLayer())
-                            MineTeeLayer = 1;
-                        else if (pTMap == m_pLayers->MineTeeBGLayer())
-                            MineTeeLayer = 2;
-                        else if (pTMap == m_pLayers->MineTeeFGLayer())
-                            MineTeeLayer = 3;
-                    }
-
-					if (m_pLayers->GameLayer() && g_Config.m_ddrShowHiddenWays && str_find_nocase(Info.m_aGameType, "race"))
-					{
+                        Graphics()->BlendNone();
+                        RenderTools()->RenderTilemap(pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+                                                         EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                         Graphics()->BlendNormal();
-                        RenderTools()->RenderTilemap(pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE|LAYERRENDERFLAG_TRANSPARENT,
-                                                     EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset, MineTeeLayer, false, m_pClient->m_pEffects);
-					}
+                        RenderTools()->RenderTilemap(pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+                                                        EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+                    }
                     else
                     {
                         Graphics()->BlendNone();
                         RenderTools()->RenderTilemap(0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
-                                                        EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset, MineTeeLayer, false, m_pClient->m_pEffects);
+                                                        EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                         Graphics()->BlendNormal();
                         RenderTools()->RenderTilemap(0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
-                                                        EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset, MineTeeLayer, false, m_pClient->m_pEffects);
+                                                        EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                     }
-
-                    if (MineTeeLayer == 1)
-                        RenderTools()->RenderTilemap(0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
-                                                        EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset, MineTeeLayer, true, 0x0);
 				}
 				else if(pLayer->m_Type == LAYERTYPE_QUADS)
 				{
@@ -268,54 +269,6 @@ void CMapLayers::OnRender()
 		if(!g_Config.m_GfxNoclip)
 			Graphics()->ClipDisable();
 	}
-
-    //H-Client
-    //NIGHT-DAY
-    CServerInfo Info;
-    Client()->GetServerInfo(&Info);
-    if (str_find_nocase(Info.m_aGameType,"minetee") && m_pLayers->TileLights() && m_pLayers->MineTeeLayer() && !Graphics()->Tumbtail())
-    {
-        CTile *pMTLTiles = 0x0;
-        CTile *pMTTiles = 0x0;
-        static int s_LightLevel = 0;
-
-        if (300 < 0)
-            s_LightLevel = 0;
-        else
-        {
-            int Time = -1;
-            if (m_pClient->m_Snap.m_pGameInfoObj)
-                Time = (Client()->GameTick()-m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick) / (float)Client()->GameTickSpeed();
-            m_MineTeeIsDay = (static_cast<int>(Time/300)%2)?false:true;
-
-            float tt = Time;
-            int itt = tt/300;
-            tt/=300;
-
-            if (tt-itt < 0.02)
-                s_LightLevel=(m_MineTeeIsDay)?0:3;
-            else if (tt-itt < 0.025)
-                s_LightLevel=(m_MineTeeIsDay)?1:2;
-            else if (tt-itt < 0.035)
-                s_LightLevel=(m_MineTeeIsDay)?2:1;
-            else if (tt-itt < 0.045)
-                s_LightLevel=(m_MineTeeIsDay)?3:0;
-            else
-                s_LightLevel=(m_MineTeeIsDay)?4:0;
-        }
-
-
-
-        if (s_LightLevel >= 0)
-        {
-            CMapItemLayerTilemap *pMTMap = m_pLayers->MineTeeLayer();
-            if (pMTMap)
-                pMTTiles = (CTile *)m_pLayers->Map()->GetData(pMTMap->m_Data);
-
-            if (pMTTiles)
-                RenderTools()->UpdateLights(Collision(), pMTTiles, m_pLayers->TileLights(), Layers()->Lights()->m_Width, Layers()->Lights()->m_Height, s_LightLevel);
-        }
-    }
 
 	if(!g_Config.m_GfxNoclip)
 		Graphics()->ClipDisable();

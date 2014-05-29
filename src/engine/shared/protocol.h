@@ -70,15 +70,6 @@ enum
 	// sent by server (todo: move it up)
 	NETMSG_RCON_CMD_ADD,
 	NETMSG_RCON_CMD_REM,
-
-
-	//H-Client: server
-    NETMSG_TILECHANGE_INFO, //send with the size of mapa
-    NETMSG_TILECHANGEEXT, //send with sync map
-    NETMSG_TILEDESTROY, //send when destroy tile
-    NETMSG_TILECREATE, //send when create tile
-
-	//H-Client: client
 };
 
 // this should be revised
@@ -87,10 +78,8 @@ enum
 	SERVER_TICK_SPEED=50,
 	SERVER_FLAG_PASSWORD = 0x1,
 
-    //H-Client
-    MAX_BOTS=25,
-	MAX_CLIENTS=16+MAX_BOTS,
-    //
+	MAX_CLIENTS=64,
+	VANILLA_MAX_CLIENTS=16,
 
 	MAX_INPUT_SIZE=128,
 	MAX_SNAPSHOT_PACKSIZE=900,
@@ -103,7 +92,7 @@ enum
 	MSGFLAG_FLUSH=2,
 	MSGFLAG_NORECORD=4,
 	MSGFLAG_RECORD=8,
-	MSGFLAG_NOSEND=16,
+	MSGFLAG_NOSEND=16
 };
 
 #endif

@@ -223,11 +223,6 @@ container.sounds.Add(SoundSet("ctf_capture", ["audio/sfx_ctf_cap_pl.wv"]))
 
 container.sounds.Add(SoundSet("menu", ["audio/music_menu.wv"]))
 
-container.sounds.Add(SoundSet("destroy_block", FileList("audio/sfx_destroy_block-%02d.wv", 1))) #H-Client
-container.sounds.Add(SoundSet("pickup_block", FileList("audio/foley_dbljump-%02d.wv", 3))) #H-Client
-container.sounds.Add(SoundSet("animal_teecow", FileList("audio/sfx_teecow-%02d.wv", 1))) #H-Client
-container.sounds.Add(SoundSet("enemy_zombitee", FileList("audio/sfx_zombitee-%02d.wv", 1))) #H-Client
-
 image_null = Image("null", "")
 image_particles = Image("particles", "particles.png")
 image_game = Image("game", "game.png")
@@ -238,12 +233,12 @@ image_fileicons = Image("fileicons", "file_icons.png")
 image_guibuttons = Image("guibuttons", "gui_buttons.png")
 image_guiicons = Image("guiicons", "gui_icons.png")
 image_chat_emoticons = Image("chat_emoticons", "chat_emoticons.png") #H-Client
-image_unfreeze_effect = Image("unfreeze_effect", "broken_freeze.png") #H-Client
-image_minetee_food = Image("minetee_food", "minetee-food.png") #H-Client
-image_minetee_items = Image("minetee_items", "minetee-items.png") #H-Client
 image_settings_icons = Image("settings_icons", "settings_tabicons.png") #H-Client
-image_irc = Image("irc", "irc.png") #H-Client
+image_unfreeze_effect = Image("unfreeze_effect", "broken_freeze.png") #H-Client
 image_arrow = Image("arrow", "arrow.png") #H-Client
+image_guicontrols = Image("guicontrols", "gui_controls.png") #H-Client
+image_splashtee = Image("splashtee", "splashtee.png") #H-Client
+
 
 container.images.Add(image_null)
 container.images.Add(image_game)
@@ -258,25 +253,18 @@ container.images.Add(image_demobuttons)
 container.images.Add(image_fileicons)
 container.images.Add(image_guibuttons)
 container.images.Add(image_guiicons)
-container.images.Add(Image("hclient_logo", "hclient_logo.png")) #H-Client
 container.images.Add(image_chat_emoticons) #H-Client
-container.images.Add(image_unfreeze_effect) #H-Client
-container.images.Add(image_minetee_food) #H-Client
-container.images.Add(Image("minetee_fx_water", "fx_water.png")) #H-Client
-container.images.Add(Image("minetee_fx_lava", "fx_lava.png")) #H-Client
-container.images.Add(Image("minetee_fx_tombstone", "fx_tombstone.png")) #H-Client
 container.images.Add(image_settings_icons) #H-Client
-container.images.Add(image_minetee_items) #H-Client
-container.images.Add(image_irc) #H-Client
+container.images.Add(image_unfreeze_effect) #H-Client
 container.images.Add(image_arrow) #H-Client
+container.images.Add(image_guicontrols) #H-Client
+container.images.Add(Image("hclient_logo", "hclient_logo.png")) #H-Client
+container.images.Add(image_splashtee) #H-Client
 
 container.pickups.Add(Pickup("health"))
 container.pickups.Add(Pickup("armor"))
 container.pickups.Add(Pickup("weapon"))
 container.pickups.Add(Pickup("ninja", 90, 90))
-container.pickups.Add(Pickup("block", -1)) #H-Client
-container.pickups.Add(Pickup("food", -1)) #H-Client
-container.pickups.Add(Pickup("dropitem")) #H-Client
 
 set_particles = SpriteSet("particles", image_particles, 8, 8)
 set_game = SpriteSet("game", image_game, 32, 16)
@@ -288,10 +276,9 @@ set_fileicons = SpriteSet("fileicons", image_fileicons, 8, 1)
 set_guibuttons = SpriteSet("guibuttons", image_guibuttons, 12, 4)
 set_guiicons = SpriteSet("guiicons", image_guiicons, 8, 2)
 set_chat_emoticons = SpriteSet("chat_emoticons", image_chat_emoticons, 6, 5) #H-Client
+set_settings_icons = SpriteSet("settings_icon", image_settings_icons, 9, 1) #H-Client
 set_unfreeze_effect = SpriteSet("unfreeze_effect", image_unfreeze_effect, 4, 1) #H-Client
-set_minetee_food = SpriteSet("minetee_food", image_minetee_food, 2, 1) #H-Client
-set_settings_icons = SpriteSet("settings_icon", image_minetee_food, 8, 1) #H-Client
-set_minetee_items = SpriteSet("minetee_items", image_minetee_items, 16, 16) #H-Client
+set_guicontrols = SpriteSet("guicontrols", image_guicontrols, 2, 1) #H-Client
 
 container.spritesets.Add(set_particles)
 container.spritesets.Add(set_game)
@@ -303,10 +290,9 @@ container.spritesets.Add(set_fileicons)
 container.spritesets.Add(set_guibuttons)
 container.spritesets.Add(set_guiicons)
 container.spritesets.Add(set_chat_emoticons) #H-Client
-container.spritesets.Add(set_unfreeze_effect) #H-Client
-container.spritesets.Add(set_minetee_food) #H-Client
 container.spritesets.Add(set_settings_icons) #H-Client
-container.spritesets.Add(set_minetee_items) #H-Client
+container.spritesets.Add(set_unfreeze_effect) #H-Client
+container.spritesets.Add(set_guicontrols) # H-Client
 
 container.sprites.Add(Sprite("part_slice", set_particles, 0,0,1,1))
 container.sprites.Add(Sprite("part_ball", set_particles, 1,0,1,1))
@@ -437,7 +423,17 @@ container.sprites.Add(Sprite("guibutton_hover", set_guibuttons, 8,0,4,4))
 container.sprites.Add(Sprite("guiicon_mute", set_guiicons, 0,0,4,2))
 container.sprites.Add(Sprite("guiicon_friend", set_guiicons, 4,0,4,2))
 
-#H-Client
+# H-Client
+container.sprites.Add(Sprite("icon_language", set_settings_icons, 0,  0,  1,  1))
+container.sprites.Add(Sprite("icon_general", set_settings_icons, 1,  0,  1,  1))
+container.sprites.Add(Sprite("icon_player", set_settings_icons, 2,  0,  1,  1))
+container.sprites.Add(Sprite("icon_tee", set_settings_icons, 3,  0,  1,  1))
+container.sprites.Add(Sprite("icon_controls", set_settings_icons, 4,  0,  1,  1))
+container.sprites.Add(Sprite("icon_graphics", set_settings_icons, 5,  0,  1,  1))
+container.sprites.Add(Sprite("icon_sound", set_settings_icons, 6,  0,  1,  1))
+container.sprites.Add(Sprite("icon_mod", set_settings_icons, 7,  0,  1,  1))
+container.sprites.Add(Sprite("icon_theme", set_settings_icons, 8,  0,  1,  1))
+
 container.sprites.Add(Sprite("chat_emote1", set_chat_emoticons, 0,  0,  1,  1))
 container.sprites.Add(Sprite("chat_emote2", set_chat_emoticons, 1,  0,  1,  1))
 container.sprites.Add(Sprite("chat_emote3", set_chat_emoticons, 2,  0,  1,  1))
@@ -474,65 +470,8 @@ container.sprites.Add(Sprite("part_unfreeze02", set_unfreeze_effect, 1,  0,  1, 
 container.sprites.Add(Sprite("part_unfreeze03", set_unfreeze_effect, 2,  0,  1,  1))
 container.sprites.Add(Sprite("part_unfreeze04", set_unfreeze_effect, 3,  0,  1,  1))
 
-container.sprites.Add(Sprite("food01", set_minetee_food, 0,  0,  1,  1))
-container.sprites.Add(Sprite("food02", set_minetee_food, 1,  0,  1,  1))
-
-container.sprites.Add(Sprite("icon_language", set_settings_icons, 0,  0,  1,  1))
-container.sprites.Add(Sprite("icon_general", set_settings_icons, 1,  0,  1,  1))
-container.sprites.Add(Sprite("icon_player", set_settings_icons, 2,  0,  1,  1))
-container.sprites.Add(Sprite("icon_tee", set_settings_icons, 3,  0,  1,  1))
-container.sprites.Add(Sprite("icon_controls", set_settings_icons, 4,  0,  1,  1))
-container.sprites.Add(Sprite("icon_graphics", set_settings_icons, 5,  0,  1,  1))
-container.sprites.Add(Sprite("icon_sound", set_settings_icons, 6,  0,  1,  1))
-container.sprites.Add(Sprite("icon_mod", set_settings_icons, 7,  0,  1,  1))
-
-container.sprites.Add(Sprite("item_burn", set_minetee_items, 5,  0,  1,  1))
-container.sprites.Add(Sprite("item_stone", set_minetee_items, 6,  0,  1,  1))
-container.sprites.Add(Sprite("item_carbon", set_minetee_items, 7,  0,  1,  1))
-container.sprites.Add(Sprite("item_chain", set_minetee_items, 8,  0,  1,  1))
-container.sprites.Add(Sprite("item_seed_a", set_minetee_items, 9,  0,  1,  1))
-container.sprites.Add(Sprite("item_apple_r", set_minetee_items, 10,  0,  1,  1))
-container.sprites.Add(Sprite("item_apple_y", set_minetee_items, 11,  0,  1,  1))
-container.sprites.Add(Sprite("item_egg", set_minetee_items, 12,  0,  1,  1))
-container.sprites.Add(Sprite("item_sugar", set_minetee_items, 13,  0,  1,  1))
-container.sprites.Add(Sprite("item_snow", set_minetee_items, 14,  0,  1,  1))
-container.sprites.Add(Sprite("item_arco", set_minetee_items, 5,  1,  1,  1))
-container.sprites.Add(Sprite("item_ladrillo", set_minetee_items, 6,  1,  1,  1))
-container.sprites.Add(Sprite("item_silver", set_minetee_items, 7,  1,  1,  1))
-container.sprites.Add(Sprite("item_pluma", set_minetee_items, 8,  1,  1,  1))
-container.sprites.Add(Sprite("item_yerba_a", set_minetee_items, 9,  1,  1,  1))
-container.sprites.Add(Sprite("item_picture", set_minetee_items, 10,  1,  1,  1))
-container.sprites.Add(Sprite("item_yerba_b", set_minetee_items, 11,  1,  1,  1))
-container.sprites.Add(Sprite("item_bone", set_minetee_items, 12,  1,  1,  1))
-container.sprites.Add(Sprite("item_cake", set_minetee_items, 13,  1,  1,  1))
-container.sprites.Add(Sprite("item_undef_a", set_minetee_items, 14,  1,  1,  1))
-container.sprites.Add(Sprite("item_row", set_minetee_items, 5,  2,  1,  1))
-container.sprites.Add(Sprite("item_row_bag", set_minetee_items, 6,  2,  1,  1))
-container.sprites.Add(Sprite("item_gold", set_minetee_items, 7,  2,  1,  1))
-container.sprites.Add(Sprite("item_polvora", set_minetee_items, 8,  2,  1,  1))
-container.sprites.Add(Sprite("item_bred", set_minetee_items, 9,  2,  1,  1))
-container.sprites.Add(Sprite("item_message", set_minetee_items, 10,  2,  1,  1))
-container.sprites.Add(Sprite("item_bed", set_minetee_items, 13,  2,  1,  1))
-container.sprites.Add(Sprite("item_ball_fire", set_minetee_items, 14,  2,  1,  1))
-container.sprites.Add(Sprite("item_stick", set_minetee_items, 5,  3,  1,  1))
-container.sprites.Add(Sprite("item_dyamond", set_minetee_items, 7,  3,  1,  1))
-container.sprites.Add(Sprite("item_polvo_r", set_minetee_items, 8,  3,  1,  1))
-container.sprites.Add(Sprite("item_book", set_minetee_items, 11,  3,  1,  1))
-container.sprites.Add(Sprite("item_map", set_minetee_items, 12,  3,  1,  1))
-container.sprites.Add(Sprite("item_seed_b", set_minetee_items, 13,  3,  1,  1))
-container.sprites.Add(Sprite("item_seed_c", set_minetee_items, 14,  3,  1,  1))
-container.sprites.Add(Sprite("item_sword_a", set_minetee_items, 0,  4,  1,  1))
-container.sprites.Add(Sprite("item_sword_b", set_minetee_items, 1,  4,  1,  1))
-container.sprites.Add(Sprite("item_sword_c", set_minetee_items, 2,  4,  1,  1))
-container.sprites.Add(Sprite("item_sword_d", set_minetee_items, 3,  4,  1,  1))
-container.sprites.Add(Sprite("item_sword_e", set_minetee_items, 4,  4,  1,  1))
-container.sprites.Add(Sprite("item_food_empty", set_minetee_items, 7,  4,  1,  1))
-container.sprites.Add(Sprite("item_food_full", set_minetee_items, 8,  4,  1,  1))
-container.sprites.Add(Sprite("item_azufre", set_minetee_items, 9,  4,  1,  1))
-container.sprites.Add(Sprite("item_cube_empty", set_minetee_items, 10,  4,  1,  1))
-container.sprites.Add(Sprite("item_cube_water", set_minetee_items, 11,  4,  1,  1))
-container.sprites.Add(Sprite("item_cube_lava", set_minetee_items, 12,  4,  1,  1))
-container.sprites.Add(Sprite("item_cube_milk", set_minetee_items, 13,  4,  1,  1))
+container.sprites.Add(Sprite("guicontrol_checkbox_active", set_guicontrols, 0,  0,  1,  1))
+container.sprites.Add(Sprite("guicontrol_checkbox_inactive", set_guicontrols, 1,  0,  1,  1))
 ##
 
 anim = Animation("base")
@@ -605,7 +544,7 @@ weapon.firedelay.Set(125)
 weapon.ammoregentime.Set(500)
 weapon.visual_size.Set(64)
 weapon.offsetx.Set(32)
-weapon.offsety.Set(-4)
+weapon.offsety.Set(4)
 weapon.muzzleoffsetx.Set(50)
 weapon.muzzleoffsety.Set(6)
 container.weapons.gun.base.Set(weapon)

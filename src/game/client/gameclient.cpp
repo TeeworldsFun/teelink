@@ -1,5 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <base/math.h> // H-Client
+
 #include <engine/editor.h>
 #include <engine/engine.h>
 #include <engine/friends.h>
@@ -10,12 +12,10 @@
 #include <engine/storage.h>
 #include <engine/sound.h>
 #include <engine/serverbrowser.h>
-#include <engine/servermanager.h> //H-Client
-#include <engine/autoupdate.h> //H-Client
-#include <engine/news.h> //H-Client
-#include <engine/irc.h> //H-Client
 #include <engine/shared/demo.h>
 #include <engine/shared/config.h>
+#include <engine/geoip.h> //H-Client
+#include <engine/texturepack.h> //H-Client
 
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
@@ -53,8 +53,6 @@
 #include "components/sounds.h"
 #include "components/spectator.h"
 #include "components/voting.h"
-#include "components/serveradmin.h" //H-Client
-#include "components/ghost.h" //H-Client
 
 CGameClient g_GameClient;
 
@@ -90,37 +88,29 @@ static CMapImages gs_MapImages;
 static CMapLayers gs_MapLayersBackGround(CMapLayers::TYPE_BACKGROUND);
 static CMapLayers gs_MapLayersForeGround(CMapLayers::TYPE_FOREGROUND);
 
-//H-Client
-static CServerAdmin gs_ServerAdmin;
-static CGhost gs_Ghost;
-
 CGameClient::CStack::CStack() { m_Num = 0; }
 void CGameClient::CStack::Add(class CComponent *pComponent) { m_paComponents[m_Num++] = pComponent; }
 
 const char *CGameClient::Version() { return GAME_VERSION; }
 const char *CGameClient::NetVersion() { return GAME_NETVERSION; }
-const char *CGameClient::HClientNetVersion() { return HCLIENT_VERSION; } //H-Client
 const char *CGameClient::GetItemName(int Type) { return m_NetObjHandler.GetObjName(Type); }
 
 void CGameClient::OnConsoleInit()
 {
 	m_pEngine = Kernel()->RequestInterface<IEngine>();
 	m_pClient = Kernel()->RequestInterface<IClient>();
-	m_pGraphics = Kernel()->RequestInterface<IGraphics>();
 	m_pTextRender = Kernel()->RequestInterface<ITextRender>();
 	m_pSound = Kernel()->RequestInterface<ISound>();
 	m_pInput = Kernel()->RequestInterface<IInput>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
-	m_pStorage = Kernel()->RequestInterface<IStorageTW>();
+	m_pStorage = Kernel()->RequestInterface<IStorage>();
 	m_pDemoPlayer = Kernel()->RequestInterface<IDemoPlayer>();
 	m_pDemoRecorder = Kernel()->RequestInterface<IDemoRecorder>();
 	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>();
-	m_pServerManager = Kernel()->RequestInterface<IServerManager>(); //H-Client
-	m_pAutoUpdate = Kernel()->RequestInterface<IAutoUpdate>(); //H-Client
-	m_pNews = Kernel()->RequestInterface<INews>(); //H-Client
-	m_pIrc = Kernel()->RequestInterface<IIrc>(); //H-Client
 	m_pEditor = Kernel()->RequestInterface<IEditor>();
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
+	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
+	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
 
 	// setup pointers
 	m_pBinds = &::gs_Binds;
@@ -141,16 +131,15 @@ void CGameClient::OnConsoleInit()
 	m_pVoting = &::gs_Voting;
 	m_pScoreboard = &::gs_Scoreboard;
 	m_pItems = &::gs_Items;
-	m_pServerAdmin = &::gs_ServerAdmin; //H-Client
-	m_pPlayers = &::gs_Players; //H-Client
-	m_pGhost = &::gs_Ghost; //H-Client
+	m_pMapLayersBackGround = &::gs_MapLayersBackGround;
+	m_pMapLayersForeGround = &::gs_MapLayersForeGround;
 
 	// make a list of all the systems, make sure to add them in the corrent render order
 	m_All.Add(m_pSkins);
 	m_All.Add(m_pCountryFlags);
 	m_All.Add(m_pMapimages);
 	m_All.Add(m_pEffects); // doesn't render anything, just updates effects
-	//m_All.Add(m_pParticles);
+	m_All.Add(m_pParticles);
 	m_All.Add(m_pBinds);
 	m_All.Add(m_pControls);
 	m_All.Add(m_pCamera);
@@ -159,12 +148,10 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
 
 	m_All.Add(&gs_MapLayersBackGround); // first to render
-	m_All.Add(&m_pParticles->m_RenderHClientTumbstone); //H-Client
 	m_All.Add(&m_pParticles->m_RenderTrail);
 	m_All.Add(m_pItems);
 	m_All.Add(&gs_Players);
 	m_All.Add(&m_pParticles->m_RenderHClientFreeze); //H-Client
-	m_All.Add(m_pGhost); //H-Client
 	m_All.Add(&gs_MapLayersForeGround);
 	m_All.Add(&m_pParticles->m_RenderHClientBlood); //H-Client
 	m_All.Add(&m_pParticles->m_RenderExplosions);
@@ -180,7 +167,6 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(&gs_DebugHud);
 	m_All.Add(&gs_Scoreboard);
 	m_All.Add(m_pMotd);
-	m_All.Add(m_pServerAdmin); //H-Client
 	m_All.Add(m_pMenus);
 	m_All.Add(m_pGameConsole);
 
@@ -189,12 +175,10 @@ void CGameClient::OnConsoleInit()
 	m_Input.Add(&m_pBinds->m_SpecialBinds);
 	m_Input.Add(m_pGameConsole);
 	m_Input.Add(m_pChat); // chat has higher prio due to tha you can quit it by pressing esc
-    m_Input.Add(m_pServerAdmin); //H-Client
 	m_Input.Add(m_pMotd); // for pressing esc to remove it
 	m_Input.Add(m_pMenus);
 	m_Input.Add(&gs_Spectator);
 	m_Input.Add(&gs_Emoticon);
-	m_Input.Add(&gs_Players); //H-Client
 	m_Input.Add(m_pControls);
 	m_Input.Add(m_pBinds);
 
@@ -217,12 +201,10 @@ void CGameClient::OnConsoleInit()
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, 0, 0, "Force a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, 0, 0, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, 0, 0, "Force a vote to yes/no");
+	Console()->Register("swap_teams", "", CFGFLAG_SERVER, 0, 0, "Swap the current teams");
+	Console()->Register("shuffle_teams", "", CFGFLAG_SERVER, 0, 0, "Shuffle the current teams");
 
 
-	// propagate pointers
-	m_UI.SetGraphics(Graphics(), TextRender());
-	m_RenderTools.m_pGraphics = Graphics();
-	m_RenderTools.m_pUI = UI();
 	for(int i = 0; i < m_All.m_Num; i++)
 		m_All.m_paComponents[i]->m_pClient = this;
 
@@ -246,6 +228,13 @@ void CGameClient::OnConsoleInit()
 
 void CGameClient::OnInit()
 {
+	m_pGraphics = Kernel()->RequestInterface<IGraphics>();
+
+	// propagate pointers
+	m_UI.SetGraphics(Graphics(), TextRender());
+	m_RenderTools.m_pGraphics = Graphics();
+	m_RenderTools.m_pUI = UI();
+
 	int64 Start = time_get();
 
 	// set the language
@@ -259,12 +248,12 @@ void CGameClient::OnInit()
 	// load default font
 	static CFont *pDefaultFont = 0;
 	char aFilename[512];
-	IOHANDLE File = Storage()->OpenFile("fonts/DejaVuSans.ttf", IOFLAG_READ, IStorageTW::TYPE_ALL, aFilename, sizeof(aFilename));
+	IOHANDLE File = Storage()->OpenFile("fonts/DejaVuSans.ttf", IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
 	if(File)
 	{
 		io_close(File);
 		pDefaultFont = TextRender()->LoadFont(aFilename);
-		TextRender()->SetDefaultFont(pDefaultFont);
+		TextRender()->SetFont(pDefaultFont);
 	}
 	if(!pDefaultFont)
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", "failed to load font. filename='fonts/DejaVuSans.ttf'");
@@ -273,62 +262,31 @@ void CGameClient::OnInit()
 	for(int i = m_All.m_Num-1; i >= 0; --i)
 		m_All.m_paComponents[i]->OnInit();
 
-    //H-Client: Auto-Update
-    char aBuf[128];
-    if (g_Config.m_hcAutoUpdate)
-    {
-        str_format(aBuf, sizeof(aBuf), "Checking updates, please wait....");
-        g_GameClient.m_pMenus->RenderUpdating(aBuf);
-        AutoUpdate()->CheckUpdates(m_pMenus);
-        if (AutoUpdate()->Updated())
-        {
-            if (AutoUpdate()->NeedResetClient())
-            {
-                Client()->Quit();
-                return;
-            }
-            else
-            {
-                str_format(aBuf, sizeof(aBuf), "H-Client updated successfully :)");
-                g_GameClient.m_pMenus->RenderUpdating(aBuf);
-            }
-        }
-        else
-        {
-            str_format(aBuf, sizeof(aBuf), "Not need be update :)");
-            g_GameClient.m_pMenus->RenderUpdating(aBuf);
-        }
-    }
-
 	// setup load amount// load textures
-	for(int i = 0; i < g_pData->m_NumImages; i++)
-	{
-		g_pData->m_aImages[i].m_Id = Graphics()->LoadTexture(g_pData->m_aImages[i].m_pFilename, IStorageTW::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
-		g_GameClient.m_pMenus->RenderLoading();
-	}
+//	for(int i = 0; i < g_pData->m_NumImages; i++)
+//	{
+//		g_pData->m_aImages[i].m_Id = Graphics()->LoadTexture(g_pData->m_aImages[i].m_pFilename, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+//		g_GameClient.m_pMenus->RenderLoading();
+//	}
 
-	//H-Client: Search all maps Downloaded
-    Storage()->ListDirectory(IStorageTW::TYPE_ALL, "downloadedmaps", SearchMapsCallback, this);
-    dbg_msg("H-Client", "Founded %d maps.", m_vMaps.size());
-    //
+    // H-Client: Load TexturePack
+	m_pTexturePack->Init();
+	m_pTexturePack->Load(g_Config.m_hcTheme);
+	//
 
 	for(int i = 0; i < m_All.m_Num; i++)
 		m_All.m_paComponents[i]->OnReset();
 
-
 	int64 End = time_get();
+	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "initialisation finished after %.2fms", ((End-Start)*1000)/(float)time_freq());
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "gameclient", aBuf);
 
 	m_ServerMode = SERVERMODE_PURE;
 
 	m_TakeInitScreenShot = false; //H-Client
-	m_DDRaceMsgSent = false; //DDRace
-	m_KillInfo.clear(); //H-Client
-
-	LoadBackgroundMap("hclient");
+    m_DDRaceMsgSent = false;
 }
-
 
 void CGameClient::DispatchInput()
 {
@@ -369,40 +327,6 @@ int CGameClient::OnSnapInput(int *pData)
 	return m_pControls->SnapInput(pData);
 }
 
-int CGameClient::LoadBackgroundMap(const char *map)
-{
-    const char *pError = 0;
-    char aBuf[128];
-    str_format(aBuf, sizeof(aBuf), "%s.map", map);
-
-    pError = m_pClient->LoadMap(map, aBuf, 0, IClient::STATE_OFFLINE);
-    if (!pError)
-    {
-        m_Layers.Init(Kernel());
-        m_Collision.Init(Layers());
-
-        RenderTools()->RenderTilemapGenerateSkip(Layers());
-
-        for(int i = 0; i < m_All.m_Num; i++)
-        {
-            m_All.m_paComponents[i]->OnMapLoad();
-            m_All.m_paComponents[i]->OnReset();
-        }
-
-        m_pCamera->m_Center = vec2(-32.0f*16,-32.0f*16.0f);
-                    /*if (PredictedCameraOffset.y > CameraOffset.y)
-                        CameraOffset.y+=OffsetFactor;
-                    else if (PredictedCameraOffset.y < CameraOffset.y)
-                        CameraOffset.y-=OffsetFactor;*/
-
-        Client()->SetBackgroundLoaded(true);
-    }
-    else
-        Client()->SetBackgroundLoaded(false);
-
-    return Client()->BackgroundLoaded();
-}
-
 void CGameClient::OnConnected()
 {
 	m_Layers.Init(Kernel());
@@ -416,12 +340,14 @@ void CGameClient::OnConnected()
 		m_All.m_paComponents[i]->OnReset();
 	}
 
+	CServerInfo CurrentServerInfo;
+	Client()->GetServerInfo(&CurrentServerInfo);
+
 	m_ServerMode = SERVERMODE_PURE;
 	m_LastSendInfo = 0;
 
 	// send the inital info
 	SendInfo(true);
-	Graphics()->ShowInfoKills(false);
 }
 
 void CGameClient::OnReset()
@@ -441,8 +367,9 @@ void CGameClient::OnReset()
 	m_FlagDropTick[TEAM_BLUE] = 0;
 	m_Tuning = CTuningParams();
 
-	m_DDRaceMsgSent = false; //H-Client: DDRace
-	m_KillInfo.clear(); //H-Client
+    m_Teams.Reset(); // H-Client: DDNet
+    m_DDRaceMsgSent = false;
+	m_TakeInitScreenShot = false; // H-Client
 }
 
 
@@ -542,7 +469,7 @@ void CGameClient::OnRender()
 	m_NewPredictedTick = false;
 
 	// check if client info has to be resent
-	if(m_LastSendInfo && Client()->State() == IClient::STATE_ONLINE && !m_pMenus->IsActive() && m_LastSendInfo+time_freq()*5 < time_get())
+	if(m_LastSendInfo && Client()->State() == IClient::STATE_ONLINE && m_Snap.m_LocalClientID >= 0 && !m_pMenus->IsActive() && m_LastSendInfo+time_freq()*6 < time_get())
 	{
 		// resend if client info differs
 		if(str_comp(g_Config.m_PlayerName, m_aClients[m_Snap.m_LocalClientID].m_aName) ||
@@ -567,13 +494,6 @@ void CGameClient::OnRelease()
 		m_All.m_paComponents[i]->OnRelease();
 }
 
-void CGameClient::OnMessageIrc(const char *pFrom, const char *pUser, const char *pText)
-{
-    // TODO: this should be done smarter
-	for(int i = 0; i < m_All.m_Num; i++)
-		m_All.m_paComponents[i]->OnMessageIrc(pFrom, pUser, pText);
-}
-
 void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 {
 	// special messages
@@ -586,6 +506,9 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 			CNetObj_Projectile Proj;
 			for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 				((int *)&Proj)[i] = pUnpacker->GetInt();
+
+			if(pUnpacker->Error())
+				return;
 
 			g_GameClient.m_pItems->AddExtraProjectile(&Proj);
 		}
@@ -600,82 +523,16 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 		for(unsigned i = 0; i < sizeof(CTuningParams)/sizeof(int); i++)
 			pParams[i] = pUnpacker->GetInt();
 
+		// check for unpacking errors
+		if(pUnpacker->Error())
+			return;
+
 		m_ServerMode = SERVERMODE_PURE;
 
 		// apply new tuning
 		m_Tuning = NewTuning;
 		return;
 	}
-    else if(MsgId == NETMSGTYPE_SV_TILECHANGEEXT)
-    {
-        CServerInfo sInfo;
-        Client()->GetServerInfo(&sInfo);
-
-        int Size = pUnpacker->GetInt();
-        int Index = pUnpacker->GetInt();
-        int posX = pUnpacker->GetInt();
-        int posY = pUnpacker->GetInt();
-        int ITile = pUnpacker->GetInt();
-        int State = pUnpacker->GetInt();
-        int Coll = pUnpacker->GetInt();
-        int Act = pUnpacker->GetInt();
-        vec2 Pos = vec2(posX, posY);
-
-        // check fior errors
-        /*if(pUnpacker->Error())
-        {
-            dbg_msg("MineTee", "Oops! net message fail! :S");
-            return;
-        }*/
-
-        if (Index == -1 && Size > 0)
-        {
-            m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client/network", "starting to download map state");
-            Client()->SetSyncTotalSize(Size);  //TODO: Ugly
-
-            CMsgPacker Msg(NETMSGTYPE_CL_TILECHANGEREQUEST);
-            Msg.AddInt(0);
-            m_pClient->SendMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH);
-
-            return;
-        }
-
-        if (Act == TILE_DESTROY)
-        {
-            Layers()->DestroyTile(Pos);
-            if (Index == -1)
-                m_pEffects->BlockDestroy(vec2(Pos.x*32.0f, Pos.y*32.0f));
-        }
-        else if (Act == TILE_CREATE)
-            Layers()->CreateTile(Pos, ITile, Coll, State);
-
-        if (Index != -1)
-        {
-            if(Index >= Client()->MapSyncTotalsize()-1)
-            {
-                const char *pError;
-                m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client/network", "download complete, loading map");
-
-                Client()->SetSyncAmount(0); //TODO: Ugly
-                Client()->SetSyncTotalSize(-1); //TODO: Ugly
-
-                return;
-            }
-            else if (Index > 0 && (Index+1)%TILECHANGE_MAX_PACKS == 0)
-            {
-                CMsgPacker Msg(NETMSGTYPE_CL_TILECHANGEREQUEST);
-                Msg.AddInt(Index+1);
-                m_pClient->SendMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH);
-
-                if(g_Config.m_Debug)
-                    m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client/network", "requested chunk");
-            }
-
-            Client()->SetSyncAmount(Index+1); //TODO: Ugly
-        }
-
-        return;
-    }
 
 	void *pRawMsg = m_NetObjHandler.SecureUnpackMsg(MsgId, pUnpacker);
 	if(!pRawMsg)
@@ -715,8 +572,42 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 			pMsg->m_SoundID == SOUND_CTF_GRAB_PL)
 			g_GameClient.m_pSounds->Enqueue(CSounds::CHN_GLOBAL, pMsg->m_SoundID);
 		else
-			g_GameClient.m_pSounds->Play(CSounds::CHN_GLOBAL, pMsg->m_SoundID, 1.0f, vec2(0,0));
+			g_GameClient.m_pSounds->Play(CSounds::CHN_GLOBAL, pMsg->m_SoundID, 1.0f);
 	}
+	// H-Client: DDNet
+	else if(MsgId == NETMSGTYPE_SV_TEAMSSTATE)
+	{
+		unsigned int i;
+
+		for(i = 0; i < MAX_CLIENTS; i++)
+		{
+			int Team = pUnpacker->GetInt();
+			bool WentWrong = false;
+
+			if(pUnpacker->Error())
+				WentWrong = true;
+
+			if(!WentWrong && Team >= 0 && Team < MAX_CLIENTS)
+				m_Teams.Team(i, Team);
+			else if (Team != MAX_CLIENTS)
+				WentWrong = true;
+
+			if(WentWrong)
+			{
+				m_Teams.Team(i, 0);
+				break;
+			}
+		}
+
+		if (i <= 16)
+			m_Teams.m_IsDDRace16 = true;
+	}
+	else if(MsgId == NETMSGTYPE_SV_PLAYERTIME)
+	{
+		CNetMsg_Sv_PlayerTime *pMsg = (CNetMsg_Sv_PlayerTime *)pRawMsg;
+		m_aClients[pMsg->m_ClientID].m_Score = pMsg->m_Time;
+	}
+	//
 }
 
 void CGameClient::OnStateChange(int NewState, int OldState)
@@ -735,10 +626,8 @@ void CGameClient::OnEnterGame() {}
 
 void CGameClient::OnGameOver()
 {
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && g_Config.m_ClEditor == 0)
 		Client()->AutoScreenshot_Start();
-
-    Graphics()->ShowInfoKills(true);
 }
 
 void CGameClient::OnStartGame()
@@ -747,7 +636,7 @@ void CGameClient::OnStartGame()
 		Client()->DemoRecorder_HandleAutoStart();
 
     m_TakeInitScreenShot = true;
-    Graphics()->ShowInfoKills(false);
+    m_DDRaceMsgSent = true; //DDRace
 }
 
 void CGameClient::OnRconLine(const char *pLine)
@@ -786,17 +675,6 @@ void CGameClient::ProcessEvents()
 		{
 			CNetEvent_Spawn *ev = (CNetEvent_Spawn *)pData;
 			g_GameClient.m_pEffects->PlayerSpawn(vec2(ev->m_X, ev->m_Y));
-
-            //H-Client
-            CServerInfo Info;
-            Client()->GetServerInfo(&Info);
-			if (g_Config.m_ddrAutoTeam && str_find_nocase(Info.m_aGameType, "ddrace"))
-			{
-			    char aBuf[15];
-			    str_format(aBuf, sizeof(aBuf), "/team %s", g_Config.m_ddrAutoTeamNum);
-			    m_pChat->Say(0, aBuf);
-			}
-			//
 		}
 		else if(Item.m_Type == NETEVENTTYPE_DEATH)
 		{
@@ -806,14 +684,7 @@ void CGameClient::ProcessEvents()
 		else if(Item.m_Type == NETEVENTTYPE_SOUNDWORLD)
 		{
 			CNetEvent_SoundWorld *ev = (CNetEvent_SoundWorld *)pData;
-			g_GameClient.m_pSounds->Play(CSounds::CHN_WORLD, ev->m_SoundID, 1.0f, vec2(ev->m_X, ev->m_Y));
-		}
-
-		//H-Client
-		else if(Item.m_Type == NETEVENTTYPE_TOMBSTONE)
-		{
-			CNetEvent_Death *ev = (CNetEvent_Death *)pData;
-			g_GameClient.m_pEffects->Tombstone(vec2(ev->m_X, ev->m_Y));
+			g_GameClient.m_pSounds->PlayAt(CSounds::CHN_WORLD, ev->m_SoundID, 1.0f, vec2(ev->m_X, ev->m_Y));
 		}
 	}
 }
@@ -889,13 +760,7 @@ void CGameClient::OnNewSnapshot()
 				m_aClients[ClientID].m_ColorFeet = pInfo->m_ColorFeet;
 
 				// prepare the info
-				if((m_aClients[ClientID].m_aSkinName[0] == 'x' || m_aClients[ClientID].m_aSkinName[1] == '_')
-                    && str_comp_nocase(m_aClients[ClientID].m_aSkinName, "x_teeper") != 0
-                    && str_comp_nocase(m_aClients[ClientID].m_aSkinName, "x_zombitee") != 0
-                    && str_comp_nocase(m_aClients[ClientID].m_aSkinName, "x_spidertee") != 0
-                    && str_comp_nocase(m_aClients[ClientID].m_aSkinName, "x_skeletee") != 0
-                    && str_comp_nocase(m_aClients[ClientID].m_aSkinName, "x_teecow") != 0
-                    && str_comp_nocase(m_aClients[ClientID].m_aSkinName, "x_teepig") != 0)
+				if(m_aClients[ClientID].m_aSkinName[0] == 'x' || m_aClients[ClientID].m_aSkinName[1] == '_')
 					str_copy(m_aClients[ClientID].m_aSkinName, "default", 64);
 
 				m_aClients[ClientID].m_SkinInfo.m_ColorBody = m_pSkins->GetColorV4(m_aClients[ClientID].m_ColorBody);
@@ -945,7 +810,7 @@ void CGameClient::OnNewSnapshot()
 				}
 
 				// calculate team-balance
-				if(pInfo->m_Team != TEAM_SPECTATORS && pInfo->m_Team <= TEAM_BLUE)
+				if(pInfo->m_Team != TEAM_SPECTATORS)
 					m_Snap.m_aTeamSize[pInfo->m_Team]++;
 
 			}
@@ -997,38 +862,11 @@ void CGameClient::OnNewSnapshot()
 					if(m_FlagDropTick[TEAM_BLUE] == 0)
 						m_FlagDropTick[TEAM_BLUE] = Client()->GameTick();
 				}
-
 				else if(m_FlagDropTick[TEAM_BLUE] != 0)
 						m_FlagDropTick[TEAM_BLUE] = 0;
 			}
 			else if(Item.m_Type == NETOBJTYPE_FLAG)
 				m_Snap.m_paFlags[Item.m_ID%2] = (const CNetObj_Flag *)pData;
-
-            //H-Client
-			else if(Item.m_Type == NETOBJTYPE_INVENTORY)
-			{
-				const CNetObj_Inventory *pInfo = (const CNetObj_Inventory *)pData;
-				m_Inventory.m_Items[0] = pInfo->m_Item1;
-				m_Inventory.m_Items[1] = pInfo->m_Item2;
-				m_Inventory.m_Items[2] = pInfo->m_Item3;
-				m_Inventory.m_Items[3] = pInfo->m_Item4;
-				m_Inventory.m_Items[4] = pInfo->m_Item5;
-				m_Inventory.m_Items[5] = pInfo->m_Item6;
-				m_Inventory.m_Items[6] = pInfo->m_Item7;
-				m_Inventory.m_Items[7] = pInfo->m_Item8;
-				m_Inventory.m_Items[8] = pInfo->m_Item9;
-
-				m_Inventory.m_Ammo[0] = pInfo->m_Ammo1;
-				m_Inventory.m_Ammo[1] = pInfo->m_Ammo2;
-				m_Inventory.m_Ammo[2] = pInfo->m_Ammo3;
-				m_Inventory.m_Ammo[3] = pInfo->m_Ammo4;
-				m_Inventory.m_Ammo[4] = pInfo->m_Ammo5;
-				m_Inventory.m_Ammo[5] = pInfo->m_Ammo6;
-				m_Inventory.m_Ammo[6] = pInfo->m_Ammo7;
-				m_Inventory.m_Ammo[7] = pInfo->m_Ammo8;
-				m_Inventory.m_Ammo[8] = pInfo->m_Ammo9;
-				m_Inventory.m_Selected = pInfo->m_Selected;
-			}
 		}
 	}
 
@@ -1058,24 +896,23 @@ void CGameClient::OnNewSnapshot()
 			m_Snap.m_SpecInfo.m_SpectatorID = SPEC_FREEVIEW;
 	}
 
+    CServerInfo SInfo;
+    Client()->GetServerInfo(&SInfo);
+
 	// clear out unneeded client data
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
+	    // clear out unneeded client data
 		if(!m_Snap.m_paPlayerInfos[i] && m_aClients[i].m_Active)
 			m_aClients[i].Reset();
-	}
 
-	// update friend state
-    CServerInfo SInfo;
-    Client()->GetServerInfo(&SInfo);
-	for(int i = 0; i < MAX_CLIENTS; ++i)
-	{
-		if(i == m_Snap.m_LocalClientID || !m_Snap.m_paPlayerInfos[i] || !Friends()->IsFriend(m_aClients[i].m_aName, m_aClients[i].m_aClan, true))
+        // update friend state
+        if(i == m_Snap.m_LocalClientID || !m_Snap.m_paPlayerInfos[i] || !Friends()->IsFriend(m_aClients[i].m_aName, m_aClients[i].m_aClan, true))
 			m_aClients[i].m_Friend = false;
 		else
 			m_aClients[i].m_Friend = true;
 
-        //H-Client: DDRace
+        // H-Client: update freeze state
         if (str_find_nocase(SInfo.m_aGameType, "ddrace") && (Collision()->GetTileIndex(Collision()->GetPureMapIndex(m_aClients[i].m_Predicted.m_Pos)) == TILE_FREEZE || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
         {
             if (!m_aClients[i].m_FreezedState.m_Freezed)
@@ -1106,9 +943,9 @@ void CGameClient::OnNewSnapshot()
 		}
 	}
 	// sort player infos by team
-	int Teams[9] = { TEAM_RED, TEAM_BLUE, TEAM_SPECTATORS, TEAM_ENEMY_TEEPER, TEAM_ENEMY_ZOMBITEE, TEAM_ENEMY_SKELETEE, TEAM_ENEMY_SPIDERTEE, TEAM_ANIMAL_TEECOW, TEAM_ANIMAL_TEEPIG };
+	int Teams[3] = { TEAM_RED, TEAM_BLUE, TEAM_SPECTATORS };
 	int Index = 0;
-	for(int Team = 0; Team < 9; ++Team)
+	for(int Team = 0; Team < 3; ++Team)
 	{
 		for(int i = 0; i < MAX_CLIENTS && Index < MAX_CLIENTS; ++i)
 		{
@@ -1117,12 +954,24 @@ void CGameClient::OnNewSnapshot()
 		}
 	}
 
+    // H-Client: DDNet - sort player infos by DDRace Team (and score inbetween)
+	Index = 0;
+	for(int Team = 0; Team <= MAX_CLIENTS; ++Team)
+	{
+		for(int i = 0; i < MAX_CLIENTS && Index < MAX_CLIENTS; ++i)
+		{
+			if(m_Snap.m_paInfoByScore[i] && m_Teams.Team(m_Snap.m_paInfoByScore[i]->m_ClientID) == Team)
+				m_Snap.m_paInfoByDDTeam[Index++] = m_Snap.m_paInfoByScore[i];
+		}
+	}
+	//
+
 	CTuningParams StandardTuning;
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
-	if(CurrentServerInfo.m_aGameType[0] != 0)
+	if(CurrentServerInfo.m_aGameType[0] != '0')
 	{
-		if(str_comp_nocase(CurrentServerInfo.m_aGameType, "DM") != 0 && str_comp_nocase(CurrentServerInfo.m_aGameType, "TDM") != 0 && str_comp_nocase(CurrentServerInfo.m_aGameType, "CTF") != 0)
+		if(str_comp(CurrentServerInfo.m_aGameType, "DM") != 0 && str_comp(CurrentServerInfo.m_aGameType, "TDM") != 0 && str_comp(CurrentServerInfo.m_aGameType, "CTF") != 0)
 			m_ServerMode = SERVERMODE_MOD;
 		else if(mem_comp(&StandardTuning, &m_Tuning, sizeof(CTuningParams)) == 0)
 			m_ServerMode = SERVERMODE_PURE;
@@ -1143,16 +992,25 @@ void CGameClient::OnNewSnapshot()
 
         m_TakeInitScreenShot = false;
     }
-
-    //DDRace
+    //H-Client: DDNet
 	if(!m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
 	{
-		CNetMsg_Cl_IsDDRace Msg;
-		Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+		CMsgPacker Msg(NETMSGTYPE_CL_ISDDNET); // <-- NO, THIS IS H-CLIENT BITCH!
+		Msg.AddInt(CLIENT_VERSIONNR);
+		Client()->SendMsg(&Msg, MSGFLAG_VITAL);
 		m_DDRaceMsgSent = true;
 	}
     //
 
+	// add tuning to demo
+	if(DemoRecorder()->IsRecording() && mem_comp(&StandardTuning, &m_Tuning, sizeof(CTuningParams)) != 0)
+	{
+		CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+		int *pParams = (int *)&m_Tuning;
+		for(unsigned i = 0; i < sizeof(m_Tuning)/sizeof(int); i++)
+			Msg.AddInt(pParams[i]);
+		Client()->SendMsg(&Msg, MSGFLAG_RECORD|MSGFLAG_NOSEND);
+	}
 }
 
 void CGameClient::OnPredict()
@@ -1323,11 +1181,12 @@ void CGameClient::CClientData::Reset()
 	m_SkinInfo.m_Texture = g_GameClient.m_pSkins->Get(0)->m_ColorTexture;
 	m_SkinInfo.m_ColorBody = vec4(1,1,1,1);
 	m_SkinInfo.m_ColorFeet = vec4(1,1,1,1);
-
-    m_FreezedState.Reset(); //H-Client
-    m_InWater = false; //H-Client
-
 	UpdateRenderInfo();
+
+    m_FreezedState.Reset();
+	m_hasEndlessHook = false;
+	m_hasSuperJump = false;
+	m_hasJetPack = false;
 }
 
 void CGameClient::SendSwitchTeam(int Team)
@@ -1397,60 +1256,38 @@ IGameClient *CreateGameClient()
 	return &g_GameClient;
 }
 
-
-//H-Client
-// TODO: should be more general
-int CGameClient::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos)
+// H-Client
+int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2& NewPos2, int ownID)
 {
-	// Find other players
-	static const int ProximityRadius = 28;
-	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+	float PhysSize = 28.0f;
+	float Distance = 0.0f;
 	int ClosestID = -1;
+
+	if (!m_Tuning.m_PlayerHooking)
+	return ClosestID;
 
 	for (int i=0; i<MAX_CLIENTS; i++)
 	{
-        CClientData cData = m_aClients[i];
-        CNetObj_Character Prev = m_Snap.m_aCharacters[i].m_Prev;
-        CNetObj_Character Player = m_Snap.m_aCharacters[i].m_Cur;
+		CClientData cData = m_aClients[i];
+		CNetObj_Character Prev = m_Snap.m_aCharacters[i].m_Prev;
+		CNetObj_Character Player = m_Snap.m_aCharacters[i].m_Cur;
 
-        vec2 Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Client()->IntraGameTick());
+		vec2 Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Client()->IntraGameTick());
 
-        if (!cData.m_Active || cData.m_Team == TEAM_SPECTATORS || m_Snap.m_LocalClientID == m_Snap.m_paPlayerInfos[i]->m_ClientID)
-            continue;
+		if (!cData.m_Active || i == ownID || !m_Teams.SameTeam(i, ownID))
+			continue;
 
-		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, Position);
-		float Len = distance(Position, IntersectPos);
-		if(Len < ProximityRadius+Radius)
+		vec2 ClosestPoint = closest_point_on_line(HookPos, NewPos, Position);
+		if(distance(Position, ClosestPoint) < PhysSize+2.0f)
 		{
-			Len = distance(Pos0, IntersectPos);
-			if(Len < ClosestLen)
+			if(ClosestID == -1 || distance(HookPos, Position) < Distance)
 			{
-				NewPos = IntersectPos;
-				ClosestLen = Len;
+				NewPos2 = ClosestPoint;
 				ClosestID = i;
+				Distance = distance(HookPos, Position);
 			}
 		}
 	}
 
 	return ClosestID;
 }
-
-int SearchMapsCallback(const char *pName, int IsDir, int StorageType, void *pUser)
-{
-	CGameClient *pSelf = (CGameClient *)pUser;
-	int Length = str_length(pName);
-	if((pName[0] == '.' && (pName[1] == 0 ||
-		(pName[1] == '.' && pName[2] == 0))) ||
-		(!IsDir && (Length < 4 || str_comp(pName+Length-4, ".map"))))
-		return 0;
-
-
-    std::string mapName(pName);
-    mapName = mapName.substr(0, mapName.find_last_of("_"));
-
-    pSelf->m_vMaps.push_back(mapName);
-
-	return 0;
-}
-//
-//

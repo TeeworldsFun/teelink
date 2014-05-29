@@ -29,7 +29,6 @@ void CMotd::OnStateChange(int NewState, int OldState)
 
 void CMotd::OnRender()
 {
-    //H-Client: IF Change
 	if(!IsActive() || Graphics()->Tumbtail())
 		return;
 
@@ -38,20 +37,19 @@ void CMotd::OnRender()
 
 	Graphics()->MapScreen(0, 0, Width, Height);
 
-    CUIRect rBox, rTitle;
-    rBox.h = 800.0f;
-    rBox.w = 650.0f;
-    rBox.x = Width/2 - rBox.w/2;
-    rBox.y = 150.0f;
+	float h = 800.0f;
+	float w = 650.0f;
+	float x = Width/2 - w/2;
+	float y = 150.0f;
 
 	Graphics()->BlendNormal();
 	Graphics()->TextureSet(-1);
-	RenderTools()->DrawUIRect(&rBox, vec4(0,0,0,0.5f), CUI::CORNER_T, 15.0f);
-	rBox.HSplitTop(50.0f, &rTitle, &rBox);
-	RenderTools()->DrawUIRect(&rTitle, vec4(1,1,1,0.5f), CUI::CORNER_T, 15.0f);
-	TextRender()->Text(0, rTitle.x+5.0f, rTitle.y+5.0f, 32.0f, "MoTD", rBox.w-10.0f);
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(HexToVec4(g_Config.m_hcContainerBackgroundColor));
+	RenderTools()->DrawRoundRect(x, y, w, h, 40.0f);
+	Graphics()->QuadsEnd();
 
-	TextRender()->Text(0, rBox.x+40.0f, rBox.y+40.0f, 22.0f, m_aServerMotd, (int)(rBox.w-80.0f));
+	TextRender()->Text(0, x+40.0f, y+40.0f, 32.0f, m_aServerMotd, (int)(w-80.0f));
 }
 
 void CMotd::OnMessage(int MsgType, void *pRawMsg)

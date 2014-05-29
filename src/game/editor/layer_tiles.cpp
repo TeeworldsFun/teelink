@@ -7,10 +7,10 @@
 #include <engine/textrender.h>
 
 #include <game/generated/client_data.h>
+#include <game/localization.h>
 #include <game/client/render.h>
 #include "editor.h"
 
-#include <game/localization.h>
 
 CLayerTiles::CLayerTiles(int w, int h)
 {
@@ -19,7 +19,6 @@ CLayerTiles::CLayerTiles(int w, int h)
 	m_Width = w;
 	m_Height = h;
 	m_Image = -1;
-	m_TexID = -1;
 	m_Game = 0;
 	m_Color.r = 255;
 	m_Color.g = 255;
@@ -30,6 +29,9 @@ CLayerTiles::CLayerTiles(int w, int h)
 
 	m_pTiles = new CTile[m_Width*m_Height];
 	mem_zero(m_pTiles, m_Width*m_Height*sizeof(CTile));
+
+	m_SelectedRuleSet = 0;
+	m_SelectedAmount = 50;
 }
 
 CLayerTiles::~CLayerTiles()
@@ -61,10 +63,14 @@ void CLayerTiles::MakePalette()
 void CLayerTiles::Render()
 {
 	if(m_Image >= 0 && m_Image < m_pEditor->m_Map.m_lImages.size())
-		m_TexID = m_pEditor->m_Map.m_lImages[m_Image]->m_TexID;
-	Graphics()->TextureSet(m_TexID);
+		m_Texture = m_pEditor->m_Map.m_lImages[m_Image]->m_Texture;
+	Graphics()->TextureSet(m_Texture);
 	vec4 Color = vec4(m_Color.r/255.0f, m_Color.g/255.0f, m_Color.b/255.0f, m_Color.a/255.0f);
-	m_pEditor->RenderTools()->RenderTilemap(0x0, m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_OPAQUE|LAYERRENDERFLAG_TRANSPARENT,
+	Graphics()->BlendNone();
+	m_pEditor->RenderTools()->RenderTilemap(0x0, m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_OPAQUE,
+												m_pEditor->EnvelopeEval, m_pEditor, m_ColorEnv, m_ColorEnvOffset);
+	Graphics()->BlendNormal();
+	m_pEditor->RenderTools()->RenderTilemap(0x0, m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_TRANSPARENT,
 												m_pEditor->EnvelopeEval, m_pEditor, m_ColorEnv, m_ColorEnvOffset);
 }
 
@@ -141,7 +147,7 @@ int CLayerTiles::BrushGrab(CLayerGroup *pBrush, CUIRect Rect)
 	// create new layers
 	CLayerTiles *pGrabbed = new CLayerTiles(r.w, r.h);
 	pGrabbed->m_pEditor = m_pEditor;
-	pGrabbed->m_TexID = m_TexID;
+	pGrabbed->m_Texture = m_Texture;
 	pGrabbed->m_Image = m_Image;
 	pGrabbed->m_Game = m_Game;
 	pBrush->AddLayer(pGrabbed);
@@ -159,6 +165,8 @@ void CLayerTiles::FillSelection(bool Empty, CLayer *pBrush, CUIRect Rect)
 	if(m_Readonly)
 		return;
 
+	Snap(&Rect);
+
 	int sx = ConvertX(Rect.x);
 	int sy = ConvertY(Rect.y);
 	int w = ConvertX(Rect.w);
@@ -166,9 +174,9 @@ void CLayerTiles::FillSelection(bool Empty, CLayer *pBrush, CUIRect Rect)
 
 	CLayerTiles *pLt = static_cast<CLayerTiles*>(pBrush);
 
-	for(int y = 0; y <= h; y++)
+	for(int y = 0; y < h; y++)
 	{
-		for(int x = 0; x <= w; x++)
+		for(int x = 0; x < w; x++)
 		{
 			int fx = x+sx;
 			int fy = y+sy;
@@ -202,6 +210,9 @@ void CLayerTiles::BrushDraw(CLayer *pBrush, float wx, float wy)
 			int fy = y+sy;
 			if(fx<0 || fx >= m_Width || fy < 0 || fy >= m_Height)
 				continue;
+
+            if (m_pEditor->m_BrushMode == BRUSH_MODE_ADDITION && l->m_pTiles[y*l->m_Width+x].m_Index == 0)
+                continue;
 
 			m_pTiles[fy*m_Width+fx] = l->m_pTiles[y*l->m_Width+x];
 		}
@@ -332,6 +343,7 @@ void CLayerTiles::ShowInfo()
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
 	Graphics()->TextureSet(m_pEditor->Client()->GetDebugFont());
+	Graphics()->QuadsBegin();
 
 	int StartY = max(0, (int)(ScreenY0/32.0f)-1);
 	int StartX = max(0, (int)(ScreenX0/32.0f)-1);
@@ -346,17 +358,18 @@ void CLayerTiles::ShowInfo()
 			{
 				char aBuf[64];
 				str_format(aBuf, sizeof(aBuf), "%i", m_pTiles[c].m_Index);
-				m_pEditor->Graphics()->QuadsText(x*32, y*32, 16.0f, 1,1,1,1, aBuf);
+				m_pEditor->Graphics()->QuadsText(x*32, y*32, 16.0f, aBuf);
 
 				char aFlags[4] = {	m_pTiles[c].m_Flags&TILEFLAG_VFLIP ? 'V' : ' ',
 									m_pTiles[c].m_Flags&TILEFLAG_HFLIP ? 'H' : ' ',
 									m_pTiles[c].m_Flags&TILEFLAG_ROTATE? 'R' : ' ',
 									0};
-				m_pEditor->Graphics()->QuadsText(x*32, y*32+16, 16.0f, 1,1,1,1, aFlags);
+				m_pEditor->Graphics()->QuadsText(x*32, y*32+16, 16.0f, aFlags);
 			}
 			x += m_pTiles[c].m_Skip;
 		}
 
+	Graphics()->QuadsEnd();
 	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
@@ -367,18 +380,23 @@ int CLayerTiles::RenderProperties(CUIRect *pToolBox)
 	bool InGameGroup = !find_linear(m_pEditor->m_Map.m_pGameGroup->m_lLayers.all(), this).empty();
 	if(m_pEditor->m_Map.m_pGameLayer != this)
 	{
-		if(m_Image >= 0 && m_Image < m_pEditor->m_Map.m_lImages.size() && m_pEditor->m_Map.m_lImages[m_Image]->m_AutoMapper.IsLoaded())
+		if(m_Image >= 0 && m_Image < m_pEditor->m_Map.m_lImages.size() && m_pEditor->m_Map.m_lImages[m_Image]->m_pAutoMapper)
 		{
 			static int s_AutoMapperButton = 0;
 			pToolBox->HSplitBottom(12.0f, pToolBox, &Button);
 			if(m_pEditor->DoButton_Editor(&s_AutoMapperButton, "Auto map", 0, &Button, 0, ""))
 				m_pEditor->PopupSelectConfigAutoMapInvoke(m_pEditor->UI()->MouseX(), m_pEditor->UI()->MouseY());
 
-			int Result = m_pEditor->PopupSelectConfigAutoMapResult();
-			if(Result > -1)
+			bool Proceed = m_pEditor->PopupAutoMapProceedOrder();
+			if(Proceed)
 			{
-				m_pEditor->m_Map.m_lImages[m_Image]->m_AutoMapper.Proceed(this, Result);
-				return 1;
+				if(m_pEditor->m_Map.m_lImages[m_Image]->m_pAutoMapper->GetType() == IAutoMapper::TYPE_TILESET)
+				{
+					m_pEditor->m_Map.m_lImages[m_Image]->m_pAutoMapper->Proceed(this, m_SelectedRuleSet);
+					return 1; // only close the popup when it's a tileset
+				}
+				else if(m_pEditor->m_Map.m_lImages[m_Image]->m_pAutoMapper->GetType() == IAutoMapper::TYPE_DOODADS)
+					m_pEditor->m_Map.m_lImages[m_Image]->m_pAutoMapper->Proceed(this, m_SelectedRuleSet, m_SelectedAmount);
 			}
 		}
 	}
@@ -459,7 +477,7 @@ int CLayerTiles::RenderProperties(CUIRect *pToolBox)
 	{
 		if (NewVal == -1)
 		{
-			m_TexID = -1;
+			m_Texture = -1;
 			m_Image = -1;
 		}
 		else

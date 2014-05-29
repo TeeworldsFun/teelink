@@ -30,6 +30,7 @@ public:
 	virtual void Destroy();
 	virtual void Tick();
 	virtual void TickDefered();
+	virtual void TickPaused();
 	virtual void Snap(int SnappingClient);
 
 	bool IsGrounded();
@@ -55,7 +56,6 @@ public:
 	bool IncreaseHealth(int Amount);
 	bool IncreaseArmor(int Amount);
 
-    bool GiveBlock(int Block, int Amount); //H-Client
 	bool GiveWeapon(int Weapon, int Ammo);
 	void GiveNinja();
 
@@ -63,42 +63,6 @@ public:
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
-
-
-    //H-Client
-    CCharacterCore* GetCore() { return &m_Core; }
-    void DropItem(int ItemID = -1);
-
-    int m_Kills;
-
-    struct {
-        int m_Items[9];
-        int m_Selected;
-    } m_Inventory;
-
-	struct BlockStat
-	{
-	    int m_Amount;
-	    bool m_Got;
-	} m_aBlocks[NUM_BLOCKS];
-
-	void UpdateInventory(int item = NUM_WEAPONS+NUM_BLOCKS);
-	bool IsInventoryFull();
-
-    int GetCurrentAmmo(int wid);
-
-	//Bot
-	vec2 m_BotLastPos;
-    int m_BotDir;
-    int m_BotStuckCount;
-    int m_BotClientIDFix;
-    float m_BotLastStuckTime;
-    float m_BotTimePlayerFound;
-    float m_BotTimeGrounded;
-    float m_BotTimeLastOption;
-    float m_BotTimeLastDamage;
-    float m_BotTimeLastSound;
-	//
 
 private:
 	// player controlling this character
@@ -116,6 +80,7 @@ private:
 		int m_Ammo;
 		int m_Ammocost;
 		bool m_Got;
+
 	} m_aWeapons[NUM_WEAPONS];
 
 	int m_ActiveWeapon;
@@ -132,6 +97,7 @@ private:
 
 	// last tick that the player took any action ie some input
 	int m_LastAction;
+	int m_LastNoAmmoSound;
 
 	// these are non-heldback inputs
 	CNetObj_PlayerInput m_LatestPrevInput;
@@ -164,13 +130,6 @@ private:
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
-
-    bool m_NeedSendInventory;
-	float TimerFluidDamage;
-	bool inWater;
-	void Construct();
-	void BotIA();
-	//
 
 };
 

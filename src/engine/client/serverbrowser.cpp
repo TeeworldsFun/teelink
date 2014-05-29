@@ -1,17 +1,16 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <algorithm> // sort
+#include <algorithm> // sort  TODO: remove this
 
 #include <base/math.h>
 #include <base/system.h>
-
-#include <engine/storage.h>
 
 #include <engine/shared/config.h>
 #include <engine/shared/memheap.h>
 #include <engine/shared/network.h>
 #include <engine/shared/protocol.h>
 
+#include <engine/storage.h> // H-Client
 #include <engine/config.h>
 #include <engine/console.h>
 #include <engine/friends.h>
@@ -20,7 +19,6 @@
 #include <mastersrv/mastersrv.h>
 
 #include "serverbrowser.h"
-
 class SortWrap
 {
 	typedef bool (CServerBrowser::*SortFunc)(int, int) const;
@@ -28,7 +26,7 @@ class SortWrap
 	CServerBrowser *m_pThis;
 public:
 	SortWrap(CServerBrowser *t, SortFunc f) : m_pfnSort(f), m_pThis(t) {}
-	bool operator()(int a, int b) { return (m_pThis->*m_pfnSort)(a, b); }
+	bool operator()(int a, int b) { return (g_Config.m_BrSortOrder ? (m_pThis->*m_pfnSort)(b, a) : (m_pThis->*m_pfnSort)(a, b)); }
 };
 
 CServerBrowser::CServerBrowser()
@@ -73,9 +71,6 @@ void CServerBrowser::SetBaseInfo(class CNetClient *pClient, const char *pNetVers
 	IConfig *pConfig = Kernel()->RequestInterface<IConfig>();
 	if(pConfig)
 		pConfig->RegisterCallback(ConfigSaveCallback, this);
-
-	m_pStorage = Kernel()->RequestInterface<IStorageTW>();
-	LoadServerInfo(); //H-Client
 }
 
 const CServerInfo *CServerBrowser::SortedGet(int Index) const
@@ -91,7 +86,7 @@ bool CServerBrowser::SortCompareName(int Index1, int Index2) const
 	CServerEntry *a = m_ppServerlist[Index1];
 	CServerEntry *b = m_ppServerlist[Index2];
 	//	make sure empty entries are listed last
-	return (a->m_GotInfo && b->m_GotInfo) || (!a->m_GotInfo && !b->m_GotInfo) ? str_comp(a->m_Info.m_aName, b->m_Info.m_aName) < 0 :
+	return (a->m_GotInfo && b->m_GotInfo) || (!a->m_GotInfo && !b->m_GotInfo) ? str_comp_nocase(a->m_Info.m_aName, b->m_Info.m_aName) < 0 :
 			a->m_GotInfo ? true : false;
 }
 
@@ -99,7 +94,7 @@ bool CServerBrowser::SortCompareMap(int Index1, int Index2) const
 {
 	CServerEntry *a = m_ppServerlist[Index1];
 	CServerEntry *b = m_ppServerlist[Index2];
-	return str_comp(a->m_Info.m_aMap, b->m_Info.m_aMap) < 0;
+	return str_comp_nocase(a->m_Info.m_aMap, b->m_Info.m_aMap) < 0;
 }
 
 bool CServerBrowser::SortComparePing(int Index1, int Index2) const
@@ -113,7 +108,7 @@ bool CServerBrowser::SortCompareGametype(int Index1, int Index2) const
 {
 	CServerEntry *a = m_ppServerlist[Index1];
 	CServerEntry *b = m_ppServerlist[Index2];
-	return str_comp(a->m_Info.m_aGameType, b->m_Info.m_aGameType) < 0;
+	return str_comp_nocase(a->m_Info.m_aGameType, b->m_Info.m_aGameType) < 0;
 }
 
 bool CServerBrowser::SortCompareNumPlayers(int Index1, int Index2) const
@@ -288,27 +283,18 @@ void CServerBrowser::Sort()
 
 	// sort
 	if(g_Config.m_BrSort == IServerBrowser::SORT_NAME)
-		std::sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this, &CServerBrowser::SortCompareName));
+		std::stable_sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this, &CServerBrowser::SortCompareName));
 	else if(g_Config.m_BrSort == IServerBrowser::SORT_PING)
-		std::sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this, &CServerBrowser::SortComparePing));
+		std::stable_sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this, &CServerBrowser::SortComparePing));
 	else if(g_Config.m_BrSort == IServerBrowser::SORT_MAP)
-		std::sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this, &CServerBrowser::SortCompareMap));
+		std::stable_sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this, &CServerBrowser::SortCompareMap));
 	else if(g_Config.m_BrSort == IServerBrowser::SORT_NUMPLAYERS)
-		std::sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this,
+		std::stable_sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this,
 					g_Config.m_BrFilterSpectators ? &CServerBrowser::SortCompareNumPlayers : &CServerBrowser::SortCompareNumClients));
-	else if(g_Config.m_BrSort == IServerBrowser::SORT_GAMETYPE)
-		std::sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this, &CServerBrowser::SortCompareGametype));
+	//else if(g_Config.m_BrSort == IServerBrowser::SORT_GAMETYPE)
 
-	// invert the list if requested
-	if(g_Config.m_BrSortOrder)
-	{
-		for(i = 0; i < m_NumSortedServers/2; i++)
-		{
-			int Temp = m_pSortedServerlist[i];
-			m_pSortedServerlist[i] = m_pSortedServerlist[m_NumSortedServers-i-1];
-			m_pSortedServerlist[m_NumSortedServers-i-1] = Temp;
-		}
-	}
+    // H-Client
+    std::stable_sort(m_pSortedServerlist, m_pSortedServerlist+m_NumSortedServers, SortWrap(this, &CServerBrowser::SortCompareGametype));
 
 	// set indexes
 	for(i = 0; i < m_NumSortedServers; i++)
@@ -360,7 +346,7 @@ void CServerBrowser::QueueRequest(CServerEntry *pEntry)
 	else
 		m_pFirstReqServer = pEntry;
 	m_pLastReqServer = pEntry;
-
+	pEntry->m_pNextReq = 0;
 	m_NumRequests++;
 }
 
@@ -386,7 +372,6 @@ void CServerBrowser::SetInfo(CServerEntry *pEntry, const CServerInfo &Info)
 	}*/
 
 	pEntry->m_GotInfo = 1;
-	Sort();
 }
 
 CServerBrowser::CServerEntry *CServerBrowser::Add(const NETADDR &Addr)
@@ -404,7 +389,7 @@ CServerBrowser::CServerEntry *CServerBrowser::Add(const NETADDR &Addr)
 	pEntry->m_Info.m_NetAddr = Addr;
 
 	pEntry->m_Info.m_Latency = 999;
-	net_addr_str(&Addr, pEntry->m_Info.m_aAddress, sizeof(pEntry->m_Info.m_aAddress));
+	net_addr_str(&Addr, pEntry->m_Info.m_aAddress, sizeof(pEntry->m_Info.m_aAddress), true);
 	str_copy(pEntry->m_Info.m_aName, pEntry->m_Info.m_aAddress, sizeof(pEntry->m_Info.m_aName));
 
 	// check if it's a favorite
@@ -438,12 +423,14 @@ CServerBrowser::CServerEntry *CServerBrowser::Add(const NETADDR &Addr)
 
 void CServerBrowser::Set(const NETADDR &Addr, int Type, int Token, const CServerInfo *pInfo)
 {
+	static int temp = 0;
 	CServerEntry *pEntry = 0;
 	if(Type == IServerBrowser::SET_MASTER_ADD)
 	{
 		if(m_ServerlistType != IServerBrowser::TYPE_INTERNET)
 			return;
-
+		m_LastPacketTick = 0;
+		++temp;
 		if(!Find(Addr))
 		{
 			pEntry = Add(Addr);
@@ -474,8 +461,11 @@ void CServerBrowser::Set(const NETADDR &Addr, int Type, int Token, const CServer
 			SetInfo(pEntry, *pInfo);
 			if(m_ServerlistType == IServerBrowser::TYPE_LAN)
 				pEntry->m_Info.m_Latency = min(static_cast<int>((time_get()-m_BroadcastTime)*1000/time_freq()), 999);
-			else
+			else if (pEntry->m_RequestTime > 0)
+			{
 				pEntry->m_Info.m_Latency = min(static_cast<int>((time_get()-pEntry->m_RequestTime)*1000/time_freq()), 999);
+				pEntry->m_RequestTime = -1; // Request has been answered
+			}
 			RemoveRequest(pEntry);
 		}
 	}
@@ -493,7 +483,7 @@ void CServerBrowser::Refresh(int Type)
 	m_pFirstReqServer = 0;
 	m_pLastReqServer = 0;
 	m_NumRequests = 0;
-
+	m_CurrentMaxRequests = g_Config.m_BrMaxRequests;
 	// next token
 	m_CurrentToken = (m_CurrentToken+1)&0xff;
 
@@ -512,7 +502,7 @@ void CServerBrowser::Refresh(int Type)
 		/* do the broadcast version */
 		Packet.m_ClientID = -1;
 		mem_zero(&Packet, sizeof(Packet));
-		Packet.m_Address.type = NETTYPE_ALL|NETTYPE_LINK_BROADCAST;
+		Packet.m_Address.type = m_pNetClient->NetType()|NETTYPE_LINK_BROADCAST;
 		Packet.m_Flags = NETSENDFLAG_CONNLESS;
 		Packet.m_DataSize = sizeof(Buffer);
 		Packet.m_pData = Buffer;
@@ -544,7 +534,7 @@ void CServerBrowser::RequestImpl(const NETADDR &Addr, CServerEntry *pEntry) cons
 	if(g_Config.m_Debug)
 	{
 		char aAddrStr[NETADDR_MAXSTRSIZE];
-		net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr));
+		net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr), true);
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf),"requesting server info from %s", aAddrStr);
 		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", aBuf);
@@ -565,8 +555,39 @@ void CServerBrowser::RequestImpl(const NETADDR &Addr, CServerEntry *pEntry) cons
 		pEntry->m_RequestTime = time_get();
 }
 
+void CServerBrowser::RequestImpl64(const NETADDR &Addr, CServerEntry *pEntry) const
+{
+	unsigned char Buffer[sizeof(SERVERBROWSE_GETINFO64)+1];
+	CNetChunk Packet;
+
+	if(g_Config.m_Debug)
+	{
+		char aAddrStr[NETADDR_MAXSTRSIZE];
+		net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr), true);
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf),"requesting server info 64 from %s", aAddrStr);
+		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", aBuf);
+	}
+
+	mem_copy(Buffer, SERVERBROWSE_GETINFO64, sizeof(SERVERBROWSE_GETINFO64));
+	Buffer[sizeof(SERVERBROWSE_GETINFO64)] = m_CurrentToken;
+
+	Packet.m_ClientID = -1;
+	Packet.m_Address = Addr;
+	Packet.m_Flags = NETSENDFLAG_CONNLESS;
+	Packet.m_DataSize = sizeof(Buffer);
+	Packet.m_pData = Buffer;
+
+	m_pNetClient->Send(&Packet);
+
+	if(pEntry)
+		pEntry->m_RequestTime = time_get();
+}
+
 void CServerBrowser::Request(const NETADDR &Addr) const
 {
+	// Call both because we can't know what kind the server is
+	RequestImpl64(Addr, 0);
 	RequestImpl(Addr, 0);
 }
 
@@ -583,17 +604,62 @@ void CServerBrowser::Update(bool ForceResort)
 	{
 		NETADDR Addr;
 		CNetChunk Packet;
-		int i;
+		int i = 0;
 
 		m_NeedRefresh = 0;
+		m_MasterServerCount = -1;
+		mem_zero(&Packet, sizeof(Packet));
+		Packet.m_ClientID = -1;
+		Packet.m_Flags = NETSENDFLAG_CONNLESS;
+		Packet.m_DataSize = sizeof(SERVERBROWSE_GETCOUNT);
+		Packet.m_pData = SERVERBROWSE_GETCOUNT;
 
+		for(i = 0; i < IMasterServer::MAX_MASTERSERVERS; i++)
+		{
+			if(!m_pMasterServer->IsValid(i))
+				continue;
+
+			Addr = m_pMasterServer->GetAddr(i);
+			m_pMasterServer->SetCount(i, -1);
+			Packet.m_Address = Addr;
+			m_pNetClient->Send(&Packet);
+			if(g_Config.m_Debug)
+			{
+				dbg_msg("client_srvbrowse", "Count-Request sent to %d", i);
+			}
+		}
+	}
+
+	//Check if all server counts arrived
+	if(m_MasterServerCount == -1)
+	{
+		m_MasterServerCount = 0;
+		for(int i = 0; i < IMasterServer::MAX_MASTERSERVERS; i++)
+			{
+				if(!m_pMasterServer->IsValid(i))
+					continue;
+				int Count = m_pMasterServer->GetCount(i);
+				if(Count == -1)
+				{
+				/* ignore Server
+					m_MasterServerCount = -1;
+					return;
+					// we don't have the required server information
+					*/
+				}
+				else
+					m_MasterServerCount += Count;
+			}
+		//request Server-List
+		NETADDR Addr;
+		CNetChunk Packet;
 		mem_zero(&Packet, sizeof(Packet));
 		Packet.m_ClientID = -1;
 		Packet.m_Flags = NETSENDFLAG_CONNLESS;
 		Packet.m_DataSize = sizeof(SERVERBROWSE_GETLIST);
 		Packet.m_pData = SERVERBROWSE_GETLIST;
 
-		for(i = 0; i < IMasterServer::MAX_MASTERSERVERS; i++)
+		for(int i = 0; i < IMasterServer::MAX_MASTERSERVERS; i++)
 		{
 			if(!m_pMasterServer->IsValid(i))
 				continue;
@@ -602,46 +668,96 @@ void CServerBrowser::Update(bool ForceResort)
 			Packet.m_Address = Addr;
 			m_pNetClient->Send(&Packet);
 		}
-
 		if(g_Config.m_Debug)
-			m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", "requesting server list");
-	}
-
-	// do timeouts
-	pEntry = m_pFirstReqServer;
-	while(1)
-	{
-		if(!pEntry) // no more entries
-			break;
-
-		pNext = pEntry->m_pNextReq;
-
-		if(pEntry->m_RequestTime && pEntry->m_RequestTime+Timeout < Now)
 		{
-			// timeout
-			RemoveRequest(pEntry);
+			dbg_msg("client_srvbrowse", "ServerCount: %d, requesting server list", m_MasterServerCount);
 		}
-
-		pEntry = pNext;
+		m_LastPacketTick = 0;
 	}
-
-	// do timeouts
+	else if(m_MasterServerCount > -1)
+	{
+		m_MasterServerCount = 0;
+		for(int i = 0; i < IMasterServer::MAX_MASTERSERVERS; i++)
+			{
+				if(!m_pMasterServer->IsValid(i))
+					continue;
+				int Count = m_pMasterServer->GetCount(i);
+				if(Count == -1)
+				{
+				/* ignore Server
+					m_MasterServerCount = -1;
+					return;
+					// we don't have the required server information
+					*/
+				}
+				else
+					m_MasterServerCount += Count;
+			}
+			//if(g_Config.m_Debug)
+			//{
+			//	dbg_msg("client_srvbrowse", "ServerCount2: %d", m_MasterServerCount);
+			//}
+	}
+	if(m_MasterServerCount > m_NumRequests  + m_LastPacketTick)
+	{
+		++m_LastPacketTick;
+		return; //wait for more packets
+	}
 	pEntry = m_pFirstReqServer;
 	Count = 0;
 	while(1)
 	{
 		if(!pEntry) // no more entries
 			break;
-
+		if(pEntry->m_RequestTime && pEntry->m_RequestTime+Timeout < Now)
+		{
+			pEntry = pEntry->m_pNextReq;
+			continue;
+		}
 		// no more then 10 concurrent requests
-		if(Count == g_Config.m_BrMaxRequests)
+		if(Count == m_CurrentMaxRequests)
 			break;
 
 		if(pEntry->m_RequestTime == 0)
-			RequestImpl(pEntry->m_Addr, pEntry);
+		{
+			if (pEntry->m_Is64)
+				RequestImpl64(pEntry->m_Addr, pEntry);
+			else
+				RequestImpl(pEntry->m_Addr, pEntry);
+		}
 
 		Count++;
 		pEntry = pEntry->m_pNextReq;
+	}
+
+	if(m_pFirstReqServer && Count == 0 && m_CurrentMaxRequests > 1) //NO More current Server Requests
+	{
+		//reset old ones
+		pEntry = m_pFirstReqServer;
+		while(1)
+		{
+			if(!pEntry) // no more entries
+				break;
+			pEntry->m_RequestTime = 0;
+			pEntry = pEntry->m_pNextReq;
+		}
+
+		//update max-requests
+		m_CurrentMaxRequests = m_CurrentMaxRequests/2;
+		if(m_CurrentMaxRequests < 1)
+			m_CurrentMaxRequests = 1;
+	}
+	else if(Count == 0 && m_CurrentMaxRequests == 1) //we reached the limit, just release all left requests. IF a server sends us a packet, a new request will be added automatically, so we can delete all
+	{
+		pEntry = m_pFirstReqServer;
+		while(1)
+		{
+			if(!pEntry) // no more entries
+				break;
+			pNext = pEntry->m_pNextReq;
+			RemoveRequest(pEntry);	//release request
+			pEntry = pNext;
+		}
 	}
 
 	// check if we need to resort
@@ -685,7 +801,7 @@ void CServerBrowser::AddFavorite(const NETADDR &Addr)
 	if(g_Config.m_Debug)
 	{
 		char aAddrStr[NETADDR_MAXSTRSIZE];
-		net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr));
+		net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr), true);
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "added fav, %s", aAddrStr);
 		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", aBuf);
@@ -739,12 +855,11 @@ void CServerBrowser::ConfigSaveCallback(IConfig *pConfig, void *pUserData)
 {
 	CServerBrowser *pSelf = (CServerBrowser *)pUserData;
 
-	int i;
 	char aAddrStr[128];
 	char aBuffer[256];
-	for(i = 0; i < pSelf->m_NumFavoriteServers; i++)
+	for(int i = 0; i < pSelf->m_NumFavoriteServers; i++)
 	{
-		net_addr_str(&pSelf->m_aFavoriteServers[i], aAddrStr, sizeof(aAddrStr));
+		net_addr_str(&pSelf->m_aFavoriteServers[i], aAddrStr, sizeof(aAddrStr), true);
 		str_format(aBuffer, sizeof(aBuffer), "add_favorite %s", aAddrStr);
 		pConfig->WriteLine(aBuffer);
 	}
@@ -754,8 +869,8 @@ void CServerBrowser::ConfigSaveCallback(IConfig *pConfig, void *pUserData)
 /** H-Client **/
 bool CServerBrowser::SaveServerInfo()
 {
-    Storage()->RemoveFile("serverinfo.tw", IStorageTW::TYPE_SAVE);
-    IOHANDLE File = Storage()->OpenFile("serverinfo.tw", IOFLAG_WRITE, IStorageTW::TYPE_SAVE);
+    Storage()->RemoveFile("serverinfo.tw", IStorage::TYPE_SAVE);
+    IOHANDLE File = Storage()->OpenFile("serverinfo.tw", IOFLAG_WRITE, IStorage::TYPE_SAVE);
 	if(!File)
 		return false;
 
@@ -774,7 +889,7 @@ bool CServerBrowser::SaveServerInfo()
 
 bool CServerBrowser::LoadServerInfo()
 {
-    IOHANDLE File = Storage()->OpenFile("serverinfo.tw", IOFLAG_READ, IStorageTW::TYPE_SAVE);
+    IOHANDLE File = Storage()->OpenFile("serverinfo.tw", IOFLAG_READ, IStorage::TYPE_SAVE);
 	if(!File)
 		return false;
 

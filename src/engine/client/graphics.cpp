@@ -3,26 +3,13 @@
 
 #include <base/detect.h>
 #include <base/math.h>
+#include <base/tl/threading.h>
 
 #include "SDL.h"
-
-#ifdef CONF_FAMILY_WINDOWS
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
-#endif
-
-#ifdef CONF_PLATFORM_MACOSX
-	#include <OpenGL/gl.h>
-	#include <OpenGL/glu.h>
-#else
-	#include <GL/gl.h>
-	#include <GL/glu.h>
-#endif
+#include "SDL_opengl.h"
 
 #include <base/system.h>
 #include <engine/external/pnglite/pnglite.h>
-#define GL_GLEXT_PROTOTYPES
-#include <engine/external/opengl/glext.h>
 
 #include <engine/shared/config.h>
 #include <engine/graphics.h>
@@ -36,13 +23,20 @@
 
 #include "graphics.h"
 
-// compressed textures
-#define GL_COMPRESSED_RGB_ARB 0x84ED
-#define GL_COMPRESSED_RGBA_ARB 0x84EE
-#define GL_COMPRESSED_ALPHA_ARB 0x84E9
 
+#if defined(CONF_PLATFORM_MACOSX)
 
-#define TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+	class semaphore
+	{
+		SDL_sem *sem;
+	public:
+		semaphore() { sem = SDL_CreateSemaphore(0); }
+		~semaphore() { SDL_DestroySemaphore(sem); }
+		void wait() { SDL_SemWait(sem); }
+		void signal() { SDL_SemPost(sem); }
+	};
+#endif
+
 
 static CVideoMode g_aFakeModes[] = {
 	{320,240,8,8,8}, {400,300,8,8,8}, {640,480,8,8,8},
@@ -220,6 +214,18 @@ void CGraphics_OpenGL::BlendAdditive()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 }
 
+void CGraphics_OpenGL::WrapNormal()
+{
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
+void CGraphics_OpenGL::WrapClamp()
+{
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
 int CGraphics_OpenGL::MemoryUsage() const
 {
 	return m_TextureMemoryUsage;
@@ -233,8 +239,7 @@ void CGraphics_OpenGL::MapScreen(float TopLeftX, float TopLeftY, float BottomRig
 	m_ScreenY1 = BottomRightY;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	//glOrtho(TopLeftX, BottomRightX, BottomRightY, TopLeftY, 1.0f, 10.f);
-	glOrtho(TopLeftX, BottomRightX, BottomRightY, TopLeftY, -300.0f, 300.f); //H-Client
+	glOrtho(TopLeftX, BottomRightX, BottomRightY, TopLeftY, 1.0f, 10.f);
 }
 
 void CGraphics_OpenGL::GetScreen(float *pTopLeftX, float *pTopLeftY, float *pBottomRightX, float *pBottomRightY)
@@ -294,8 +299,20 @@ int CGraphics_OpenGL::UnloadTexture(int Index)
 	return 0;
 }
 
+int CGraphics_OpenGL::LoadTextureRawSub(int TextureID, int x, int y, int Width, int Height, int Format, const void *pData)
+{
+	int Oglformat = GL_RGBA;
+	if(Format == CImageInfo::FORMAT_RGB)
+		Oglformat = GL_RGB;
+	else if(Format == CImageInfo::FORMAT_ALPHA)
+		Oglformat = GL_ALPHA;
 
-int CGraphics_OpenGL::LoadTextureRaw(int Width, int Height, int Format, const void *pData, int StoreFormat, int Flags)
+	glBindTexture(GL_TEXTURE_2D, m_aTextures[TextureID].m_Tex);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, Width, Height, Oglformat, GL_UNSIGNED_BYTE, pData);
+	return 0;
+}
+
+int CGraphics_OpenGL::LoadTextureRaw(int Width, int Height, int Format, const void *pData, int StoreFormat, int Flags, int forceTextureID)
 {
 	int Mipmap = 1;
 	unsigned char *pTexData = (unsigned char *)pData;
@@ -309,9 +326,13 @@ int CGraphics_OpenGL::LoadTextureRaw(int Width, int Height, int Format, const vo
 		return 	m_InvalidTexture;
 
 	// grab texture
-	Tex = m_FirstFreeTexture;
-	m_FirstFreeTexture = m_aTextures[Tex].m_Next;
-	m_aTextures[Tex].m_Next = -1;
+	if (forceTextureID == -1)
+    {
+        Tex = m_FirstFreeTexture;
+        m_FirstFreeTexture = m_aTextures[Tex].m_Next;
+        m_aTextures[Tex].m_Next = -1;
+    } else
+        Tex = forceTextureID;
 
 	// resample if needed
 	if(!(Flags&TEXLOAD_NORESAMPLE) && (Format == CImageInfo::FORMAT_RGBA || Format == CImageInfo::FORMAT_RGB))
@@ -360,12 +381,19 @@ int CGraphics_OpenGL::LoadTextureRaw(int Width, int Height, int Format, const vo
 
 	glGenTextures(1, &m_aTextures[Tex].m_Tex);
 	glBindTexture(GL_TEXTURE_2D, m_aTextures[Tex].m_Tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-	gluBuild2DMipmaps(GL_TEXTURE_2D, StoreOglformat, Width, Height, Oglformat, GL_UNSIGNED_BYTE, pTexData);
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	if(Flags&TEXLOAD_NOMIPMAPS)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, StoreOglformat, Width, Height, 0, Oglformat, GL_UNSIGNED_BYTE, pData);
+	}
+	else
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+		gluBuild2DMipmaps(GL_TEXTURE_2D, StoreOglformat, Width, Height, Oglformat, GL_UNSIGNED_BYTE, pTexData);
+	}
 
 	// calculate memory usage
 	{
@@ -393,7 +421,7 @@ int CGraphics_OpenGL::LoadTextureRaw(int Width, int Height, int Format, const vo
 }
 
 // simple uncompressed RGBA loaders
-int CGraphics_OpenGL::LoadTexture(const char *pFilename, int StorageType, int StoreFormat, int Flags)
+int CGraphics_OpenGL::LoadTexture(const char *pFilename, int StorageType, int StoreFormat, int Flags, int forceTextureID)
 {
 	int l = str_length(pFilename);
 	int ID;
@@ -406,8 +434,10 @@ int CGraphics_OpenGL::LoadTexture(const char *pFilename, int StorageType, int St
 		if (StoreFormat == CImageInfo::FORMAT_AUTO)
 			StoreFormat = Img.m_Format;
 
-		ID = LoadTextureRaw(Img.m_Width, Img.m_Height, Img.m_Format, Img.m_pData, StoreFormat, Flags);
+		ID = LoadTextureRaw(Img.m_Width, Img.m_Height, Img.m_Format, Img.m_pData, StoreFormat, Flags, forceTextureID);
 		mem_free(Img.m_pData);
+		if(ID != m_InvalidTexture && g_Config.m_Debug)
+			dbg_msg("graphics/texture", "loaded %s", pFilename);
 		return ID;
 	}
 
@@ -469,7 +499,7 @@ void CGraphics_OpenGL::ScreenshotDirect(const char *pFilename)
 	int w = m_ScreenWidth;
 	int h = m_ScreenHeight;
 
-	if (Tumbtail())
+    if (Tumbtail())
 	{
 	    w = 200;
 	    h = 133;
@@ -480,12 +510,12 @@ void CGraphics_OpenGL::ScreenshotDirect(const char *pFilename)
 	GLint Alignment;
 	glGetIntegerv(GL_PACK_ALIGNMENT, &Alignment);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	if (Tumbtail())
+    if (Tumbtail())
         glReadPixels(ScreenWidth()/2-w/2, ScreenHeight()/2-h/2, w, h, GL_RGB, GL_UNSIGNED_BYTE, pPixelData);
     else
-        glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pPixelData);
+        glReadPixels(0,0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pPixelData);
+	glPixelStorei(GL_PACK_ALIGNMENT, Alignment);
 
-    glPixelStorei(GL_PACK_ALIGNMENT, Alignment);
 	// flip the pixel because opengl works from bottom left corner
 	for(y = 0; y < h/2; y++)
 	{
@@ -499,7 +529,7 @@ void CGraphics_OpenGL::ScreenshotDirect(const char *pFilename)
 		char aWholePath[1024];
 		png_t Png; // ignore_convention
 
-		IOHANDLE File = m_pStorage->OpenFile(pFilename, IOFLAG_WRITE, IStorageTW::TYPE_SAVE, aWholePath, sizeof(aWholePath));
+		IOHANDLE File = m_pStorage->OpenFile(pFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE, aWholePath, sizeof(aWholePath));
 		if(File)
 			io_close(File);
 
@@ -516,7 +546,7 @@ void CGraphics_OpenGL::ScreenshotDirect(const char *pFilename)
 	mem_free(pPixelData);
 }
 
-void CGraphics_OpenGL::TextureSet(int TextureID, int TextureID2)
+void CGraphics_OpenGL::TextureSet(int TextureID)
 {
 	dbg_assert(m_Drawing == 0, "called Graphics()->TextureSet within begin");
 	if(TextureID == -1)
@@ -525,23 +555,8 @@ void CGraphics_OpenGL::TextureSet(int TextureID, int TextureID2)
 	}
 	else
 	{
-	    glEnable(GL_TEXTURE_2D);
-
-		if (TextureID2 != -1)
-		{
-		    //glActiveTexture(GL_TEXTURE0);
-		    glBindTexture(GL_TEXTURE_2D, m_aTextures[TextureID2].m_Tex);
-            //glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, m_aTextures[TextureID].m_Tex);
-
-            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		}
-		else
-		{
-            //glDisableTexture(GL_TEXTURE0);
-            //glDisableTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, m_aTextures[TextureID].m_Tex);
-		}
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, m_aTextures[TextureID].m_Tex);
 	}
 }
 
@@ -595,6 +610,17 @@ void CGraphics_OpenGL::SetColor(float r, float g, float b, float a)
 		CColorVertex(1, r, g, b, a),
 		CColorVertex(2, r, g, b, a),
 		CColorVertex(3, r, g, b, a)};
+	SetColorVertex(Array, 4);
+}
+
+void CGraphics_OpenGL::SetColor(vec4 color)
+{
+	dbg_assert(m_Drawing != 0, "called Graphics()->SetColor without begin");
+	CColorVertex Array[4] = {
+		CColorVertex(0, color.r, color.g, color.b, color.a),
+		CColorVertex(1, color.r, color.g, color.b, color.a),
+		CColorVertex(2, color.r, color.g, color.b, color.a),
+		CColorVertex(3, color.r, color.g, color.b, color.a)};
 	SetColorVertex(Array, 4);
 }
 
@@ -701,12 +727,9 @@ void CGraphics_OpenGL::QuadsDrawFreeform(const CFreeformItem *pArray, int Num)
 	AddVertices(4*Num);
 }
 
-void CGraphics_OpenGL::QuadsText(float x, float y, float Size, float r, float g, float b, float a, const char *pText)
+void CGraphics_OpenGL::QuadsText(float x, float y, float Size, const char *pText)
 {
 	float StartX = x;
-
-	QuadsBegin();
-	SetColor(r,g,b,a);
 
 	while(*pText)
 	{
@@ -731,13 +754,17 @@ void CGraphics_OpenGL::QuadsText(float x, float y, float Size, float r, float g,
 			x += Size/2;
 		}
 	}
-
-	QuadsEnd();
 }
 
-bool CGraphics_OpenGL::Init()
+// H-Client
+int CGraphics_OpenGL::GetInvalidTexture() {
+    return m_InvalidTexture;
+}
+//
+
+int CGraphics_OpenGL::Init()
 {
-	m_pStorage = Kernel()->RequestInterface<IStorageTW>();
+	m_pStorage = Kernel()->RequestInterface<IStorage>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
 	// Set all z to -5.0f
@@ -771,259 +798,26 @@ bool CGraphics_OpenGL::Init()
 
 	m_InvalidTexture = LoadTextureRaw(4,4,CImageInfo::FORMAT_RGBA,aNullTextureData,CImageInfo::FORMAT_RGBA,TEXLOAD_NORESAMPLE);
 
-	return true;
+	return 0;
 }
-
-//H-Client 3D
-void CGraphics_OpenGL::Texture3D(CQuadItem QuadItem, int zPro)
-{
-    dbg_assert(m_Drawing == DRAWING_QUADS, "called Texture3D without begin");
-
-    const int Num = zPro;
-
-    for(int i = 0; i < Num; i++)
-    {
-        m_aVertices[m_NumVertices].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices].m_Pos.z = 1*i;
-        m_aVertices[m_NumVertices].m_Tex = m_aTexture[0];
-        m_aVertices[m_NumVertices].m_Color = m_aColor[0];
-
-        m_aVertices[m_NumVertices + 1].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 1].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 1].m_Pos.z = 1*i;
-        m_aVertices[m_NumVertices + 1].m_Tex = m_aTexture[1];
-        m_aVertices[m_NumVertices + 1].m_Color = m_aColor[1];
-
-        m_aVertices[m_NumVertices + 2].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 2].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 2].m_Pos.z = 1*i;
-        m_aVertices[m_NumVertices + 2].m_Tex = m_aTexture[2];
-        m_aVertices[m_NumVertices + 2].m_Color = m_aColor[2];
-
-        m_aVertices[m_NumVertices + 3].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices + 3].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 3].m_Pos.z = 1*i;
-        m_aVertices[m_NumVertices + 3].m_Tex = m_aTexture[3];
-        m_aVertices[m_NumVertices + 3].m_Color = m_aColor[3];
-
-        AddVertices(4);
-    }
-}
-
-void CGraphics_OpenGL::Cube3D(CQuadItem QuadItem)
-{
-        dbg_assert(m_Drawing == DRAWING_QUADS, "called Cube3D without begin");
-        //Front Face
-        m_aVertices[m_NumVertices].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices].m_Pos.z = 0;
-        m_aVertices[m_NumVertices].m_Tex = m_aTexture[0];
-        m_aVertices[m_NumVertices].m_Color = m_aColor[0];
-
-        m_aVertices[m_NumVertices + 1].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 1].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 1].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 1].m_Tex = m_aTexture[1];
-        m_aVertices[m_NumVertices + 1].m_Color = m_aColor[1];
-
-        m_aVertices[m_NumVertices + 2].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 2].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 2].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 2].m_Tex = m_aTexture[2];
-        m_aVertices[m_NumVertices + 2].m_Color = m_aColor[2];
-
-        m_aVertices[m_NumVertices + 3].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices + 3].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 3].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 3].m_Tex = m_aTexture[3];
-        m_aVertices[m_NumVertices + 3].m_Color = m_aColor[3];
-
-        //Back Face
-        m_aVertices[m_NumVertices + 4].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 4].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 4].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 4].m_Tex = m_aTexture[1];
-        m_aVertices[m_NumVertices + 4].m_Color = m_aColor[1];
-
-        m_aVertices[m_NumVertices + 5].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices + 5].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 5].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 5].m_Tex = m_aTexture[0];
-        m_aVertices[m_NumVertices + 5].m_Color = m_aColor[0];
-
-        m_aVertices[m_NumVertices + 6].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices + 6].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 6].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 6].m_Tex = m_aTexture[3];
-        m_aVertices[m_NumVertices + 6].m_Color = m_aColor[3];
-
-        m_aVertices[m_NumVertices + 7].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 7].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 7].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 7].m_Tex = m_aTexture[2];
-        m_aVertices[m_NumVertices + 7].m_Color = m_aColor[2];
-
-        //Left Face
-        m_aVertices[m_NumVertices + 8].m_Pos.x =  QuadItem.m_X;
-        m_aVertices[m_NumVertices + 8].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 8].m_Pos.z =  -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 8].m_Tex = m_aTexture[0];
-        m_aVertices[m_NumVertices + 8].m_Color = m_aColor[0];
-
-        m_aVertices[m_NumVertices + 9].m_Pos.x =  QuadItem.m_X;
-        m_aVertices[m_NumVertices + 9].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 9].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 9].m_Tex = m_aTexture[1];
-        m_aVertices[m_NumVertices + 9].m_Color = m_aColor[1];
-
-        m_aVertices[m_NumVertices + 10].m_Pos.x =  QuadItem.m_X;
-        m_aVertices[m_NumVertices + 10].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 10].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 10].m_Tex = m_aTexture[3];
-        m_aVertices[m_NumVertices + 10].m_Color = m_aColor[3];
-
-        m_aVertices[m_NumVertices + 11].m_Pos.x =  QuadItem.m_X;
-        m_aVertices[m_NumVertices + 11].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 11].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 11].m_Tex = m_aTexture[2];
-        m_aVertices[m_NumVertices + 11].m_Color = m_aColor[2];
-
-        //Right Face
-        m_aVertices[m_NumVertices + 12].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 12].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 12].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 12].m_Tex = m_aTexture[0];
-        m_aVertices[m_NumVertices + 12].m_Color = m_aColor[0];
-
-        m_aVertices[m_NumVertices + 13].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 13].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 13].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 13].m_Tex = m_aTexture[1];
-        m_aVertices[m_NumVertices + 13].m_Color = m_aColor[1];
-
-        m_aVertices[m_NumVertices + 14].m_Pos.x = QuadItem.m_X +QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 14].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 14].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 14].m_Tex = m_aTexture[2];
-        m_aVertices[m_NumVertices + 14].m_Color = m_aColor[2];
-
-        m_aVertices[m_NumVertices + 15].m_Pos.x = QuadItem.m_X +QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 15].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 15].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 15].m_Tex = m_aTexture[3];
-        m_aVertices[m_NumVertices + 15].m_Color = m_aColor[3];
-
-        //Top Face
-        m_aVertices[m_NumVertices + 16].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices + 16].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 16].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 16].m_Tex = m_aTexture[0];
-        m_aVertices[m_NumVertices + 16].m_Color = m_aColor[0];
-
-        m_aVertices[m_NumVertices + 17].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 17].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 17].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 17].m_Tex = m_aTexture[1];
-        m_aVertices[m_NumVertices + 17].m_Color = m_aColor[1];
-
-        m_aVertices[m_NumVertices + 18].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 18].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 18].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 18].m_Tex = m_aTexture[2];
-        m_aVertices[m_NumVertices + 18].m_Color = m_aColor[2];
-
-        m_aVertices[m_NumVertices + 19].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices + 19].m_Pos.y = QuadItem.m_Y;
-        m_aVertices[m_NumVertices + 19].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 19].m_Tex = m_aTexture[3];
-        m_aVertices[m_NumVertices + 19].m_Color = m_aColor[3];
-
-        //Bottom Face
-        m_aVertices[m_NumVertices + 20].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices + 20].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 20].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 20].m_Tex = m_aTexture[3];
-        m_aVertices[m_NumVertices + 20].m_Color = m_aColor[3];
-
-        m_aVertices[m_NumVertices + 21].m_Pos.x = QuadItem.m_X +QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 21].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 21].m_Pos.z = 0;
-        m_aVertices[m_NumVertices + 21].m_Tex = m_aTexture[2];
-        m_aVertices[m_NumVertices + 21].m_Color = m_aColor[2];
-
-        m_aVertices[m_NumVertices + 22].m_Pos.x = QuadItem.m_X + QuadItem.m_Width;
-        m_aVertices[m_NumVertices + 22].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 22].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 22].m_Tex = m_aTexture[1];
-        m_aVertices[m_NumVertices + 22].m_Color = m_aColor[1];
-
-        m_aVertices[m_NumVertices + 23].m_Pos.x = QuadItem.m_X;
-        m_aVertices[m_NumVertices + 23].m_Pos.y = QuadItem.m_Y + QuadItem.m_Height;
-        m_aVertices[m_NumVertices + 23].m_Pos.z = -(QuadItem.m_Width);
-        m_aVertices[m_NumVertices + 23].m_Tex = m_aTexture[0];
-        m_aVertices[m_NumVertices + 23].m_Color = m_aColor[0];
-
-        AddVertices(4*6);
-}
-
-void CGraphics_OpenGL::Quads3DEnd()
-{
-	dbg_assert(m_Drawing == DRAWING_QUADS, "called quads3d_end without begin");
-	Flush();
-	m_Drawing = 0;
-	MapScreen(m_ScreenX0, m_ScreenY0, m_ScreenX1, m_ScreenY1);
-}
-
-int CGraphics_OpenGL::GetTextureWidth(int tid)
-{
-    if (tid == -1)
-        return 0;
-
-    int res=0;
-    TextureSet(tid);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &res);
-    TextureSet(-1);
-    return res;
-}
-
-int CGraphics_OpenGL::GetTextureHeight(int tid)
-{
-    if (tid == -1)
-        return 0;
-
-    int res=0;
-    TextureSet(tid);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &res);
-    TextureSet(-1);
-    return res;
-}
-
-int CGraphics_OpenGL::GetInvalidTexture() {
-    return m_InvalidTexture;
-}
-
-void CGraphics_OpenGL::ShowInfoKills(bool state)
-{
-    m_DoScreenShowInfoKills = state;
-}
-//
 
 int CGraphics_SDL::TryInit()
 {
-	const SDL_VideoInfo *pInfo;
-	int Flags = SDL_OPENGL;
+	const SDL_VideoInfo *pInfo = SDL_GetVideoInfo();
+	SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE); // prevent stuck mouse cursor sdl-bug when loosing fullscreen focus in windows
+
+	// use current resolution as default
+	if(g_Config.m_GfxScreenWidth == 0 || g_Config.m_GfxScreenHeight == 0)
+	{
+		g_Config.m_GfxScreenWidth = pInfo->current_w;
+		g_Config.m_GfxScreenHeight = pInfo->current_h;
+	}
 
 	m_ScreenWidth = g_Config.m_GfxScreenWidth;
 	m_ScreenHeight = g_Config.m_GfxScreenHeight;
 
-	pInfo = SDL_GetVideoInfo();
-	SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
-
 	// set flags
-	Flags = SDL_OPENGL;
-	Flags |= SDL_GL_DOUBLEBUFFER;
-	Flags |= SDL_HWPALETTE;
+	int Flags = SDL_OPENGL;
 	if(g_Config.m_DbgResizable)
 		Flags |= SDL_RESIZABLE;
 
@@ -1035,7 +829,15 @@ int CGraphics_SDL::TryInit()
 	if(pInfo->blit_hw) // ignore_convention
 		Flags |= SDL_HWACCEL;
 
-	if(g_Config.m_GfxFullscreen)
+	if(g_Config.m_GfxBorderless && g_Config.m_GfxFullscreen)
+	{
+		dbg_msg("gfx", "both borderless and fullscreen activated, disabling borderless");
+		g_Config.m_GfxBorderless = 0;
+	}
+
+	if(g_Config.m_GfxBorderless)
+		Flags |= SDL_NOFRAME;
+	else if(g_Config.m_GfxFullscreen)
 		Flags |= SDL_FULLSCREEN;
 
 	// set gl attributes
@@ -1054,7 +856,6 @@ int CGraphics_SDL::TryInit()
 	SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, g_Config.m_GfxVsync);
 
 	// set caption
-	//SDL_WM_SetCaption("Teeworlds", "Teeworlds");
 	SDL_WM_SetCaption("Teeworlds [H-Client MoD v"HCLIENT_VERSION"]", "Teeworlds [H-Client MoD v"HCLIENT_VERSION"]"); //H-Client
 
 	// create window
@@ -1110,7 +911,7 @@ CGraphics_SDL::CGraphics_SDL()
 	m_pScreenSurface = 0;
 }
 
-bool CGraphics_SDL::Init()
+int CGraphics_SDL::Init()
 {
 	{
 		int Systems = SDL_INIT_VIDEO;
@@ -1124,7 +925,7 @@ bool CGraphics_SDL::Init()
 		if(SDL_Init(Systems) < 0)
 		{
 			dbg_msg("gfx", "unable to init SDL: %s", SDL_GetError());
-			return true;
+			return -1;
 		}
 	}
 
@@ -1132,18 +933,18 @@ bool CGraphics_SDL::Init()
 
 	#ifdef CONF_FAMILY_WINDOWS
 		if(!getenv("SDL_VIDEO_WINDOW_POS") && !getenv("SDL_VIDEO_CENTERED")) // ignore_convention
-			putenv("SDL_VIDEO_WINDOW_POS=8,27"); // ignore_convention
+			putenv("SDL_VIDEO_WINDOW_POS=center"); // ignore_convention
 	#endif
 
 	if(InitWindow() != 0)
-		return true;
+		return -1;
 
 	SDL_ShowCursor(0);
 
 	CGraphics_OpenGL::Init();
 
 	MapScreen(0,0,g_Config.m_GfxScreenWidth, g_Config.m_GfxScreenHeight);
-	return false;
+	return 0;
 }
 
 void CGraphics_SDL::Shutdown()
@@ -1182,18 +983,21 @@ void CGraphics_SDL::TakeScreenshot(const char *pFilename)
 	m_DoScreenshotTumbtail = false;
 }
 
+// H-Client
 void CGraphics_SDL::TakeScreenshotFree(const char *pFilename, bool tumbtail)
 {
 	str_format(m_aScreenshotName, sizeof(m_aScreenshotName), "%s", pFilename?pFilename:"unknown");
 	m_DoScreenshot = true;
 	m_DoScreenshotTumbtail = tumbtail;
 }
+//
 
 void CGraphics_SDL::Swap()
 {
 	if(m_DoScreenshot)
 	{
-		ScreenshotDirect(m_aScreenshotName);
+		if(WindowActive())
+			ScreenshotDirect(m_aScreenshotName);
 		m_DoScreenshot = false;
 		m_DoScreenshotTumbtail = false;
 	}
@@ -1248,6 +1052,21 @@ int CGraphics_SDL::GetVideoModes(CVideoMode *pModes, int MaxModes)
 	}
 
 	return NumModes;
+}
+
+// syncronization
+void CGraphics_SDL::InsertSignal(semaphore *pSemaphore)
+{
+	pSemaphore->signal();
+}
+
+bool CGraphics_SDL::IsIdle()
+{
+	return true;
+}
+
+void CGraphics_SDL::WaitForIdle()
+{
 }
 
 extern IEngineGraphics *CreateEngineGraphics() { return new CGraphics_SDL(); }

@@ -9,6 +9,7 @@
 #include <math.h>
 #include "collision.h"
 #include <engine/shared/protocol.h>
+#include <game/teamscore.h>
 #include <game/generated/protocol.h>
 
 
@@ -202,6 +203,9 @@ public:
 	void Read(const CNetObj_CharacterCore *pObjCore);
 	void Write(CNetObj_CharacterCore *pObjCore);
 	void Quantize();
+
+private:
+    CTeamsCore* m_pTeams;
 };
 
 #endif

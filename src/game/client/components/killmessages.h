@@ -21,8 +21,10 @@ public:
 		CTeeRenderInfo m_KillerRenderInfo;
 		int m_ModeSpecial; // for CTF, if the guy is carrying a flag for example
 		int m_Tick;
-		bool m_Show;
+        // H-Client
+        bool m_Show;
 		int m_ID;
+		//
 	};
 
 	enum
@@ -38,7 +40,7 @@ public:
 	virtual void OnMessage(int MsgType, void *pRawMsg);
 
 private:
-    float* TeeSize(const void *pID, float Seconds, int Checked); //H-Client
+    float* TeeSize(const void *pID, float Seconds, int Checked);
 };
 
 #endif

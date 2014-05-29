@@ -25,6 +25,7 @@ public:
 	int Tick() const { return m_CurrentGameTick; }
 	int TickSpeed() const { return m_TickSpeed; }
 
+	virtual int MaxClients() const = 0;
 	virtual const char *ClientName(int ClientID) = 0;
 	virtual const char *ClientClan(int ClientID) = 0;
 	virtual int ClientCountry(int ClientID) = 0;
@@ -33,8 +34,6 @@ public:
 	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) = 0;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
-    virtual int SendMsgEx(CMsgPacker *pMsg, int Flags, int ClientID, bool System) = 0; //H-Client
-
 
 	template<class T>
 	int SendPackMsg(T *pMsg, int Flags, int ClientID)
@@ -56,15 +55,17 @@ public:
 
 	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
 
+	enum
+	{
+		RCON_CID_SERV=-1,
+		RCON_CID_VOTE=-2,
+	};
+	virtual void SetRconCID(int ClientID) = 0;
 	virtual bool IsAuthed(int ClientID) = 0;
 	virtual void Kick(int ClientID, const char *pReason) = 0;
 
 	virtual void DemoRecorder_HandleAutoStart() = 0;
-
-	virtual unsigned GetCurrentMapCRC() = 0; //H-Client
-	virtual void InitBot(int ClientID, int BType) = 0; //H-Client
-	virtual void ReloadMap() = 0; //H-Client
-
+	virtual bool DemoRecorder_IsRecording() = 0;
 };
 
 class IGameServer : public IInterface
@@ -95,9 +96,6 @@ public:
 	virtual const char *GameType() = 0;
 	virtual const char *Version() = 0;
 	virtual const char *NetVersion() = 0;
-	virtual const char *HClientNetVersion() = 0; //H-Client
-	virtual void CreateBot(int ClientID) = 0; //H-Client
-	virtual void UpdateBotInfo(int ClientID, int TEnemy) = 0; //H-Client
 };
 
 extern IGameServer *CreateGameServer();
