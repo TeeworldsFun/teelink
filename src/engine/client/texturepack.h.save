@@ -1,0 +1,33 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#ifndef ENGINE_CLIENT_TEXTUREPACK_H
+#define ENGINE_CLIENT_TEXTUREPACK_H
+
+#include <engine/texturepack.h>
+#include <engine/storage.h>
+#include <e
+
+class CTexturePack : public ITexturePack
+{
+	char m_RawPackName[128];
+	std::list<CTheme> m_Themes;
+
+public:
+	IStorage *m_pStorage;
+	IGraphics *m_pGraphics;
+
+    virtual void Init();
+    virtual bool Load(const char *rawpackname);
+    virtual std::list<CTheme> GetThemes() { return m_Themes; }
+
+    void LoadTheme(const char *theme);
+    void LoadImage(const char *imageName, int i);
+
+private:
+    void SearchThemes();
+    void AddTheme(CTheme theme) { m_Themes.push_back(theme); }
+};
+
+int ThemelistCallback(const char *pName, int IsDir, int DirType, void *pUser);
+int ImagelistCallback(const char *pName, int IsDir, int DirType, void *pUser);
+#endif
