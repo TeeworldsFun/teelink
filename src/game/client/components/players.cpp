@@ -360,16 +360,10 @@ void CPlayers::RenderPlayer(
         bool doBreak = false;
         int Hit = 0;
 
-        float PhysSize = 28.0f;
+        static const float PhysSize = 28.0f;
         vec2 OldPos = Position+ExDirection*PhysSize*1.5f;
         do {
             vec2 NewPos = OldPos + ExDirection * m_pClient->m_Tuning.m_HookFireSpeed;
-
-            if (distance(Position, NewPos) > m_pClient->m_Tuning.m_HookLength)
-            {
-                NewPos = OldPos;
-                doBreak = true;
-            }
 
             Hit = Collision()->IntersectLine(OldPos, NewPos, &finishPos, 0x0, true);
             if(!doBreak && Hit && !(Collision()->GetCollisionAt(finishPos.x, finishPos.y)&CCollision::COLFLAG_NOHOOK))
@@ -383,6 +377,13 @@ void CPlayers::RenderPlayer(
 
             if(Hit)
                 doBreak = true;
+
+            if (distance(Position, NewPos) > m_pClient->m_Tuning.m_HookLength)
+            {
+                NewPos = OldPos;
+                finishPos = NewPos;
+                doBreak = true;
+            }
 
             OldPos = NewPos;
         } while (!doBreak);

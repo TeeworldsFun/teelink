@@ -16,6 +16,7 @@
 #include <engine/shared/config.h>
 #include <engine/geoip.h> //H-Client
 #include <engine/texturepack.h> //H-Client
+#include <engine/autoupdate.h> //H-Client
 
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
@@ -111,6 +112,7 @@ void CGameClient::OnConsoleInit()
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
 	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
 	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
+	m_pAutoUpdate = Kernel()->RequestInterface<IAutoUpdate>(); //H-Client
 
 	// setup pointers
 	m_pBinds = &::gs_Binds;
@@ -269,9 +271,39 @@ void CGameClient::OnInit()
 //		g_GameClient.m_pMenus->RenderLoading();
 //	}
 
-    // H-Client: Load TexturePack
+    // H-Client
+    // Load TexturePack
 	m_pTexturePack->Init();
 	m_pTexturePack->Load(g_Config.m_hcTheme);
+
+	// auto update
+    #if !defined(CONF_PLATFORM_MACOSX)
+        if (g_Config.m_hcAutoUpdate)
+        {
+            char aBuf[128];
+            str_format(aBuf, sizeof(aBuf), "Checking for updates");
+            g_GameClient.m_pMenus->RenderUpdating(aBuf);
+            AutoUpdate()->CheckUpdates(m_pMenus);
+            if (AutoUpdate()->Updated())
+            {
+                if (AutoUpdate()->NeedResetClient())
+                {
+                    Client()->Quit();
+                    return;
+                }
+                else
+                {
+                    str_format(aBuf, sizeof(aBuf), "H-Client Client updated successfully");
+                    g_GameClient.m_pMenus->RenderUpdating(aBuf);
+                }
+            }
+            else
+            {
+                str_format(aBuf, sizeof(aBuf), "No updates available");
+                g_GameClient.m_pMenus->RenderUpdating(aBuf);
+            }
+        }
+    #endif
 	//
 
 	for(int i = 0; i < m_All.m_Num; i++)
@@ -370,6 +402,17 @@ void CGameClient::OnReset()
     m_Teams.Reset(); // H-Client: DDNet
     m_DDRaceMsgSent = false;
 	m_TakeInitScreenShot = false; // H-Client
+
+    // H-Client
+    m_LocalInfo.m_CanHook = true;
+	m_LocalInfo.m_Jumps = 2;
+    m_LocalInfo.m_InfiniteJumps = false;
+    m_LocalInfo.m_Jetpack = false;
+    m_LocalInfo.m_CollidePlayers = true;
+    m_LocalInfo.m_SoloPart = false;
+    m_LocalInfo.m_EndlessHook = false;
+    m_LocalInfo.m_CanHit = true;
+    m_LocalInfo.m_WantedWeapon = WEAPON_GUN;
 }
 
 
@@ -1182,11 +1225,6 @@ void CGameClient::CClientData::Reset()
 	m_SkinInfo.m_ColorBody = vec4(1,1,1,1);
 	m_SkinInfo.m_ColorFeet = vec4(1,1,1,1);
 	UpdateRenderInfo();
-
-    m_FreezedState.Reset();
-	m_hasEndlessHook = false;
-	m_hasSuperJump = false;
-	m_hasJetPack = false;
 }
 
 void CGameClient::SendSwitchTeam(int Team)

@@ -97,24 +97,6 @@ class CMenus : public CComponent
 
 	enum
 	{
-		POPUP_NONE=0,
-		POPUP_FIRST_LAUNCH,
-		POPUP_CONNECTING,
-		POPUP_MESSAGE,
-		POPUP_DISCONNECTED,
-		POPUP_PURE,
-		POPUP_LANGUAGE,
-		POPUP_COUNTRY,
-		POPUP_DELETE_DEMO,
-		POPUP_RENAME_DEMO,
-		POPUP_REMOVE_FRIEND,
-		POPUP_SOUNDERROR,
-		POPUP_PASSWORD,
-		POPUP_QUIT,
-	};
-
-	enum
-	{
 		PAGE_NEWS=1,
 		PAGE_GAME,
 		PAGE_PLAYERS,
@@ -285,6 +267,26 @@ class CMenus : public CComponent
 
 	static int DeleteMapPreviewCacheCallback(const char *pName, int IsDir, int StorageType, void *pUser); // H-Client
 public:
+	enum
+	{
+		POPUP_NONE=0,
+		POPUP_FIRST_LAUNCH,
+		POPUP_CONNECTING,
+		POPUP_MESSAGE,
+		POPUP_DISCONNECTED,
+		POPUP_PURE,
+		POPUP_LANGUAGE,
+		POPUP_COUNTRY,
+		POPUP_DELETE_DEMO,
+		POPUP_RENAME_DEMO,
+		POPUP_REMOVE_FRIEND,
+		POPUP_SOUNDERROR,
+		POPUP_PASSWORD,
+		POPUP_QUIT,
+
+		POPUP_AUTOUPDATE, // H-Client
+	};
+
 	void RenderBackground();
 
 	void UseMouseButtons(bool Use) { m_UseMouseButtons = Use; }
@@ -294,6 +296,7 @@ public:
 	CMenus();
 
 	void RenderLoading();
+	void RenderUpdating(const char *pCaption, int current=0, int total=0); // H-Client
 
 	bool IsActive() const { return m_MenuActive; }
 
@@ -308,5 +311,6 @@ public:
     //H-Client
 	void DeleteMapPreviewCache();
 	int GetImageMapPreview(const char *sMap, bool reload = false);
+	void SetPopup(int popup) { m_Popup = popup; }
 };
 #endif

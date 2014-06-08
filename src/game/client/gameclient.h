@@ -47,6 +47,7 @@ class CGameClient : public IGameClient
 	class IFriends *m_pFriends;
 	class IGeoIP *m_pGeoIP; //H-Client
     class ITexturePack *m_pTexturePack; //H-Client
+    class IAutoUpdate *m_pAutoUpdate; //H-Client
 
 	CLayers m_Layers;
 	class CCollision m_Collision;
@@ -87,6 +88,7 @@ public:
 	class IFriends *Friends() { return m_pFriends; }
 	class IGeoIP *GeoIP() const { return m_pGeoIP; } //H-Client
 	class ITexturePack *TexturePack() const { return m_pTexturePack; } //H-Client
+	class IAutoUpdate *AutoUpdate() const { return m_pAutoUpdate; } //H-Client
 
 	int NetobjNumCorrections() { return m_NetObjHandler.NumObjCorrections(); }
 	const char *NetobjCorrectedOn() { return m_NetObjHandler.CorrectedObjOn(); }
@@ -203,9 +205,6 @@ public:
             void Reset() { m_Freezed = false; m_TimerFreeze = 0; m_Alpha = 0.0f; }
         } m_FreezedState;
 
-        bool m_hasEndlessHook;
-        bool m_hasSuperJump;
-        bool m_hasJetPack;
         int m_Score; // H-Client: DDNet
 	};
 
@@ -266,9 +265,23 @@ public:
 	class CMapLayers *m_pMapLayersBackGround;
 	class CMapLayers *m_pMapLayersForeGround;
 
+    class CPlayerInfo *m_pPlayerInfo; // H-Client
     class CTeamsCore m_Teams; // H-Client: DDNet
 	bool m_TakeInitScreenShot; // H-Client
 	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2& NewPos2, int ownID); // H-Client
+
+	// H-Client
+	struct {
+	    bool m_CanHook;
+	    unsigned int m_Jumps;
+        bool m_InfiniteJumps;
+        bool m_Jetpack;
+        bool m_CollidePlayers;
+        bool m_SoloPart;
+        bool m_EndlessHook;
+        bool m_CanHit;
+        int m_WantedWeapon;
+	} m_LocalInfo;
 
 private:
 	bool m_DDRaceMsgSent; //H-Client: DDRace

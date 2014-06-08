@@ -383,6 +383,7 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 		{
 			str_copy(m_aLines[m_CurrentLine].m_aName, "*** ", sizeof(m_aLines[m_CurrentLine].m_aName));
 			str_format(m_aLines[m_CurrentLine].m_aText, sizeof(m_aLines[m_CurrentLine].m_aText), "%s", pLine);
+			ParseServerMessage(pLine); // H-Client
 		}
 		else
 		{
@@ -661,5 +662,47 @@ void CChat::AssignChatEmote(const char *emote, int sc_id)
         return;
 
     m_vChatEmotes.push_back(CChatEmote(emote, SPRITE_CHAT_EMOTE1 + sc_id));
+}
+
+void CChat::ParseServerMessage(const char *msg)
+{
+    std::string srvmsg(msg);
+    try
+    {
+        if (srvmsg.find("You can't hook others") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanHook = false;
+        else if (srvmsg.find("You can hook others") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanHook = true;
+        else if (srvmsg.find("You can jump") != std::string::npos && srvmsg.find("times") != std::string::npos)
+            sscanf(msg, "You can jump %d times", &m_pClient->m_LocalInfo.m_Jumps);
+        else if (srvmsg.find("You have infinite air jumps") != std::string::npos)
+            m_pClient->m_LocalInfo.m_InfiniteJumps = true;
+        else if (srvmsg.find("You don't have infinite air jumps") != std::string::npos)
+            m_pClient->m_LocalInfo.m_InfiniteJumps = false;
+        else if (srvmsg.find("You have a jetpack gun") != std::string::npos)
+            m_pClient->m_LocalInfo.m_Jetpack = true;
+        else if (srvmsg.find("You lost your jetpack gun") != std::string::npos)
+            m_pClient->m_LocalInfo.m_Jetpack = false;
+        else if (srvmsg.find("You can collide with others") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CollidePlayers = true;
+        else if (srvmsg.find("You can't collide with others") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CollidePlayers = false;
+        else if (srvmsg.find("You are now in a solo part.") != std::string::npos)
+            m_pClient->m_LocalInfo.m_SoloPart = true;
+        else if (srvmsg.find("You are now out of the solo part.") != std::string::npos)
+            m_pClient->m_LocalInfo.m_SoloPart = false;
+        else if (srvmsg.find("Endless hook has been activated") != std::string::npos)
+            m_pClient->m_LocalInfo.m_EndlessHook = true;
+        else if (srvmsg.find("Endless hook has been deactivated") != std::string::npos)
+            m_pClient->m_LocalInfo.m_EndlessHook = false;
+        else if (srvmsg.find("You can hit others") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanHit = true;
+        else if (srvmsg.find("You can't hit others") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanHit = false;
+
+    } catch (...)
+    {
+        // Ignore
+    }
 }
 //

@@ -30,6 +30,7 @@ protected:
 	class CLayers *Layers() const { return m_pClient->Layers(); }
 	class CCollision *Collision() const { return m_pClient->Collision(); }
 	class IGeoIP *GeoIP() const { return m_pClient->GeoIP(); } //H-Client
+	class IAutoUpdate *AutoUpdate() const { return m_pClient->AutoUpdate(); } //H-Client
 public:
 	virtual ~CComponent() {}
 

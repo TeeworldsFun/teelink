@@ -44,7 +44,8 @@ class CChat : public CComponent
 	};
     std::list<CChat::CChatEmote> m_vChatEmotes;
 
-	void AssignChatEmote(const char *emote, int sc_id);
+	void AssignChatEmote(const char *emote, int sc_id); // H-Client
+	void ParseServerMessage(const char *msg); // H-Client
 
 	// chat
 	enum

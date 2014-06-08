@@ -286,7 +286,9 @@ void CGraphics_OpenGL::LinesDraw(const CLineItem *pArray, int Num)
 
 int CGraphics_OpenGL::UnloadTexture(int Index)
 {
-	if(Index == m_InvalidTexture)
+    if (Index < 0 || Index >= sizeof(m_aTextures)/sizeof(CTexture))
+        return 0;
+	if(Index == m_InvalidTexture || m_aTextures[Index].m_Tex == m_InvalidTexture)
 		return 0;
 
 	if(Index < 0)
@@ -556,7 +558,10 @@ void CGraphics_OpenGL::TextureSet(int TextureID)
 	else
 	{
 		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, m_aTextures[TextureID].m_Tex);
+		if (TextureID < 0 || TextureID >= sizeof(m_aTextures)/sizeof(CTexture))
+            glBindTexture(GL_TEXTURE_2D, m_InvalidTexture);
+        else
+            glBindTexture(GL_TEXTURE_2D, m_aTextures[TextureID].m_Tex);
 	}
 }
 

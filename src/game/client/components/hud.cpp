@@ -26,6 +26,9 @@
 #include "chat.h" //H-Client
 #include "players.h" //H-Client
 
+#include <vector> // H-Client
+#include <string> // H-Client
+
 CHud::CHud()
 {
 	// won't work if zero
@@ -568,7 +571,7 @@ void CHud::RenderCursor()
 	Graphics()->QuadsEnd();
 }
 
-void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
+void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter, int localID)
 {
 	if(!pCharacter)
 		return;
@@ -583,6 +586,7 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
 
     CServerInfo Info;
     Client()->GetServerInfo(&Info);
+
     if (g_Config.m_hcUseHUD && !str_find_nocase(Info.m_aGameType, "race"))
     {
         Graphics()->TextureSet(-1);
@@ -603,7 +607,7 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
         TextRender()->Text(0, x+13.0f, y+16.0f-1.0f, 8.0f, aBuf, -1);
 
-        if (!str_find_nocase(Info.m_aGameType, "race") && !str_find_nocase(Info.m_aGameType, "ictf") && !str_find_nocase(Info.m_aGameType, "idm") && !str_find_nocase(Info.m_aGameType, "itdm") && pCharacter->m_Weapon != WEAPON_HAMMER)
+        if (!str_find_nocase(Info.m_aGameType, "ictf") && !str_find_nocase(Info.m_aGameType, "idm") && !str_find_nocase(Info.m_aGameType, "itdm") && pCharacter->m_Weapon != WEAPON_HAMMER)
         {
             Graphics()->TextureSet(-1);
             Graphics()->QuadsBegin();
@@ -612,13 +616,14 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
                 RenderTools()->DrawRoundRect(x-25.0f, y+32.0f-1.0f, 37.5f, 12.0f, 5.0f);
             Graphics()->QuadsEnd();
 
+            char aBuf[15];
             str_format(aBuf, sizeof(aBuf), "%d", pCharacter->m_AmmoCount);
             TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
             TextRender()->Text(0, x+13.0f, y+32.0f-1.0f, 8.0f, aBuf, -1);
         }
 
         int h = 0;
-        if (!str_find_nocase(Info.m_aGameType, "race") && !str_find_nocase(Info.m_aGameType, "ictf") && !str_find_nocase(Info.m_aGameType, "idm") && !str_find_nocase(Info.m_aGameType, "itdm") && pCharacter->m_Weapon != WEAPON_HAMMER)
+        if (!str_find_nocase(Info.m_aGameType, "ictf") && !str_find_nocase(Info.m_aGameType, "idm") && !str_find_nocase(Info.m_aGameType, "itdm") && pCharacter->m_Weapon != WEAPON_HAMMER)
         {
             Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
             IGraphics::CQuadItem QuadItem(x,y+32,10,10);
@@ -739,12 +744,12 @@ void CHud::OnRender()
 	if(g_Config.m_ClShowhud && !m_pClient->m_pScoreboard->Active())
 	{
 		if(m_pClient->m_Snap.m_pLocalCharacter && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
-			RenderHealthAndAmmo(m_pClient->m_Snap.m_pLocalCharacter);
+			RenderHealthAndAmmo(m_pClient->m_Snap.m_pLocalCharacter, m_pClient->m_Snap.m_LocalClientID);
 		else if(m_pClient->m_Snap.m_SpecInfo.m_Active)
 		{
 			if(m_pClient->m_Snap.m_SpecInfo.m_SpectatorID != SPEC_FREEVIEW)
 			{
-				RenderHealthAndAmmo(&m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_SpecInfo.m_SpectatorID].m_Cur);
+				RenderHealthAndAmmo(&m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_SpecInfo.m_SpectatorID].m_Cur, m_pClient->m_Snap.m_LocalClientID);
                 RenderSelectorSpectatorHud(); //H-Client
 			}
 			RenderSpectatorHud();
@@ -752,6 +757,7 @@ void CHud::OnRender()
 
 		RenderGameTimer();
 		RenderSuddenDeath();
+		RenderPlayerInfo();
 
         RenderScoreHud();
 		RenderWarmupTimer();
@@ -991,4 +997,64 @@ void CHud::OnMessage(int MsgType, void *pRawMsg)
 		m_ServerRecord = (float)pMsg->m_ServerTimeBest/100;
 		m_PlayerRecord = (float)pMsg->m_PlayerTimeBest/100;
 	}
+}
+
+void CHud::RenderPlayerInfo()
+{
+    if (!g_Config.m_hcPlayerInfo)
+        return;
+
+    std::vector<CPlayerInfoLine> infomsg;
+    const float top = 30.0f;
+
+    if (m_pClient->m_LocalInfo.m_Jetpack)
+        infomsg.push_back(CPlayerInfoLine("Have jetpack",1));
+    if (m_pClient->m_LocalInfo.m_EndlessHook)
+        infomsg.push_back(CPlayerInfoLine("Have endless hook",1));
+    if (m_pClient->m_LocalInfo.m_SoloPart)
+        infomsg.push_back(CPlayerInfoLine("In solo part",2));
+    if (m_pClient->m_LocalInfo.m_Jumps != 2 || m_pClient->m_LocalInfo.m_InfiniteJumps)
+    {
+        if (m_pClient->m_LocalInfo.m_Jumps == 0)
+            infomsg.push_back(CPlayerInfoLine("Can't Jump",3));
+
+        else
+        {
+            if (!m_pClient->m_LocalInfo.m_InfiniteJumps)
+            {
+                char aBuf[128];
+                str_format(aBuf, sizeof(aBuf), "Jumps: %d", m_pClient->m_LocalInfo.m_Jumps);
+                infomsg.push_back(CPlayerInfoLine(aBuf,2));
+            }
+            else
+                infomsg.push_back(CPlayerInfoLine("Jumps: Infinite",2));
+        }
+    }
+    if (!m_pClient->m_LocalInfo.m_CanHook)
+        infomsg.push_back(CPlayerInfoLine("Can't hook other players",3));
+    if (!m_pClient->m_LocalInfo.m_CollidePlayers)
+        infomsg.push_back(CPlayerInfoLine("Can't collide with other players",3));
+    if (!m_pClient->m_LocalInfo.m_CanHit)
+        infomsg.push_back(CPlayerInfoLine("Can't hit other players",3));
+
+    if (!infomsg.empty())
+    {
+        std::vector<CPlayerInfoLine>::iterator it = infomsg.begin();
+        int i=0;
+        for (it=infomsg.begin(); it!=infomsg.end(); ++it,i++)
+        {
+            char aBuf[128];
+            str_format(aBuf, sizeof(aBuf), "- %s", it->m_Text.c_str());
+
+            if (it->m_Type == 1)
+                TextRender()->TextColor(0.4f, 1.0f, 0.4f, 0.8f);
+            else if (it->m_Type == 2)
+                TextRender()->TextColor(1.0f, 1.0f, 0.4f, 0.8f);
+            else if (it->m_Type == 3)
+                TextRender()->TextColor(1.0f, 0.4f, 0.4f, 0.8f);
+
+            TextRender()->Text(0, 5.0f, top+9.0f*i, 6.0f, aBuf, -1);
+        }
+        TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+    }
 }

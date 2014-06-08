@@ -8,6 +8,7 @@
 #include <engine/storage.h>
 #include <engine/textrender.h>
 #include <engine/texturepack.h> // H-Client
+#include <engine/autoupdate.h> //H-Client
 #include <engine/shared/config.h>
 #include <engine/shared/linereader.h>
 
@@ -1075,7 +1076,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	//char aBuf[128];
 	CUIRect StandartGame, DDRaceGame, HUDItem;
 	//TODO: Need be change...
-	float splitTop = 220.0f;
+	float splitTop = 240.0f;
     if (g_Config.m_hcLaserCustomColor)
         splitTop += 105.0f;
 
@@ -1123,6 +1124,11 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         if(DoButton_CheckBox(&g_Config.m_hcDisableChatSoundNotification, Localize("Disable Chat Sound Notification"), g_Config.m_hcDisableChatSoundNotification, &HUDItem))
             g_Config.m_hcDisableChatSoundNotification ^= 1;
 
+        //Show Player Info
+        StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+        if(DoButton_CheckBox(&g_Config.m_hcPlayerInfo, Localize("Show Player Info"), g_Config.m_hcPlayerInfo, &HUDItem))
+            g_Config.m_hcPlayerInfo ^= 1;
+
         //Dinamyc Camera Effect
         /*StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcDynamicCamera, Localize("Change dynamic camera"), g_Config.m_hcDynamicCamera, &HUDItem))
@@ -1138,8 +1144,8 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         static int s_ButtonAutoUpdate = 0;
         if (DoButton_Menu((void*)&s_ButtonAutoUpdate, Localize("Check now!"), 0, &Button))
         {
-            /*char aBuf[128];
-            str_format(aBuf, sizeof(aBuf), "Checking updates, please wait....");
+            char aBuf[128];
+            str_format(aBuf, sizeof(aBuf), "Checking for an update");
             RenderUpdating(aBuf);
             AutoUpdate()->CheckUpdates(this);
             if (AutoUpdate()->Updated())
@@ -1150,15 +1156,15 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
                     return;
                 }
                 else
-                    str_format(aBuf, sizeof(aBuf), "H-Client updated successfully :)");
+                    str_format(aBuf, sizeof(aBuf), "H-Client Client updated");
 
                 RenderUpdating(aBuf);
             }
             else
             {
-                str_format(aBuf, sizeof(aBuf), "Not need be update :)");
+                str_format(aBuf, sizeof(aBuf), "No update available");
                 RenderUpdating(aBuf);
-            }*/
+            }
         }
 
         //teeworlds://

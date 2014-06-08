@@ -42,6 +42,7 @@
 
 #include "geoip.h" //H-Client
 #include "texturepack.h" // H-Client
+#include "autoupdate.h" // H-Client
 #include "friends.h"
 #include "serverbrowser.h"
 #include "client.h"
@@ -1772,6 +1773,7 @@ void CClient::RegisterInterfaces()
 
 	Kernel()->RegisterInterface(static_cast<IGeoIP*>(&m_GeoIP)); //H-Client
 	Kernel()->RegisterInterface(static_cast<ITexturePack*>(&m_TexturePack)); //H-Client
+	Kernel()->RegisterInterface(static_cast<IAutoUpdate*>(&m_AutoUpdate)); //H-Client
 }
 
 void CClient::InitInterfaces()
@@ -1789,6 +1791,7 @@ void CClient::InitInterfaces()
 
 	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
 	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
+	m_pAutoUpdate = Kernel()->RequestInterface<IAutoUpdate>(); //H-Client
 
 	//
 	m_ServerBrowser.SetBaseInfo(&m_NetClient, m_pGameClient->NetVersion());
@@ -2455,6 +2458,10 @@ int main(int argc, const char **argv) // ignore_convention
 
 	// write down the config and quit
 	pConfig->Save();
+
+    #if !defined(CONF_PLATFORM_MACOSX)
+        pClient->AutoUpdate()->ExecuteExit(); // H-Client
+    #endif
 
 	return 0;
 }

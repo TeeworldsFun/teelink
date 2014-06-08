@@ -112,6 +112,8 @@ MACRO_CONFIG_INT(DbgResizable, dbg_resizable, 0, 0, 0, CFGFLAG_CLIENT, "Enables 
 
 /** H-Client **/
 //MACRO_CONFIG_INT(hc3DRender, hc_3d_render, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enables/Disable 3D Render")
+MACRO_CONFIG_STR(hcAutoUpdateServer, hc_auto_update_server, 128, "dl.dropboxusercontent.com", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update Server")
+MACRO_CONFIG_STR(hcAutoUpdateServerExtra, hc_auto_update_server_extra, 512, "/u/30566237/generic-hclient", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update Server Extra Params")
 MACRO_CONFIG_INT(hcAutoUpdate, hc_auto_update, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update")
 MACRO_CONFIG_INT(hcUseHUD, hc_use_hud, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Uses H-Client HUD")
 MACRO_CONFIG_INT(hcColorClan, hc_color_clan, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "HighLight Clan Members")
@@ -128,6 +130,7 @@ MACRO_CONFIG_INT(hcLaserColorLht, hc_laser_color_lht, 127, 0, 255, CFGFLAG_CLIEN
 MACRO_CONFIG_INT(hcLaserColorAlpha, hc_laser_color_alpha, 190, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser alpha")
 
 MACRO_CONFIG_INT(hcDisableChatSoundNotification, hc_disable_chat_sound_notification, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Disable Chat Sound Notification")
+MACRO_CONFIG_INT(hcPlayerInfo, hc_player_info, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Player Info")
 
 MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")
 MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")

@@ -14,6 +14,7 @@
 #include <engine/keys.h>
 #include <engine/serverbrowser.h>
 #include <engine/storage.h>
+#include <engine/autoupdate.h> // H-Client
 #include <engine/textrender.h>
 #include <engine/shared/config.h>
 
@@ -1098,6 +1099,14 @@ int CMenus::Render()
 			pButtonText = Localize("Ok");
 			ExtraAlign = -1;
 		}
+        #if !defined(CONF_PLATFORM_MACOSX)
+        else if(m_Popup == POPUP_AUTOUPDATE)
+        {
+            pTitle = Localize("Auto-Update");
+            pExtraText = Localize("An update to H-Client client is available. Do you want to update now? This may restart the client. If an update fails, make sure the client has permissions to modify files.");
+            ExtraAlign = -1;
+        }
+        #endif
 
 		CUIRect Box, Part;
 		Box = Screen;
@@ -1151,6 +1160,28 @@ int CMenus::Render()
 			if(DoButton_Menu(&s_ButtonTryAgain, Localize("Yes"), 0, &Yes, vec4(0.0f, 0.50f, 0.10f, 0.5f)) || m_EnterPressed)
 				Client()->Quit();
 		}
+        #if !defined(CONF_PLATFORM_MACOSX)
+        else if(m_Popup == POPUP_AUTOUPDATE)
+        {
+            CUIRect Yes, No;
+            Box.HSplitBottom(20.f, &Box, &Part);
+            Box.HSplitBottom(24.f, &Box, &Part);
+
+            // buttons
+            Part.VMargin(80.0f, &Part);
+            Part.VSplitMid(&No, &Yes);
+            Yes.VMargin(20.0f, &Yes);
+            No.VMargin(20.0f, &No);
+
+            static int s_ButtonAbort = 0;
+            if(DoButton_Menu(&s_ButtonAbort, Localize("No"), 0, &No) || m_EscapePressed)
+            m_Popup = POPUP_NONE;
+
+            static int s_ButtonTryAgain = 0;
+            if(DoButton_Menu(&s_ButtonTryAgain, Localize("Yes"), 0, &Yes) || m_EnterPressed)
+            m_pClient->AutoUpdate()->DoUpdates(this);
+        }
+        #endif
 		else if(m_Popup == POPUP_PASSWORD)
 		{
 			CUIRect Label, TextBox, TryAgain, Abort;
@@ -1845,4 +1876,57 @@ void CMenus::DeleteMapPreviewCache()
 {
     dbg_msg("h-client", "Starting clear cache...");
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "mappreviews", DeleteMapPreviewCacheCallback, this);
+}
+
+void CMenus::RenderUpdating(const char *pCaption, int current, int total)
+{
+	// make sure that we don't render for each little thing we load
+	// because that will slow down loading if we have vsync
+	static int64 LastLoadRender = 0;
+	if(time_get()-LastLoadRender < time_freq()/60)
+		return;
+	LastLoadRender = time_get();
+
+	// need up date this here to get correct
+	vec3 Rgb = HslToRgb(vec3(g_Config.m_UiColorHue/255.0f, g_Config.m_UiColorSat/255.0f, g_Config.m_UiColorLht/255.0f));
+	ms_GuiColor = vec4(Rgb.r, Rgb.g, Rgb.b, g_Config.m_UiColorAlpha/255.0f);
+
+	CUIRect Screen = *UI()->Screen();
+	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
+
+	RenderBackground();
+
+	float w = 700;
+	float h = 200;
+	float x = Screen.w/2-w/2;
+	float y = Screen.h/2-h/2;
+
+	Graphics()->BlendNormal();
+
+	Graphics()->TextureSet(-1);
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0,0,0,0.50f);
+	RenderTools()->DrawRoundRect(0, y, Screen.w, h, 0.0f);
+	Graphics()->QuadsEnd();
+
+	CUIRect r;
+	r.x = x;
+	r.y = y+20;
+	r.w = w;
+	r.h = h;
+	UI()->DoLabel(&r, Localize(pCaption), 32.0f, 0, -1);
+
+	if (total>0)
+	{
+		float Percent = current/(float)total;
+		Graphics()->TextureSet(-1);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(0.15f,0.15f,0.15f,0.75f);
+		RenderTools()->DrawRoundRect(x+40, y+h-75, w-80, 30, 5.0f);
+		Graphics()->SetColor(1,1,1,0.75f);
+		RenderTools()->DrawRoundRect(x+45, y+h-70, (w-85)*Percent, 20, 5.0f);
+		Graphics()->QuadsEnd();
+	}
+
+	Graphics()->Swap();
 }

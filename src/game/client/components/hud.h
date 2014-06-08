@@ -3,9 +3,24 @@
 #ifndef GAME_CLIENT_COMPONENTS_HUD_H
 #define GAME_CLIENT_COMPONENTS_HUD_H
 #include <game/client/component.h>
+#include <string> // H-Client
 
 class CHud : public CComponent
 {
+    // H-Client
+    struct CPlayerInfoLine
+    {
+        CPlayerInfoLine(std::string text, int type)
+        {
+            m_Text = text;
+            m_Type = type;
+        }
+
+        std::string m_Text;
+        unsigned int m_Type;
+    };
+    //
+
 	float m_Width, m_Height;
 	float m_AverageFPS;
 
@@ -15,7 +30,7 @@ class CHud : public CComponent
 	void RenderConnectionWarning();
 	void RenderTeambalanceWarning();
 	void RenderVoting();
-	void RenderHealthAndAmmo(const CNetObj_Character *pCharacter);
+	void RenderHealthAndAmmo(const CNetObj_Character *pCharacter, int localID);
 	void RenderGameTimer();
 	void RenderSuddenDeath();
 	void RenderScoreHud();
@@ -25,6 +40,7 @@ class CHud : public CComponent
     //H-Client
 	void RenderSelectorSpectatorHud();
 	void RenderRecord(); //DDRace
+	void RenderPlayerInfo();
 
 	virtual void OnMessage(int MsgType, void *pRawMsg);
 	//

@@ -307,8 +307,9 @@ unsigned io_read_line(IOHANDLE io, void *buffer, size_t maxSize)
 {
     size_t bRead = 0;
     char *tempBuff = (char*)malloc(maxSize);
-    memset(tempBuff, 0, sizeof(tempBuff));
     int c;
+
+    memset(tempBuff, 0, sizeof(tempBuff));
 
     while ((c = fgetc((FILE*)io)) != EOF)
     {
@@ -1601,15 +1602,16 @@ int str_length(const char *str)
 
 void str_format(char *buffer, int buffer_size, const char *format, ...)
 {
-    memset(buffer, 0, buffer_size);
 #if defined(CONF_FAMILY_WINDOWS)
 	va_list ap;
 	va_start(ap, format);
+	memset(buffer, 0, buffer_size);
 	_vsnprintf(buffer, buffer_size, format, ap);
 	va_end(ap);
 #else
 	va_list ap;
 	va_start(ap, format);
+	memset(buffer, 0, buffer_size);
 	vsnprintf(buffer, buffer_size, format, ap);
 	va_end(ap);
 #endif
