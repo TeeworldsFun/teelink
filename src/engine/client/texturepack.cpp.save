@@ -5,19 +5,21 @@
 #include <game/generated/client_data.h>
 #include <string>
 
-
 void CTexturePack::Init()
 {
     m_pStorage = Kernel()->RequestInterface<IStorage>();
     m_pGraphics = Kernel()->RequestInterface<IGraphics>();
+    m_pTextRender = Kernel()->RequestInterface<ITextRender>();
+    m_pSound = Kernel()->RequestInterface<ISound>();
     SearchThemes();
 }
 
-bool CTexturePack::Load(const char *rawpackname, CSounds *pSounds, ITextRender *pTextRender)
+bool CTexturePack::Load(const char *rawpackname)
 {
     if (!m_pStorage)
         return false;
 
+    // Load Colors
     char path[255];
     str_format(path, sizeof(path), "themes/%s/style.tws", rawpackname);
     IOHANDLE styleFile = m_pStorage->OpenFile(path, IOFLAG_READ, IStorage::TYPE_ALL);
@@ -25,104 +27,105 @@ bool CTexturePack::Load(const char *rawpackname, CSounds *pSounds, ITextRender *
     if (styleFile)
     {
         char buff[255];
-
-        while (io_read_line(styleFile, buff, sizeof(buff)) > 0)
+        while (io_read_line(styleFile, buff, sizeof(buff)))
         {
             std::string line(buff);
-            size_t dpos = line.find_first_of('=');
-            std::string paramName(line.substr(0, dpos));
+            std::string::size_type dpos = line.find_first_of('=');
 
-            if (line.empty() || dpos == line.length() || line.at(0) == '#')
+            if (line.empty() || dpos == std::string::npos || dpos == line.length() || line.at(0) == '#')
                 continue;
 
+            std::string paramName(line.substr(0, dpos));
+            std::string paramValue(line.substr(dpos+1));
+
             if (paramName.compare("list_header_background_color") == 0)
-                str_copy(g_Config.m_hcListHeaderBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListHeaderBackgroundColor));
+                SET_THEME_VALUE(hcListHeaderBackgroundColor, paramValue.c_str())
             else if (paramName.compare("list_header_text_color") == 0)
-                str_copy(g_Config.m_hcListHeaderTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListHeaderTextColor));
+                SET_THEME_VALUE(hcListHeaderTextColor, paramValue.c_str())
             else if (paramName.compare("list_footer_background_color") == 0)
-                str_copy(g_Config.m_hcListFooterBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListFooterBackgroundColor));
+                SET_THEME_VALUE(hcListFooterBackgroundColor, paramValue.c_str())
             else if (paramName.compare("list_footer_text_color") == 0)
-                str_copy(g_Config.m_hcListFooterTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListFooterTextColor));
+                SET_THEME_VALUE(hcListFooterTextColor, paramValue.c_str())
             else if (paramName.compare("list_background_color") == 0)
-                str_copy(g_Config.m_hcListBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListBackgroundColor));
+                SET_THEME_VALUE(hcListBackgroundColor, paramValue.c_str())
             else if (paramName.compare("list_text_color") == 0)
-                str_copy(g_Config.m_hcListTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListTextColor));
+                SET_THEME_VALUE(hcListTextColor, paramValue.c_str())
             else if (paramName.compare("list_item_selected_color") == 0)
-                str_copy(g_Config.m_hcListItemSelectedColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListItemSelectedColor));
+                SET_THEME_VALUE(hcListItemSelectedColor, paramValue.c_str())
             else if (paramName.compare("list_item_odd_color") == 0)
-                str_copy(g_Config.m_hcListItemOddColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListItemOddColor));
+                SET_THEME_VALUE(hcListItemOddColor, paramValue.c_str())
             else if (paramName.compare("list_column_selected_color") == 0)
-                str_copy(g_Config.m_hcListColumnSelectedColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcListColumnSelectedColor));
+                SET_THEME_VALUE(hcListColumnSelectedColor, paramValue.c_str())
             else if (paramName.compare("serverbrowser_list_group_header_background_color") == 0)
-                str_copy(g_Config.m_hcServerbrowserListGroupHeaderBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcServerbrowserListGroupHeaderBackgroundColor));
+                SET_THEME_VALUE(hcServerbrowserListGroupHeaderBackgroundColor, paramValue.c_str())
             else if (paramName.compare("serverbrowser_list_group_header_text_color") == 0)
-                str_copy(g_Config.m_hcServerbrowserListGroupHeaderTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcServerbrowserListGroupHeaderTextColor));
+                SET_THEME_VALUE(hcServerbrowserListGroupHeaderTextColor, paramValue.c_str())
             else if (paramName.compare("serverbrowser_list_extra_info_background_color") == 0)
-                str_copy(g_Config.m_hcServerbrowserListExtraInfoBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcServerbrowserListExtraInfoBackgroundColor));
+                SET_THEME_VALUE(hcServerbrowserListExtraInfoBackgroundColor, paramValue.c_str())
             else if (paramName.compare("serverbrowser_list_extra_info_text_color") == 0)
-                str_copy(g_Config.m_hcServerbrowserListExtraInfoTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcServerbrowserListExtraInfoTextColor));
+                SET_THEME_VALUE(hcServerbrowserListExtraInfoTextColor, paramValue.c_str())
             else if (paramName.compare("container_header_background_color") == 0)
-                str_copy(g_Config.m_hcContainerHeaderBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcContainerHeaderBackgroundColor));
+                SET_THEME_VALUE(hcContainerHeaderBackgroundColor, paramValue.c_str())
             else if (paramName.compare("container_header_text_color") == 0)
-                str_copy(g_Config.m_hcContainerHeaderTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcContainerHeaderTextColor));
+                SET_THEME_VALUE(hcContainerHeaderTextColor, paramValue.c_str())
             else if (paramName.compare("container_background_color") == 0)
-                str_copy(g_Config.m_hcContainerBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcContainerBackgroundColor));
+                SET_THEME_VALUE(hcContainerBackgroundColor, paramValue.c_str())
             else if (paramName.compare("container_text_color") == 0)
-                str_copy(g_Config.m_hcContainerTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcContainerTextColor));
+                SET_THEME_VALUE(hcContainerTextColor, paramValue.c_str())
             else if (paramName.compare("subcontainer_header_background_color") == 0)
-                str_copy(g_Config.m_hcSubcontainerHeaderBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcSubcontainerHeaderBackgroundColor));
+                SET_THEME_VALUE(hcSubcontainerHeaderBackgroundColor, paramValue.c_str())
             else if (paramName.compare("subcontainer_header_text_color") == 0)
-                str_copy(g_Config.m_hcSubcontainerHeaderTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcSubcontainerHeaderTextColor));
+                SET_THEME_VALUE(hcSubcontainerHeaderTextColor, paramValue.c_str())
             else if (paramName.compare("subcontainer_background_color") == 0)
-                str_copy(g_Config.m_hcSubcontainerBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcSubcontainerBackgroundColor));
+                SET_THEME_VALUE(hcSubcontainerBackgroundColor, paramValue.c_str())
             else if (paramName.compare("subcontainer_text_color") == 0)
-                str_copy(g_Config.m_hcSubcontainerTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcSubcontainerTextColor));
+                SET_THEME_VALUE(hcSubcontainerTextColor, paramValue.c_str())
             else if (paramName.compare("popup_header_background_color") == 0)
-                str_copy(g_Config.m_hcPopupHeaderBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcPopupHeaderBackgroundColor));
+                SET_THEME_VALUE(hcPopupHeaderBackgroundColor, paramValue.c_str())
             else if (paramName.compare("popup_header_text_color") == 0)
-                str_copy(g_Config.m_hcPopupHeaderTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcPopupHeaderTextColor));
+                SET_THEME_VALUE(hcPopupHeaderTextColor, paramValue.c_str())
             else if (paramName.compare("popup_background_color") == 0)
-                str_copy(g_Config.m_hcPopupBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcPopupBackgroundColor));
+                SET_THEME_VALUE(hcPopupBackgroundColor, paramValue.c_str())
             else if (paramName.compare("popup_text_color") == 0)
-                str_copy(g_Config.m_hcPopupTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcPopupTextColor));
+                SET_THEME_VALUE(hcPopupTextColor, paramValue.c_str())
             else if (paramName.compare("editbox_background_color") == 0)
-                str_copy(g_Config.m_hcEditboxBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcEditboxBackgroundColor));
+                SET_THEME_VALUE(hcEditboxBackgroundColor, paramValue.c_str())
             else if (paramName.compare("editbox_text_color") == 0)
-                str_copy(g_Config.m_hcEditboxTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcEditboxTextColor));
+                SET_THEME_VALUE(hcEditboxTextColor, paramValue.c_str())
             else if (paramName.compare("button_background_color") == 0)
-                str_copy(g_Config.m_hcButtonBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcButtonBackgroundColor));
+                SET_THEME_VALUE(hcButtonBackgroundColor, paramValue.c_str())
             else if (paramName.compare("button_text_color") == 0)
-                str_copy(g_Config.m_hcButtonTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcButtonTextColor));
+                SET_THEME_VALUE(hcButtonTextColor, paramValue.c_str())
             else if (paramName.compare("trackbar_background_color") == 0)
-                str_copy(g_Config.m_hcTrackbarBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcTrackbarBackgroundColor));
+                SET_THEME_VALUE(hcTrackbarBackgroundColor, paramValue.c_str())
             else if (paramName.compare("trackbar_slider_background_color") == 0)
-                str_copy(g_Config.m_hcTrackbarSliderBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcTrackbarSliderBackgroundColor));
+                SET_THEME_VALUE(hcTrackbarSliderBackgroundColor, paramValue.c_str())
             else if (paramName.compare("progressbar_background_color") == 0)
-                str_copy(g_Config.m_hcProgressbarBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcProgressbarBackgroundColor));
+                SET_THEME_VALUE(hcProgressbarBackgroundColor, paramValue.c_str())
             else if (paramName.compare("progressbar_slider_background_color") == 0)
-                str_copy(g_Config.m_hcProgressbarSliderBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcProgressbarSliderBackgroundColor));
+                SET_THEME_VALUE(hcProgressbarSliderBackgroundColor, paramValue.c_str())
             else if (paramName.compare("mainmenu_text_color") == 0)
-                str_copy(g_Config.m_hcMainmenuTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcMainmenuTextColor));
+                SET_THEME_VALUE(hcMainmenuTextColor, paramValue.c_str())
             else if (paramName.compare("mainmenu_background_top_color") == 0)
-                str_copy(g_Config.m_hcMainmenuBackgroundTopColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcMainmenuBackgroundTopColor));
+                SET_THEME_VALUE(hcMainmenuBackgroundTopColor, paramValue.c_str())
             else if (paramName.compare("mainmenu_background_bottom_color") == 0)
-                str_copy(g_Config.m_hcMainmenuBackgroundBottomColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcMainmenuBackgroundBottomColor));
+                SET_THEME_VALUE(hcMainmenuBackgroundBottomColor, paramValue.c_str())
             else if (paramName.compare("paneltab_selected_background_color") == 0)
-                str_copy(g_Config.m_hcPaneltabSelectedBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcPaneltabSelectedBackgroundColor));
+                SET_THEME_VALUE(hcPaneltabSelectedBackgroundColor, paramValue.c_str())
             else if (paramName.compare("paneltab_selected_text_color") == 0)
-                str_copy(g_Config.m_hcPaneltabSelectedTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcPaneltabSelectedTextColor));
+                SET_THEME_VALUE(hcPaneltabSelectedTextColor, paramValue.c_str())
             else if (paramName.compare("paneltab_background_color") == 0)
-                str_copy(g_Config.m_hcPaneltabBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcPaneltabBackgroundColor));
+                SET_THEME_VALUE(hcPaneltabBackgroundColor, paramValue.c_str())
             else if (paramName.compare("paneltab_text_color") == 0)
-                str_copy(g_Config.m_hcPaneltabTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcPaneltabTextColor));
+                SET_THEME_VALUE(hcPaneltabTextColor, paramValue.c_str())
             else if (paramName.compare("settings_paneltab_selected_background_color") == 0)
-                str_copy(g_Config.m_hcSettingsPaneltabSelectedBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcSettingsPaneltabSelectedBackgroundColor));
+                SET_THEME_VALUE(hcSettingsPaneltabSelectedBackgroundColor, paramValue.c_str())
             else if (paramName.compare("settings_paneltab_selected_text_color") == 0)
-                str_copy(g_Config.m_hcSettingsPaneltabSelectedTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcSettingsPaneltabSelectedTextColor));
+                SET_THEME_VALUE(hcSettingsPaneltabSelectedTextColor, paramValue.c_str())
             else if (paramName.compare("settings_paneltab_background_color") == 0)
-                str_copy(g_Config.m_hcSettingsPaneltabBackgroundColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcSettingsPaneltabBackgroundColor));
+                SET_THEME_VALUE(hcSettingsPaneltabBackgroundColor, paramValue.c_str())
             else if (paramName.compare("settings_paneltab_text_color") == 0)
-                str_copy(g_Config.m_hcSettingsPaneltabTextColor, line.substr(dpos+1).c_str(), sizeof(g_Config.m_hcSettingsPaneltabTextColor));
+                SET_THEME_VALUE(hcSettingsPaneltabTextColor, paramValue.c_str())
         }
 
         io_close(styleFile);
@@ -131,28 +134,13 @@ bool CTexturePack::Load(const char *rawpackname, CSounds *pSounds, ITextRender *
     str_copy(m_RawPackName, rawpackname, sizeof(m_RawPackName));
 
     // Load Font
-	char aFilename[512];
-	str_format(path, sizeof(path), "themes/%s/font.ttf", rawpackname); // FIXME: Not use generic name and add option for select font size
-	IOHANDLE File = m_pStorage->OpenFile(path, IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
-	if(File)
-	{
-		io_close(File);
-        pTextRender->SetFont(pTextRender->LoadFont(aFilename));
-	} else
-	{
-	    File = m_pStorage->OpenFile("fonts/DejaVuSans.ttf", IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
-	    if (File)
-        {
-            io_close(File);
-            pTextRender->SetFont(pTextRender->LoadFont(aFilename));
-        }
-	}
+    LoadFont();
 
     // Load Images
     LoadImages();
 
 	// Load Sounds
-	pSounds->OnInit();
+	//LoadSounds();
 
     return true;
 }
@@ -171,26 +159,28 @@ void CTexturePack::LoadTheme(const char *themeName)
         return;
 
     CTheme theme;
-	char buffLine[255];
-	while (io_read_line(InfoFile, buffLine, sizeof(buffLine)) > 0)
+	char buff[255];
+	while (io_read_line(InfoFile, buff, sizeof(buff)) > 0)
     {
-        std::string line(buffLine);
-        size_t dpos = line.find_first_of('=');
-        std::string paramName(line.substr(0, dpos));
+        std::string line(buff);
+        std::string::size_type dpos = line.find_first_of('=');
 
-        if (dpos == line.length())
+        if (line.empty() || dpos == std::string::npos || dpos == line.length() || line.at(0) == '#')
             continue;
 
+        std::string paramName(line.substr(0, dpos));
+        std::string paramValue(line.substr(dpos+1));
+
         if (paramName.compare("packname") == 0)
-            str_copy(theme.m_Name, line.substr(dpos+1).c_str(), sizeof(theme.m_Name));
+            str_copy(theme.m_Name, paramValue.c_str(), sizeof(theme.m_Name));
         else if (paramName.compare("version") == 0)
-            str_copy(theme.m_Version, line.substr(dpos+1).c_str(), sizeof(theme.m_Version));
+            str_copy(theme.m_Version, paramValue.c_str(), sizeof(theme.m_Version));
         else if (paramName.compare("author") == 0)
-            str_copy(theme.m_Author, line.substr(dpos+1).c_str(), sizeof(theme.m_Author));
+            str_copy(theme.m_Author, paramValue.c_str(), sizeof(theme.m_Author));
         else if (paramName.compare("mail") == 0)
-            str_copy(theme.m_Mail, line.substr(dpos+1).c_str(), sizeof(theme.m_Mail));
+            str_copy(theme.m_Mail, paramValue.c_str(), sizeof(theme.m_Mail));
         else if (paramName.compare("website") == 0)
-            str_copy(theme.m_Web, line.substr(dpos+1).c_str(), sizeof(theme.m_Web));
+            str_copy(theme.m_Web, paramValue.c_str(), sizeof(theme.m_Web));
     }
 	io_close(InfoFile);
 
@@ -198,7 +188,140 @@ void CTexturePack::LoadTheme(const char *themeName)
     AddTheme(theme);
 }
 
-void CTexturePack::LoadImages()d
+void CTexturePack::LoadStyle()
+{
+ char path[255];
+    str_format(path, sizeof(path), "themes/%s/style.tws", rawpackname);
+    IOHANDLE styleFile = m_pStorage->OpenFile(path, IOFLAG_READ, IStorage::TYPE_ALL);
+
+    if (styleFile)
+    {
+        char buff[255];
+        while (io_read_line(styleFile, buff, sizeof(buff)))
+        {
+            std::string line(buff);
+            std::string::size_type dpos = line.find_first_of('=');
+
+            if (line.empty() || dpos == std::string::npos || dpos == line.length() || line.at(0) == '#')
+                continue;
+
+            std::string paramName(line.substr(0, dpos));
+            std::string paramValue(line.substr(dpos+1));
+
+            if (paramName.compare("list_header_background_color") == 0)
+                SET_THEME_VALUE(hcListHeaderBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("list_header_text_color") == 0)
+                SET_THEME_VALUE(hcListHeaderTextColor, paramValue.c_str())
+            else if (paramName.compare("list_footer_background_color") == 0)
+                SET_THEME_VALUE(hcListFooterBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("list_footer_text_color") == 0)
+                SET_THEME_VALUE(hcListFooterTextColor, paramValue.c_str())
+            else if (paramName.compare("list_background_color") == 0)
+                SET_THEME_VALUE(hcListBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("list_text_color") == 0)
+                SET_THEME_VALUE(hcListTextColor, paramValue.c_str())
+            else if (paramName.compare("list_item_selected_color") == 0)
+                SET_THEME_VALUE(hcListItemSelectedColor, paramValue.c_str())
+            else if (paramName.compare("list_item_odd_color") == 0)
+                SET_THEME_VALUE(hcListItemOddColor, paramValue.c_str())
+            else if (paramName.compare("list_column_selected_color") == 0)
+                SET_THEME_VALUE(hcListColumnSelectedColor, paramValue.c_str())
+            else if (paramName.compare("serverbrowser_list_group_header_background_color") == 0)
+                SET_THEME_VALUE(hcServerbrowserListGroupHeaderBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("serverbrowser_list_group_header_text_color") == 0)
+                SET_THEME_VALUE(hcServerbrowserListGroupHeaderTextColor, paramValue.c_str())
+            else if (paramName.compare("serverbrowser_list_extra_info_background_color") == 0)
+                SET_THEME_VALUE(hcServerbrowserListExtraInfoBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("serverbrowser_list_extra_info_text_color") == 0)
+                SET_THEME_VALUE(hcServerbrowserListExtraInfoTextColor, paramValue.c_str())
+            else if (paramName.compare("container_header_background_color") == 0)
+                SET_THEME_VALUE(hcContainerHeaderBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("container_header_text_color") == 0)
+                SET_THEME_VALUE(hcContainerHeaderTextColor, paramValue.c_str())
+            else if (paramName.compare("container_background_color") == 0)
+                SET_THEME_VALUE(hcContainerBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("container_text_color") == 0)
+                SET_THEME_VALUE(hcContainerTextColor, paramValue.c_str())
+            else if (paramName.compare("subcontainer_header_background_color") == 0)
+                SET_THEME_VALUE(hcSubcontainerHeaderBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("subcontainer_header_text_color") == 0)
+                SET_THEME_VALUE(hcSubcontainerHeaderTextColor, paramValue.c_str())
+            else if (paramName.compare("subcontainer_background_color") == 0)
+                SET_THEME_VALUE(hcSubcontainerBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("subcontainer_text_color") == 0)
+                SET_THEME_VALUE(hcSubcontainerTextColor, paramValue.c_str())
+            else if (paramName.compare("popup_header_background_color") == 0)
+                SET_THEME_VALUE(hcPopupHeaderBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("popup_header_text_color") == 0)
+                SET_THEME_VALUE(hcPopupHeaderTextColor, paramValue.c_str())
+            else if (paramName.compare("popup_background_color") == 0)
+                SET_THEME_VALUE(hcPopupBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("popup_text_color") == 0)
+                SET_THEME_VALUE(hcPopupTextColor, paramValue.c_str())
+            else if (paramName.compare("editbox_background_color") == 0)
+                SET_THEME_VALUE(hcEditboxBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("editbox_text_color") == 0)
+                SET_THEME_VALUE(hcEditboxTextColor, paramValue.c_str())
+            else if (paramName.compare("button_background_color") == 0)
+                SET_THEME_VALUE(hcButtonBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("button_text_color") == 0)
+                SET_THEME_VALUE(hcButtonTextColor, paramValue.c_str())
+            else if (paramName.compare("trackbar_background_color") == 0)
+                SET_THEME_VALUE(hcTrackbarBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("trackbar_slider_background_color") == 0)
+                SET_THEME_VALUE(hcTrackbarSliderBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("progressbar_background_color") == 0)
+                SET_THEME_VALUE(hcProgressbarBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("progressbar_slider_background_color") == 0)
+                SET_THEME_VALUE(hcProgressbarSliderBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("mainmenu_text_color") == 0)
+                SET_THEME_VALUE(hcMainmenuTextColor, paramValue.c_str())
+            else if (paramName.compare("mainmenu_background_top_color") == 0)
+                SET_THEME_VALUE(hcMainmenuBackgroundTopColor, paramValue.c_str())
+            else if (paramName.compare("mainmenu_background_bottom_color") == 0)
+                SET_THEME_VALUE(hcMainmenuBackgroundBottomColor, paramValue.c_str())
+            else if (paramName.compare("paneltab_selected_background_color") == 0)
+                SET_THEME_VALUE(hcPaneltabSelectedBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("paneltab_selected_text_color") == 0)
+                SET_THEME_VALUE(hcPaneltabSelectedTextColor, paramValue.c_str())
+            else if (paramName.compare("paneltab_background_color") == 0)
+                SET_THEME_VALUE(hcPaneltabBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("paneltab_text_color") == 0)
+                SET_THEME_VALUE(hcPaneltabTextColor, paramValue.c_str())
+            else if (paramName.compare("settings_paneltab_selected_background_color") == 0)
+                SET_THEME_VALUE(hcSettingsPaneltabSelectedBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("settings_paneltab_selected_text_color") == 0)
+                SET_THEME_VALUE(hcSettingsPaneltabSelectedTextColor, paramValue.c_str())
+            else if (paramName.compare("settings_paneltab_background_color") == 0)
+                SET_THEME_VALUE(hcSettingsPaneltabBackgroundColor, paramValue.c_str())
+            else if (paramName.compare("settings_paneltab_text_color") == 0)
+                SET_THEME_VALUE(hcSettingsPaneltabTextColor, paramValue.c_str())
+        }
+
+        io_close(styleFile);
+    }
+}
+void CTexturePack::LoadFont()
+{
+	char aFilename[512];
+	str_format(path, sizeof(path), "themes/%s/font.ttf", rawpackname); // FIXME: Not use generic name and add option for select font size
+	IOHANDLE File = m_pStorage->OpenFile(path, IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
+	if(File)
+	{
+		io_close(File);
+        m_pTextRender->SetFont(m_pTextRender->LoadFont(aFilename));
+	} else
+	{
+	    File = m_pStorage->OpenFile("fonts/DejaVuSans.ttf", IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
+	    if (File)
+        {
+            io_close(File);
+            m_pTextRender->SetFont(m_pTextRender->LoadFont(aFilename));
+        }
+	}
+}
+
+void CTexturePack::LoadImages()
 {
     char aBuf[255];
     for (int i=0; i<g_pData->m_NumImages; i++)

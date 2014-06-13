@@ -266,6 +266,7 @@ class CMenus : public CComponent
 	void SetActive(bool Active);
 
 	static int DeleteMapPreviewCacheCallback(const char *pName, int IsDir, int StorageType, void *pUser); // H-Client
+	void *m_pGeoIPThread; // H-Client
 public:
 	enum
 	{

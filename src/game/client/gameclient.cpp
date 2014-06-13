@@ -404,15 +404,7 @@ void CGameClient::OnReset()
 	m_TakeInitScreenShot = false; // H-Client
 
     // H-Client
-    m_LocalInfo.m_CanHook = true;
-	m_LocalInfo.m_Jumps = 2;
-    m_LocalInfo.m_InfiniteJumps = false;
-    m_LocalInfo.m_Jetpack = false;
-    m_LocalInfo.m_CollidePlayers = true;
-    m_LocalInfo.m_SoloPart = false;
-    m_LocalInfo.m_EndlessHook = false;
-    m_LocalInfo.m_CanHit = true;
-    m_LocalInfo.m_WantedWeapon = WEAPON_GUN;
+    m_LocalInfo.Reset();
 }
 
 

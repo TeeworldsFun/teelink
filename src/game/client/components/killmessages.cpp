@@ -39,6 +39,9 @@ void CKillMessages::OnMessage(int MsgType, void *pRawMsg)
 		//H-Client
         Kill.m_Show = false;
 		Kill.m_ID = 1;
+
+		if (Kill.m_VictimID == m_pClient->m_Snap.m_LocalClientID)
+            m_pClient->m_LocalInfo.Reset();
 		//
 
 		// add the message

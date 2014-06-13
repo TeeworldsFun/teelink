@@ -42,6 +42,7 @@
 
 #include "geoip.h" //H-Client
 #include "texturepack.h" // H-Client
+#include "autoupdate.h" // H-Client
 #include "friends.h"
 #include "serverbrowser.h"
 #include "client.h"
@@ -762,6 +763,7 @@ void CClient::DebugRender()
 
 void CClient::Quit()
 {
+    ServerBrowser()->SaveServerInfo(); // H-Client
 	SetState(IClient::STATE_QUITING);
 }
 
@@ -1772,6 +1774,7 @@ void CClient::RegisterInterfaces()
 
 	Kernel()->RegisterInterface(static_cast<IGeoIP*>(&m_GeoIP)); //H-Client
 	Kernel()->RegisterInterface(static_cast<ITexturePack*>(&m_TexturePack)); //H-Client
+	Kernel()->RegisterInterface(static_cast<IAutoUpdate*>(&m_AutoUpdate)); //H-Client
 }
 
 void CClient::InitInterfaces()
@@ -1789,6 +1792,8 @@ void CClient::InitInterfaces()
 
 	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
 	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
+	m_pAutoUpdate = Kernel()->RequestInterface<IAutoUpdate>(); //H-Client
+	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>(); // H-Client
 
 	//
 	m_ServerBrowser.SetBaseInfo(&m_NetClient, m_pGameClient->NetVersion());
@@ -1892,10 +1897,6 @@ void CClient::Run()
 
 	// process pending commands
 	m_pConsole->StoreCommands(false);
-	
-	// Load TexturePack
-	m_TexturePack.Init();
-	m_Textur
 
 	while (1)
 	{
@@ -2444,9 +2445,6 @@ int main(int argc, const char **argv) // ignore_convention
 	// execute autoexec file
 	pConsole->ExecuteFile("autoexec.cfg");
 
-	// Load Texture Pack
-	pClient->TexturePack()->Load(g_Config.m_hcTheme);
-
 	// parse the command line arguments
 	if(argc > 1) // ignore_convention
 		pConsole->ParseArguments(argc-1, &argv[1]); // ignore_convention
@@ -2462,6 +2460,8 @@ int main(int argc, const char **argv) // ignore_convention
 
 	// write down the config and quit
 	pConfig->Save();
+
+    pClient->AutoUpdate()->ExecuteExit(); // H-Client
 
 	return 0;
 }

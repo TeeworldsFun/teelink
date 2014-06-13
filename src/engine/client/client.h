@@ -67,6 +67,7 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	IGeoIP *m_pGeoIP; //H-Client
 	ITexturePack *m_pTexturePack; //H-Client
 	IAutoUpdate *m_pAutoUpdate; //H-Client
+	IServerBrowser *m_pServerBrowser; // H-Client
 
 	enum
 	{
@@ -196,6 +197,7 @@ public:
 	IGeoIP *GeoIP() { return m_pGeoIP; } // H-Client
 	ITexturePack *TexturePack() { return m_pTexturePack; } // H-Client
 	IAutoUpdate *AutoUpdate() { return m_pAutoUpdate; } // H-Client
+	IServerBrowser *ServerBrowser() { return m_pServerBrowser; } // H-Client
 
 	CClient();
 

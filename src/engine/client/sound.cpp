@@ -351,12 +351,15 @@ int CSound::LoadWV(const char *pFilename, int forceSampleID)
 	if(!m_pStorage)
 		return -1;
 
-	ms_File = m_pStorage->OpenFile(pFilename, IOFLAG_READ, IStorage::TYPE_ALL);
+    char aFilename[512];
+	ms_File = m_pStorage->OpenFile(pFilename, IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
 	if(!ms_File)
 	{
 		dbg_msg("sound/wv", "failed to open file. filename='%s'", pFilename);
 		return -1;
 	}
+    io_close(ms_File);
+	ms_File = NULL;
 
     // H-Client
     if (forceSampleID >= 0)
@@ -377,7 +380,7 @@ int CSound::LoadWV(const char *pFilename, int forceSampleID)
     }
     //
 
-	pContext = WavpackOpenFileInput(ReadData, aError);
+	pContext = WavpackOpenFileInput(aFilename, aError, 0, 0);
 	if (pContext)
 	{
 		int m_aSamples = WavpackGetNumSamples(pContext);
@@ -432,9 +435,6 @@ int CSound::LoadWV(const char *pFilename, int forceSampleID)
 	{
 		dbg_msg("sound/wv", "failed to open %s: %s", pFilename, aError);
 	}
-
-	io_close(ms_File);
-	ms_File = NULL;
 
 	if(g_Config.m_Debug)
 		dbg_msg("sound/wv", "loaded %s", pFilename);

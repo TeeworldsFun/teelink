@@ -431,10 +431,11 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 		{
 		    // H-Client
 		    if (!g_Config.m_hcDisableChatSoundNotification)
+            {
                 m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0);
+                m_aLastSoundPlayed[CHAT_CLIENT] = Now;
+            }
             //
-
-			m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 		}
 	}
 }

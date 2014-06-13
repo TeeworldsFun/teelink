@@ -39,8 +39,10 @@
 	#error NOT IMPLEMENTED
 #endif
 #include <string>
+#include <algorithm>
 #include <stdio.h>
 #include <engine/shared/config.h>
+#include <engine/external/json-parser/json.h>
 #include "geoip.h"
 
 static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
@@ -58,38 +60,38 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     std::string csvData;
 
     //Lookup
-	if(net_host_lookup("freegeoip.net", &HostAddress, NETTYPE_IPV4) != 0)
-	{
-        dbg_msg("GeoIP","ERROR: Can't run host lookup.");
-        geoInfo->m_CountryCode = "NULL";
-        return;
-	}
+    if(net_host_lookup("freegeoip.net", &HostAddress, NETTYPE_IPV4) != 0)
+    {
+            dbg_msg("GeoIP","ERROR: Can't run host lookup.");
+            geoInfo->m_CountryCode = "NULL";
+            return;
+    }
 
     char aAddrStr[NETADDR_MAXSTRSIZE];
     net_addr_str(&HostAddress, aAddrStr, sizeof(aAddrStr), true);
 
     //Connect
     int socketID = socket(AF_INET, SOCK_STREAM, 0);
-	if(socketID < 0)
-	{
-        dbg_msg("GeoIP","ERROR: Can't create socket.");
-        geoInfo->m_CountryCode = "NULL";
-        return;
-	}
+    if(socketID < 0)
+    {
+            dbg_msg("GeoIP","ERROR: Can't create socket.");
+            geoInfo->m_CountryCode = "NULL";
+            return;
+    }
 
     Socket.type = NETTYPE_IPV4;
     Socket.ipv4sock = socketID;
     HostAddress.port = 80;
 
-	if(net_tcp_connect(Socket, &HostAddress) != 0)
-	{
-	    net_tcp_close(Socket);
-	    geoInfo->m_CountryCode = "NULL";
+    if(net_tcp_connect(Socket, &HostAddress) != 0)
+    {
+        net_tcp_close(Socket);
+        geoInfo->m_CountryCode = "NULL";
         return;
-	}
+    }
 
     //Send request
-    str_format(aNetBuff, sizeof(aNetBuff), "GET /csv/%s HTTP/1.0\nHOST: %s\n\n", ip.c_str(), aAddrStr);
+    str_format(aNetBuff, sizeof(aNetBuff), "GET /csv/%s HTTP/1.0\r\nHost: %s\r\n\r\n", ip.c_str(), aAddrStr);
     net_tcp_send(Socket, aNetBuff, strlen(aNetBuff));
 
     //read data
@@ -108,16 +110,20 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
                 if (aNetBuff[i]=='\n')
                 {
                     enterCtrl++;
-                    if (isHead && enterCtrl == 2)
+                    if (enterCtrl == 2)
                     {
                         isHead = false;
                         NetData.clear();
                         continue;
                     }
 
-                    int posDel = NetData.find_first_of(":");
-                    if (posDel > 0 && str_comp_nocase(NetData.substr(0, posDel).c_str(),"content-length") == 0)
-                        TotalBytes = atoi(NetData.substr(posDel+2).c_str());
+                    std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
+					if (NetData.find("content-length:") != std::string::npos)
+                    {
+                        sscanf(NetData.c_str(), "content-length:%d", &TotalBytes);
+                        if (TotalBytes == 0)
+                            sscanf(NetData.c_str(), "content-length: %d", &TotalBytes);
+                    }
 
                     NetData.clear();
                     continue;

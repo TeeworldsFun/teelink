@@ -272,6 +272,19 @@ public:
 
 	// H-Client
 	struct {
+	    void Reset()
+	    {
+            m_CanHook = true;
+            m_Jumps = 2;
+            m_InfiniteJumps = false;
+            m_Jetpack = false;
+            m_CollidePlayers = true;
+            m_SoloPart = false;
+            m_EndlessHook = false;
+            m_CanHit = true;
+            m_WantedWeapon = WEAPON_GUN;
+	    }
+
 	    bool m_CanHook;
 	    unsigned int m_Jumps;
         bool m_InfiniteJumps;

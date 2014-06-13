@@ -306,33 +306,27 @@ unsigned io_read(IOHANDLE io, void *buffer, unsigned size)
 unsigned io_read_line(IOHANDLE io, void *buffer, size_t maxSize)
 {
     size_t bRead = 0;
-    char *tempBuff = (char*)malloc(maxSize);
     int c;
+    char *tempBuff = (char*)mem_alloc(maxSize, 1);
 
-    memset(tempBuff, 0, sizeof(tempBuff));
+    mem_zero(tempBuff, maxSize);
 
     while ((c = fgetc((FILE*)io)) != EOF)
     {
-        if (bRead == maxSize)
-            break;
-        if (c == '\n')
+        if (c == '\n' || c == '\r')
         {
-            bRead++;
-            break;
-        } else if (c == '\r')
-        {
-            bRead++;
-            fgetc((FILE*)io); // Advance Cursor 1 position for \n
+            if (bRead == 0) tempBuff[bRead++] = '\n'; // Found a line but the line its empty
+            if (c == '\r') fgetc((FILE*)io); // Advance Cursor 1 position for \n
             break;
         }
 
-        tempBuff[bRead] = (char)c;
-        bRead++;
+        if (bRead < maxSize)
+            tempBuff[bRead++] = (char)c;
     }
 
-    tempBuff[bRead] = 0;
-    str_copy(buffer, tempBuff, bRead);
-    free(tempBuff);
+    str_copy(buffer, tempBuff, maxSize);
+    mem_free(tempBuff);
+
     return bRead;
 }
 //
@@ -434,6 +428,8 @@ void thread_destroy(void *thread)
 #if defined(CONF_FAMILY_UNIX)
 	void *r = 0;
 	pthread_join((pthread_t)thread, &r);
+#elif defined(CONF_FAMILY_WINDOWS)
+    TerminateThread((HANDLE)thread, 0);
 #else
 	/*#error not implemented*/
 #endif

@@ -9,6 +9,8 @@
 #include <engine/textrender.h>
 #include <engine/sound.h>
 
+#define SET_THEME_VALUE(a,b) str_copy(g_Config.m_##a, b, sizeof(g_Config.m_##a));
+
 class CTexturePack : public ITexturePack
 {
     IStorage *m_pStorage;
@@ -32,6 +34,8 @@ public:
     void LoadTheme(const char *theme);
 
 private:
+    void LoadStyle();
+    void LoadFont();
     void LoadImages();
     void LoadSounds();
     void SearchThemes();

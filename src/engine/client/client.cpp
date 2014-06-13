@@ -763,6 +763,7 @@ void CClient::DebugRender()
 
 void CClient::Quit()
 {
+    ServerBrowser()->SaveServerInfo(); // H-Client
 	SetState(IClient::STATE_QUITING);
 }
 
@@ -1792,6 +1793,7 @@ void CClient::InitInterfaces()
 	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
 	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
 	m_pAutoUpdate = Kernel()->RequestInterface<IAutoUpdate>(); //H-Client
+	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>(); // H-Client
 
 	//
 	m_ServerBrowser.SetBaseInfo(&m_NetClient, m_pGameClient->NetVersion());
@@ -2459,9 +2461,7 @@ int main(int argc, const char **argv) // ignore_convention
 	// write down the config and quit
 	pConfig->Save();
 
-    #if !defined(CONF_PLATFORM_MACOSX)
-        pClient->AutoUpdate()->ExecuteExit(); // H-Client
-    #endif
+    pClient->AutoUpdate()->ExecuteExit(); // H-Client
 
 	return 0;
 }

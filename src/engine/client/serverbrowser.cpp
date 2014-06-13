@@ -71,6 +71,9 @@ void CServerBrowser::SetBaseInfo(class CNetClient *pClient, const char *pNetVers
 	IConfig *pConfig = Kernel()->RequestInterface<IConfig>();
 	if(pConfig)
 		pConfig->RegisterCallback(ConfigSaveCallback, this);
+
+    m_pStorage = Kernel()->RequestInterface<IStorage>(); // H-Client
+	LoadServerInfo(); //H-Client
 }
 
 const CServerInfo *CServerBrowser::SortedGet(int Index) const
@@ -866,7 +869,6 @@ void CServerBrowser::ConfigSaveCallback(IConfig *pConfig, void *pUserData)
 }
 
 //H-Client
-/** H-Client **/
 bool CServerBrowser::SaveServerInfo()
 {
     Storage()->RemoveFile("serverinfo.tw", IStorage::TYPE_SAVE);
