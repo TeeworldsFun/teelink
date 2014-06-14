@@ -18,6 +18,7 @@
 #include <game/localization.h>
 
 #include <string> // H-Client
+#include <cstdio> // H-Client: sscanf
 
 #include "chat.h"
 
