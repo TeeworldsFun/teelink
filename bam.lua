@@ -144,10 +144,9 @@ function build(settings)
 	settings.cc.Output = Intermediate_Output
 
 	if config.compiler.driver == "cl" then
-		settings.cc.flags:Add("/wd4244")
-		settings.cc.flags:Add("/EHsc")
+		settings.cc.flags:Add("/wd4244", "/EHsc")
 	else
-		settings.cc.flags:Add("-Wall", "-fexceptions")
+		settings.cc.flags:Add("-Wall", "-fexceptions", "-O2", "-s")
 		if family == "windows" then
 			-- disable visibility attribute support for gcc on windows
 			settings.cc.defines:Add("NO_VIZ")

@@ -346,7 +346,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 				RenderTools()->DrawUIRect(&ExtraInfo, HexToVec4(g_Config.m_hcServerbrowserListExtraInfoBackgroundColor), CUI::CORNER_B, 4.0f);
 				ExtraInfo.Margin(5.0f, &ExtraInfo);
 				Preview = ExtraInfo;
-				RenderTools()->DrawUIRect(&ExtraInfo, vec4(0.3,0.3,0.3,0.2f), CUI::CORNER_ALL, 4.0f);
+				RenderTools()->DrawUIRect(&ExtraInfo, vec4(0.3f,0.3f,0.3f,0.2f), CUI::CORNER_ALL, 4.0f);
 
 				ExtraInfo.HSplitTop(20.0f, &LabelA, &ExtraInfo);
 				LabelA.VSplitLeft(130.0f, &LabelA, &LabelB);
@@ -470,7 +470,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
                 int preview = GetImageMapPreview(pItem->m_aMap);
                 if (preview == Graphics()->GetInvalidTexture())
                 {
-                    RenderTools()->DrawUIRect(&Preview, vec4(0.2,0.2,0.2,1.0f), CUI::CORNER_ALL, 4.0f);
+                    RenderTools()->DrawUIRect(&Preview, vec4(0.2f,0.2f,0.2f,1.0f), CUI::CORNER_ALL, 4.0f);
                     UI()->DoLabel(&Preview, "NOT AVAILABLE", 12.0f, 0);
                 }
                 else
@@ -487,7 +487,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 			}
 			else if (UI()->MouseInside(&Row))
 			{
-			    RenderTools()->DrawUIRect(&Row, vec4(0.2,0.2,0.2,0.5f), CUI::CORNER_ALL, 4.0f);
+			    RenderTools()->DrawUIRect(&Row, vec4(0.2f,0.2f,0.2f,0.5f), CUI::CORNER_ALL, 4.0f);
 			}
 
 			// clip the selection
