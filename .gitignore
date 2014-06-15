@@ -1,4 +1,5 @@
 *.save
+*.upd
 bam
 .bam
 config.lua
