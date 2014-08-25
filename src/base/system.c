@@ -303,7 +303,7 @@ unsigned io_read(IOHANDLE io, void *buffer, unsigned size)
 }
 
 // H-Client
-unsigned io_read_line(IOHANDLE io, void *buffer, size_t maxSize)
+unsigned io_read_line(IOHANDLE io, void *buffer, unsigned maxSize)
 {
     size_t bRead = 0;
     int c;
