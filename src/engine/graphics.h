@@ -142,6 +142,8 @@ public:
 
 	virtual int GetInvalidTexture() = 0; // H-Client
 	virtual bool Tumbtail() const = 0; // H-Client
+    virtual bool ShowInfoKills() const = 0; // H-Client
+	virtual void ShowInfoKills(bool state) = 0; // H-Client
 
 	// syncronization
 	virtual void InsertSignal(class semaphore *pSemaphore) = 0;

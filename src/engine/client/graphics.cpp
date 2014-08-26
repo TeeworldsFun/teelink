@@ -765,6 +765,11 @@ void CGraphics_OpenGL::QuadsText(float x, float y, float Size, const char *pText
 int CGraphics_OpenGL::GetInvalidTexture() {
     return m_InvalidTexture;
 }
+
+void CGraphics_OpenGL::ShowInfoKills(bool state)
+{
+    m_DoScreenShowInfoKills = state;
+}
 //
 
 int CGraphics_OpenGL::Init()

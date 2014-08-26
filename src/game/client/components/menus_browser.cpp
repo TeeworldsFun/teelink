@@ -467,20 +467,23 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 				Preview.VSplitRight(150.0f, 0x0, &Preview);
 				Preview.Margin(5.0f, &Preview);
 
-                int preview = GetImageMapPreview(pItem->m_aMap);
-                if (preview == Graphics()->GetInvalidTexture())
+                if (g_Config.m_hcShowPreviewMap)
                 {
-                    RenderTools()->DrawUIRect(&Preview, vec4(0.2f,0.2f,0.2f,1.0f), CUI::CORNER_ALL, 4.0f);
-                    UI()->DoLabel(&Preview, "NOT AVAILABLE", 12.0f, 0);
-                }
-                else
-                {
-                    IGraphics::CQuadItem QuadItem(Preview.x, Preview.y, Preview.w, Preview.h);
-                    Graphics()->TextureSet(preview);
-                    Graphics()->QuadsBegin();
-                        Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-                        Graphics()->QuadsDrawTL(&QuadItem, 1);
-                    Graphics()->QuadsEnd();
+                    int preview = GetImageMapPreview(pItem->m_aMap);
+                    if (preview == Graphics()->GetInvalidTexture())
+                    {
+                        RenderTools()->DrawUIRect(&Preview, vec4(0.2f,0.2f,0.2f,1.0f), CUI::CORNER_ALL, 4.0f);
+                        UI()->DoLabel(&Preview, "NOT AVAILABLE", 12.0f, 0);
+                    }
+                    else
+                    {
+                        IGraphics::CQuadItem QuadItem(Preview.x, Preview.y, Preview.w, Preview.h);
+                        Graphics()->TextureSet(preview);
+                        Graphics()->QuadsBegin();
+                            Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+                            Graphics()->QuadsDrawTL(&QuadItem, 1);
+                        Graphics()->QuadsEnd();
+                    }
                 }
 
 				//

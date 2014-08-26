@@ -380,6 +380,7 @@ void CGameClient::OnConnected()
 
 	// send the inital info
 	SendInfo(true);
+	Graphics()->ShowInfoKills(false); // H-Client
 }
 
 void CGameClient::OnReset()
@@ -663,6 +664,8 @@ void CGameClient::OnGameOver()
 {
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && g_Config.m_ClEditor == 0)
 		Client()->AutoScreenshot_Start();
+
+    Graphics()->ShowInfoKills(true); // H-Client
 }
 
 void CGameClient::OnStartGame()
@@ -671,7 +674,8 @@ void CGameClient::OnStartGame()
 		Client()->DemoRecorder_HandleAutoStart();
 
     m_TakeInitScreenShot = true;
-    m_DDRaceMsgSent = true; //DDRace
+    m_DDRaceMsgSent = true; // H-Client: DDRace
+    Graphics()->ShowInfoKills(false);  // H-Client
 }
 
 void CGameClient::OnRconLine(const char *pLine)
@@ -1015,7 +1019,7 @@ void CGameClient::OnNewSnapshot()
 	}
 
     //H-Client
-    if (m_TakeInitScreenShot)
+    if (g_Config.m_hcShowPreviewMap && m_TakeInitScreenShot)
     {
         ServerBrowser()->UpdateServerInfo(g_Config.m_UiServerAddress);
 

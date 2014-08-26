@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/shared/config.h>
+#include <engine/graphics.h>
 
 #include <base/math.h>
 #include <game/collision.h>
@@ -59,3 +60,16 @@ void CCamera::OnRender()
 
 	m_PrevCenter = m_Center;
 }
+
+// H-Client
+void CCamera::OnConsoleInit()
+{
+	Console()->Register("switch_camera_mode", "", CFGFLAG_CLIENT, ConCallCameraMode, this, "Switch Camera Mode");
+}
+
+void CCamera::ConCallCameraMode(IConsole::IResult *pResult, void *pUserData)
+{
+	CCamera *pSelf = (CCamera*)pUserData;
+	pSelf->m_pClient->Graphics()->ShowInfoKills(!pSelf->m_pClient->Graphics()->ShowInfoKills());
+}
+//

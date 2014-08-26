@@ -47,7 +47,8 @@ void CPacker::AddString(const char *pStr, int Limit)
 				break;
 			}
 		}
-		*m_pCurrent++ = 0;
+
+        *m_pCurrent++ = 0;
 	}
 	else
 	{
@@ -61,7 +62,8 @@ void CPacker::AddString(const char *pStr, int Limit)
 				break;
 			}
 		}
-		*m_pCurrent++ = 0;
+
+        *m_pCurrent++ = 0;
 	}
 }
 

@@ -1085,12 +1085,12 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	DDRaceGame.VSplitLeft(400.0f, &DDRaceGame, 0x0);
 
 	// Logo
-    IGraphics::CQuadItem QuadItem(MainView.w-70, 50, 206, 206);
-    Graphics()->TextureSet(g_pData->m_aImages[IMAGE_HCLIENT_LOGO].m_Id);
-    Graphics()->QuadsBegin();
-        Graphics()->SetColor(1.0f, 1.0f , 1.0f, 0.5f);
-        Graphics()->QuadsDrawTL(&QuadItem, 1);
-    Graphics()->QuadsEnd();
+//    IGraphics::CQuadItem QuadItem(450, 50, 206, 206);
+//    Graphics()->TextureSet(g_pData->m_aImages[IMAGE_HCLIENT_LOGO].m_Id);
+//    Graphics()->QuadsBegin();
+//        Graphics()->SetColor(1.0f, 1.0f , 1.0f, 0.5f);
+//        Graphics()->QuadsDrawTL(&QuadItem, 1);
+//    Graphics()->QuadsEnd();
 
     //Standart Game
     {

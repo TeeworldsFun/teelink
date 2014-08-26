@@ -46,10 +46,16 @@ void CMapLayers::EnvelopeUpdate()
 
 void CMapLayers::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup)
 {
-	float Points[4];
-	RenderTools()->MapscreenToWorld(CenterX, CenterY, pGroup->m_ParallaxX/100.0f, pGroup->m_ParallaxY/100.0f,
-		pGroup->m_OffsetX, pGroup->m_OffsetY, Graphics()->ScreenAspect(), (Graphics()->Tumbtail())?4.0f:1.0f, Points);
-	Graphics()->MapScreen(Points[0], Points[1], Points[2], Points[3]);
+	if (Graphics()->ShowInfoKills())
+        Graphics()->MapScreen(0, 0, Collision()->GetWidth()*32, Collision()->GetHeight()*32);
+    else
+    {
+        float Points[4];
+
+        RenderTools()->MapscreenToWorld(CenterX, CenterY, pGroup->m_ParallaxX/100.0f, pGroup->m_ParallaxY/100.0f,
+            pGroup->m_OffsetX, pGroup->m_OffsetY, Graphics()->ScreenAspect(), (Graphics()->Tumbtail())?4.0f:1.0f, Points);
+        Graphics()->MapScreen(Points[0], Points[1], Points[2], Points[3]);
+    }
 }
 
 void CMapLayers::EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser)
@@ -137,6 +143,7 @@ void CMapLayers::OnRender()
     //
 
 	bool PassedGameLayer = false;
+	bool RenderBkg = true;
 
 	for(int g = 0; g < m_pLayers->NumGroups(); g++)
 	{
@@ -249,6 +256,39 @@ void CMapLayers::OnRender()
 				}
 				else if(pLayer->m_Type == LAYERTYPE_QUADS)
 				{
+				    // H-Client
+				    if (Graphics()->ShowInfoKills() && RenderBkg)
+                    {
+                        Graphics()->ShowInfoKills(false);
+                        MapScreenToGroup(Center.x, Center.y, pGroup);
+
+                        CQuad *pQuad = NewQuad(0, 0);
+                        const int Width = 800000;
+                        const int Height = 600000;
+                        pQuad->m_aPoints[0].x = pQuad->m_aPoints[2].x = -Width;
+                        pQuad->m_aPoints[1].x = pQuad->m_aPoints[3].x = Width;
+                        pQuad->m_aPoints[0].y = pQuad->m_aPoints[1].y = -Height;
+                        pQuad->m_aPoints[2].y = pQuad->m_aPoints[3].y = Height;
+                        pQuad->m_aPoints[4].x = pQuad->m_aPoints[4].y = 0;
+                        pQuad->m_aColors[0].r = pQuad->m_aColors[1].r = 94;
+                        pQuad->m_aColors[0].g = pQuad->m_aColors[1].g = 132;
+                        pQuad->m_aColors[0].b = pQuad->m_aColors[1].b = 174;
+                        pQuad->m_aColors[2].r = pQuad->m_aColors[3].r = 204;
+                        pQuad->m_aColors[2].g = pQuad->m_aColors[3].g = 232;
+                        pQuad->m_aColors[2].b = pQuad->m_aColors[3].b = 255;
+
+                        Graphics()->TextureSet(-1);
+                        Graphics()->BlendNone();
+                        RenderTools()->RenderQuads(pQuad, 1, LAYERRENDERFLAG_OPAQUE, EnvelopeEval, this);
+                        Graphics()->BlendNormal();
+                        RenderTools()->RenderQuads(pQuad, 1, LAYERRENDERFLAG_TRANSPARENT, EnvelopeEval, this);
+
+                        Graphics()->ShowInfoKills(true);
+                        MapScreenToGroup(Center.x, Center.y, pGroup);
+                        RenderBkg = false;
+                    }
+                    //
+
 					CMapItemLayerQuads *pQLayer = (CMapItemLayerQuads *)pLayer;
 					if(pQLayer->m_Image == -1)
 						Graphics()->TextureSet(-1);
@@ -270,6 +310,86 @@ void CMapLayers::OnRender()
 			Graphics()->ClipDisable();
 	}
 
+// render screen sizes
+	if(m_pClient->Graphics()->ShowInfoKills())
+	{
+		Graphics()->TextureSet(-1);
+		Graphics()->LinesBegin();
+
+		float aLastPoints[4];
+		float Start = 1.0f; //9.0f/16.0f;
+		float End = 16.0f/9.0f;
+		const int NumSteps = 20;
+		for(int i = 0; i <= NumSteps; i++)
+		{
+			float aPoints[4];
+			float Aspect = Start + (End-Start)*(i/(float)NumSteps);
+
+			RenderTools()->MapscreenToWorld(
+				m_pClient->m_pCamera->m_Center.x, m_pClient->m_pCamera->m_Center.y,
+				1.0f, 1.0f, 0.0f, 0.0f, Aspect, 1.0f, aPoints);
+
+			if(i == 0)
+			{
+				IGraphics::CLineItem Array[2] = {
+					IGraphics::CLineItem(aPoints[0], aPoints[1], aPoints[2], aPoints[1]),
+					IGraphics::CLineItem(aPoints[0], aPoints[3], aPoints[2], aPoints[3])};
+				Graphics()->LinesDraw(Array, 2);
+			}
+
+			if(i != 0)
+			{
+				IGraphics::CLineItem Array[4] = {
+					IGraphics::CLineItem(aPoints[0], aPoints[1], aLastPoints[0], aLastPoints[1]),
+					IGraphics::CLineItem(aPoints[2], aPoints[1], aLastPoints[2], aLastPoints[1]),
+					IGraphics::CLineItem(aPoints[0], aPoints[3], aLastPoints[0], aLastPoints[3]),
+					IGraphics::CLineItem(aPoints[2], aPoints[3], aLastPoints[2], aLastPoints[3])};
+				Graphics()->LinesDraw(Array, 4);
+			}
+
+			if(i == NumSteps)
+			{
+				IGraphics::CLineItem Array[2] = {
+					IGraphics::CLineItem(aPoints[0], aPoints[1], aPoints[0], aPoints[3]),
+					IGraphics::CLineItem(aPoints[2], aPoints[1], aPoints[2], aPoints[3])};
+				Graphics()->LinesDraw(Array, 2);
+			}
+
+			mem_copy(aLastPoints, aPoints, sizeof(aPoints));
+		}
+
+		if(1)
+		{
+			Graphics()->SetColor(1,0,0,1);
+			for(int i = 0; i < 2; i++)
+			{
+				float aPoints[4];
+				float aAspects[] = {4.0f/3.0f, 16.0f/10.0f, 5.0f/4.0f, 16.0f/9.0f};
+				float Aspect = aAspects[i];
+
+				RenderTools()->MapscreenToWorld(
+					m_pClient->m_pCamera->m_Center.x, m_pClient->m_pCamera->m_Center.y,
+					1.0f, 1.0f, 0.0f, 0.0f, Aspect, 1.0f, aPoints);
+
+				CUIRect r;
+				r.x = aPoints[0];
+				r.y = aPoints[1];
+				r.w = aPoints[2]-aPoints[0];
+				r.h = aPoints[3]-aPoints[1];
+
+				IGraphics::CLineItem Array[4] = {
+					IGraphics::CLineItem(r.x, r.y, r.x+r.w, r.y),
+					IGraphics::CLineItem(r.x+r.w, r.y, r.x+r.w, r.y+r.h),
+					IGraphics::CLineItem(r.x+r.w, r.y+r.h, r.x, r.y+r.h),
+					IGraphics::CLineItem(r.x, r.y+r.h, r.x, r.y)};
+				Graphics()->LinesDraw(Array, 4);
+				Graphics()->SetColor(0,1,0,1);
+			}
+		}
+
+		Graphics()->LinesEnd();
+	}
+
 	if(!g_Config.m_GfxNoclip)
 		Graphics()->ClipDisable();
 
@@ -277,3 +397,50 @@ void CMapLayers::OnRender()
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 }
 
+CQuad *CMapLayers::NewQuad(int _x, int _y)
+{
+	CQuad *q = new CQuad();
+
+	q->m_PosEnv = -1;
+	q->m_ColorEnv = -1;
+	q->m_PosEnvOffset = 0;
+	q->m_ColorEnvOffset = 0;
+	int x = _x, y = _y;
+	q->m_aPoints[0].x = x;
+	q->m_aPoints[0].y = y;
+	q->m_aPoints[1].x = x+64;
+	q->m_aPoints[1].y = y;
+	q->m_aPoints[2].x = x;
+	q->m_aPoints[2].y = y+64;
+	q->m_aPoints[3].x = x+64;
+	q->m_aPoints[3].y = y+64;
+
+	q->m_aPoints[4].x = x+32; // pivot
+	q->m_aPoints[4].y = y+32;
+
+	for(int i = 0; i < 5; i++)
+	{
+		q->m_aPoints[i].x <<= 10;
+		q->m_aPoints[i].y <<= 10;
+	}
+
+
+	q->m_aTexcoords[0].x = 0;
+	q->m_aTexcoords[0].y = 0;
+
+	q->m_aTexcoords[1].x = 1<<10;
+	q->m_aTexcoords[1].y = 0;
+
+	q->m_aTexcoords[2].x = 0;
+	q->m_aTexcoords[2].y = 1<<10;
+
+	q->m_aTexcoords[3].x = 1<<10;
+	q->m_aTexcoords[3].y = 1<<10;
+
+	q->m_aColors[0].r = 255; q->m_aColors[0].g = 255; q->m_aColors[0].b = 255; q->m_aColors[0].a = 255;
+	q->m_aColors[1].r = 255; q->m_aColors[1].g = 255; q->m_aColors[1].b = 255; q->m_aColors[1].a = 255;
+	q->m_aColors[2].r = 255; q->m_aColors[2].g = 255; q->m_aColors[2].b = 255; q->m_aColors[2].a = 255;
+	q->m_aColors[3].r = 255; q->m_aColors[3].g = 255; q->m_aColors[3].b = 255; q->m_aColors[3].a = 255;
+
+	return q;
+}

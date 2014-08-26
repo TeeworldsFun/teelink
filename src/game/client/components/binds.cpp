@@ -117,6 +117,9 @@ void CBinds::SetDefaults()
 
 	Bind(KEY_F3, "vote yes");
 	Bind(KEY_F4, "vote no");
+
+	Bind('q', "+showhookcoll"); // H-Client
+	Bind('m', "switch_camera_mode"); // H-Client
 }
 
 void CBinds::OnConsoleInit()

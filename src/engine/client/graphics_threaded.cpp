@@ -873,6 +873,11 @@ void CGraphics_Threaded::TakeScreenshotFree(const char *pFilename, bool tumbtail
 	m_DoScreenshot = true;
 	m_DoScreenshotTumbtail = tumbtail;
 }
+
+void CGraphics_Threaded::ShowInfoKills(bool state)
+{
+    m_DoScreenShowInfoKills = state;
+}
 //
 
 // syncronization

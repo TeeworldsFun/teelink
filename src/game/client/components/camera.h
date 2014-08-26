@@ -23,6 +23,10 @@ public:
 
 	CCamera();
 	virtual void OnRender();
+    virtual void OnConsoleInit(); // H-Client
+
+private:
+    static void ConCallCameraMode(IConsole::IResult *pResult, void *pUserData); // H-Client
 };
 
 #endif

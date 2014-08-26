@@ -362,6 +362,7 @@ class CGraphics_Threaded : public IEngineGraphics
 	int m_TextureMemoryUsage;
 
     bool m_DoScreenshotTumbtail; //H-Client
+    bool m_DoScreenShowInfoKills; //H-Client
 
 	void FlushVertices();
 	void AddVertices(int Count);
@@ -447,6 +448,8 @@ public:
 	virtual int GetInvalidTexture(); // H-Cleint
 	virtual void TakeScreenshotFree(const char *pFilename, bool tumbtail); // H-Client
 	virtual bool Tumbtail() const { return m_DoScreenshotTumbtail; } // H-Client
+    virtual bool ShowInfoKills() const { return m_DoScreenShowInfoKills; } // H-Client
+	virtual void ShowInfoKills(bool state); // H-Client
 };
 
 extern IGraphicsBackend *CreateGraphicsBackend();
