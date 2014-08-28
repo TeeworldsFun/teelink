@@ -361,15 +361,17 @@ void CPlayers::RenderPlayer(
         int Hit = 0;
 
         static const float PhysSize = 28.0f;
-        vec2 OldPos = Position+ExDirection*PhysSize*1.5f;
-        do {
-            vec2 NewPos = OldPos + ExDirection * m_pClient->m_Tuning.m_HookFireSpeed;
+        vec2 orgPos = Position+ExDirection*PhysSize*1.5f;
 
-            Hit = Collision()->IntersectLine(OldPos, NewPos, &finishPos, 0x0, true);
+        vec2 curPos = orgPos;
+        do {
+            curPos += ExDirection * m_pClient->m_Tuning.m_HookFireSpeed;
+
+            Hit = Collision()->IntersectLine(orgPos, curPos, &finishPos, 0x0, true);
             if(!doBreak && Hit && !(Collision()->GetCollisionAt(finishPos.x, finishPos.y)&CCollision::COLFLAG_NOHOOK))
                 Graphics()->SetColor(130.0f/255.0f, 232.0f/255.0f, 160.0f/255.0f, 1.0f);
 
-            if(m_pClient->m_Tuning.m_PlayerHooking && m_pClient->IntersectCharacter(OldPos, NewPos, NewPos, pPlayerInfo->m_ClientID) != -1)
+            if(m_pClient->m_Tuning.m_PlayerHooking && m_pClient->IntersectCharacter(orgPos, curPos, curPos, pPlayerInfo->m_ClientID) != -1)
             {
                 Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
                 doBreak = true;
@@ -378,14 +380,13 @@ void CPlayers::RenderPlayer(
             if(Hit)
                 doBreak = true;
 
-            if (distance(Position, NewPos) > m_pClient->m_Tuning.m_HookLength)
+            if (distance(Position, curPos) > m_pClient->m_Tuning.m_HookLength)
             {
-                NewPos = OldPos;
-                finishPos = NewPos;
+                finishPos = orgPos + ExDirection * m_pClient->m_Tuning.m_HookLength;
                 doBreak = true;
             }
 
-            OldPos = NewPos;
+            //orgPos = curPos;
         } while (!doBreak);
 
         IGraphics::CLineItem LineItem(Position.x, Position.y, finishPos.x, finishPos.y);
