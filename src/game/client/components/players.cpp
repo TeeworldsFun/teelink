@@ -362,9 +362,10 @@ void CPlayers::RenderPlayer(
 
         static const float PhysSize = 28.0f;
         vec2 orgPos = Position+ExDirection*PhysSize*1.5f;
-
         vec2 curPos = orgPos;
-        do {
+
+        do
+        {
             curPos += ExDirection * m_pClient->m_Tuning.m_HookFireSpeed;
 
             Hit = Collision()->IntersectLine(orgPos, curPos, &finishPos, 0x0, true);

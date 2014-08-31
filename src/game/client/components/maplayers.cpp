@@ -136,7 +136,11 @@ void CMapLayers::OnRender()
 
     // H-Client
     CMapItemLayerTilemap *pGTMap = m_pLayers->GameLayer();
+    CMapItemLayerTilemap *pFTMap = m_pLayers->FrontLayer();
     CTile *pGameTiles = (CTile *)m_pLayers->Map()->GetData(pGTMap->m_Data);
+    CTile *pFrontTiles = 0x0;
+    if (pFrontTiles)
+        pFrontTiles = (CTile *)m_pLayers->Map()->GetData(pFTMap->m_Data);
 
     CServerInfo Info;
     Client()->GetServerInfo(&Info);
@@ -238,19 +242,19 @@ void CMapLayers::OnRender()
                     if (pGameTiles && g_Config.m_ddrShowHiddenWays && str_find_nocase(Info.m_aGameType, "race"))
                     {
                         Graphics()->BlendNone();
-                        RenderTools()->RenderTilemap(pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+                        RenderTools()->RenderTilemap(pFrontTiles, pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
                                                          EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                         Graphics()->BlendNormal();
-                        RenderTools()->RenderTilemap(pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+                        RenderTools()->RenderTilemap(pFrontTiles, pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
                                                         EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                     }
                     else
                     {
                         Graphics()->BlendNone();
-                        RenderTools()->RenderTilemap(0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+                        RenderTools()->RenderTilemap(0x0, 0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
                                                         EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                         Graphics()->BlendNormal();
-                        RenderTools()->RenderTilemap(0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+                        RenderTools()->RenderTilemap(0x0, 0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
                                                         EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                     }
 				}

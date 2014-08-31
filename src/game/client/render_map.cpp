@@ -164,7 +164,7 @@ void CRenderTools::RenderQuads(CQuad *pQuads, int NumQuads, int RenderFlags, ENV
 	Graphics()->QuadsEnd();
 }
 
-void CRenderTools::RenderTilemap(CTile *pGameTiles, CTile *pTiles, int w, int h, float Scale, vec4 Color, int RenderFlags,
+void CRenderTools::RenderTilemap(CTile *pFrontTiles, CTile *pGameTiles, CTile *pTiles, int w, int h, float Scale, vec4 Color, int RenderFlags,
 									ENVELOPE_EVAL pfnEval, void *pUser, int ColorEnv, int ColorEnvOffset)
 {
 	//Graphics()->TextureSet(img_get(tmap->image));
@@ -237,7 +237,16 @@ void CRenderTools::RenderTilemap(CTile *pGameTiles, CTile *pTiles, int w, int h,
 			    Graphics()->SetColor(Color.r*r, Color.g*g, Color.b*b, Color.a*a);
 			    // H-Client
                 if (g_Config.m_ddrShowHiddenWays && pGameTiles && !pGameTiles[c].m_Index)
+                {
+                    if (pFrontTiles)
+                    {
+                        if (!pFrontTiles[c].m_Index)
+                            Graphics()->SetColor(Color.r, Color.g, Color.b, 0.65f);
+                    }
+                    else
                         Graphics()->SetColor(Color.r, Color.g, Color.b, 0.65f);
+
+                }
                 //
 
 				unsigned char Flags = pTiles[c].m_Flags;
