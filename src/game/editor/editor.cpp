@@ -3059,7 +3059,7 @@ void CEditor::RenderFileImageDialog()
 	// GUI coordsys
 	Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
 	CUIRect View = *UI()->Screen();
-	float Width = View.w, Height = View.h;
+	//float Width = View.w, Height = View.h;
 
 	RenderTools()->DrawUIRect(&View, vec4(0,0,0,0.25f), 0, 0);
 	View.VMargin(150.0f, &View);
@@ -3207,8 +3207,8 @@ void CEditor::RenderFileImageDialog()
 	// the buttons
 	static int s_OkButton = 0;
 	static int s_CancelButton = 0;
-	static int s_NewFolderButton = 0;
-	static int s_MapInfoButton = 0;
+	//static int s_NewFolderButton = 0;
+	//static int s_MapInfoButton = 0;
 
 	CUIRect Button;
 	ButtonBar.VSplitRight(50.0f, &ButtonBar, &Button);
