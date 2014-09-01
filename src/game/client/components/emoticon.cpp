@@ -127,11 +127,18 @@ void CEmoticon::OnRender()
 
 	Graphics()->BlendNormal();
 
+    // H-Client
 	Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(0,0,0,0.3f);
 	DrawCircle(Screen.w/2, Screen.h/2, 190.0f, 64);
 	Graphics()->QuadsEnd();
+
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(120,120,120,0.3f);
+	DrawCircle(Screen.w/2, Screen.h/2, 120.0f, 64);
+	Graphics()->QuadsEnd();
+	//
 
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
 	Graphics()->QuadsBegin();
@@ -146,8 +153,8 @@ void CEmoticon::OnRender()
 
 		float Size = Selected ? 80.0f : 50.0f;
 
-		float NudgeX = 150.0f * cosf(Angle);
-		float NudgeY = 150.0f * sinf(Angle);
+		float NudgeX = 80.0f * cosf(Angle);
+		float NudgeY = 80.0f * sinf(Angle);
 		RenderTools()->SelectSprite(SPRITE_OOP + i);
 		IGraphics::CQuadItem QuadItem(Screen.w/2 + NudgeX, Screen.h/2 + NudgeY, Size, Size);
 		Graphics()->QuadsDraw(&QuadItem, 1);

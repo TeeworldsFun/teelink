@@ -6,6 +6,7 @@
 
 #include "kernel.h"
 #include <string>
+#include <csignal>
 
 class IGeoIP : public IInterface
 {
@@ -33,5 +34,5 @@ struct InfoGeoIPThread {
     char ip[64];
 };
 
-void ThreadGeoIP(void *params);
+void ThreadGeoIP(void *);
 #endif

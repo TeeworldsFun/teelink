@@ -27,6 +27,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 {
     static char selectedServIP[64]={0};
     static IGeoIP::GeoInfo geoInfo;
+    static InfoGeoIPThread infoGeoThread;
 	CUIRect Headers;
 	CUIRect Status;
 
@@ -427,13 +428,13 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
                 {
                     if (m_pGeoIPThread)
                     {
+                        //thread_wait(m_pGeoIPThread);
                         thread_destroy(m_pGeoIPThread);
                         m_pGeoIPThread = 0x0;
                     }
 
                     std::string host = std::string(pItem->m_aAddress);
 
-				    InfoGeoIPThread infoGeoThread;
 				    str_copy(infoGeoThread.ip, host.substr(0, host.find_first_of(":")).c_str(), sizeof(infoGeoThread.ip));
 				    geoInfo.m_CountryCode = "_P_";
 				    infoGeoThread.m_pGeoInfo = &geoInfo;
@@ -442,14 +443,12 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 
 				    str_copy(selectedServIP, pItem->m_aAddress, sizeof(selectedServIP));
                 }
-                if (geoInfo.m_CountryCode.compare("_P_") == 0) {
+                if (geoInfo.m_CountryCode.compare("_P_") == 0)
                     str_format(aBuf, sizeof(aBuf), "Country: Searching...");
-
-                } else if (geoInfo.m_CountryCode.compare("NULL") == 0) {
+                else if (geoInfo.m_CountryCode.compare("NULL") == 0)
                    str_format(aBuf, sizeof(aBuf), "Country: Unknown");
-                } else {
+                else
                     str_format(aBuf, sizeof(aBuf), "Country: %s", geoInfo.m_CountryName.c_str());
-                }
                 UI()->DoLabel(&LabelB, aBuf, 12.0f, -1);
                 LabelB.y+=20.0f;
 

@@ -47,8 +47,12 @@
 
 static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
 
+static LOCK m_GeoIPLock = 0;
+
 CGeoIP::CGeoIP()
-{ }
+{
+    m_GeoIPLock = lock_create();
+}
 
 void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
 {
@@ -85,6 +89,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
 
     if(net_tcp_connect(Socket, &HostAddress) != 0)
     {
+        dbg_msg("GeoIP","ERROR: Can't connect.");
         net_tcp_close(Socket);
         geoInfo->m_CountryCode = "NULL";
         return;
@@ -152,15 +157,19 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
         }
     }
 
+    dbg_msg("GeoIP", "NET FIN!");
+
     //Finish
     net_tcp_close(Socket);
 
     int posIdel = -1;
     unsigned int posFdel = csvData.find_first_of(",", posIdel+1);
     int itemPos = 0;
-    do {
+    do
+    {
         std::string rawCell = csvData.substr(posIdel+1, posFdel-posIdel-1);
-        if (rawCell.length() > 2) {
+        if (rawCell.length() > 2)
+        {
             std::string cell = rawCell.substr(1, rawCell.length()-2);
 
             if (itemPos == 1) { geoInfo->m_CountryCode = cell; }
@@ -173,13 +182,18 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
 
         itemPos++;
         posIdel = posFdel;
-    } while ((posFdel = csvData.find_first_of(",", posIdel+1)) != std::string::npos);
+        posFdel = csvData.find_first_of(",", posIdel+1);
+    } while ((int)posFdel >= 0);
+
+    dbg_msg("GeoIP", "FIN!");
 }
 
 void ThreadGeoIP(void *params)
 {
     InfoGeoIPThread *pInfoThread = static_cast<InfoGeoIPThread*>(params);
 
+    lock_wait(m_GeoIPLock);
     pInfoThread->m_pGeoIP->GetInfo(pInfoThread->ip, pInfoThread->m_pGeoInfo);
+    lock_release(m_GeoIPLock);
 }
 
