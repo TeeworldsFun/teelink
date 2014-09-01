@@ -56,7 +56,7 @@ CGeoIP::CGeoIP()
 
 void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
 {
-    dbg_msg("GeoIP", ip.c_str());
+    dbg_msg("GeoIP", "Searching geolocation of '%s'..." ip.c_str());
 
     NETSOCKET Socket = invalid_socket;
     NETADDR HostAddress;
@@ -157,8 +157,6 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
         }
     }
 
-    dbg_msg("GeoIP", "NET FIN!");
-
     //Finish
     net_tcp_close(Socket);
 
@@ -184,8 +182,6 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
         posIdel = posFdel;
         posFdel = csvData.find_first_of(",", posIdel+1);
     } while ((int)posFdel >= 0);
-
-    dbg_msg("GeoIP", "FIN!");
 }
 
 void ThreadGeoIP(void *params)
