@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/graphics.h>
+#include <engine/serverbrowser.h> // H-Client
 #include <engine/shared/config.h>
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
@@ -8,6 +9,7 @@
 #include <game/gamecore.h> // get_angle
 #include <game/client/ui.h>
 #include <game/client/render.h>
+#include <game/client/animstate.h> //H-Client
 #include "emoticon.h"
 
 CEmoticon::CEmoticon()
@@ -38,6 +40,7 @@ void CEmoticon::OnReset()
 	m_WasActive = false;
 	m_Active = false;
 	m_SelectedEmote = -1;
+	m_SelectedEyes = -1; // H-Client
 }
 
 void CEmoticon::OnRelease()
@@ -94,10 +97,18 @@ void CEmoticon::DrawCircle(float x, float y, float r, int Segments)
 
 void CEmoticon::OnRender()
 {
+    CServerInfo SInfo;
+    Client()->GetServerInfo(&SInfo);
+
 	if(!m_Active)
 	{
-		if(m_WasActive && m_SelectedEmote != -1)
-			Emote(m_SelectedEmote);
+		if(m_WasActive)
+		{
+            if (m_SelectedEmote != -1)
+                Emote(m_SelectedEmote);
+            else if (str_find_nocase(SInfo.m_aGameType, "ddrace") && m_SelectedEyes != -1)
+                Eyes(m_SelectedEyes);
+        }
 		m_WasActive = false;
 		return;
 	}
@@ -118,8 +129,20 @@ void CEmoticon::OnRender()
 	if (SelectedAngle < 0)
 		SelectedAngle += 2*pi;
 
-	if (length(m_SelectorMouse) > 110.0f)
+    float mouselen = length(m_SelectorMouse);
+	if (mouselen > 110.0f)
+	{
+        m_SelectedEyes = -1;
 		m_SelectedEmote = (int)(SelectedAngle / (2*pi) * NUM_EMOTICONS);
+    } else if (str_find_nocase(SInfo.m_aGameType, "ddrace") && mouselen > 50.0f && mouselen < 110.0f) // H-Client
+    {
+        m_SelectedEmote = -1;
+		m_SelectedEyes = (int)(SelectedAngle / (2*pi) * NUM_EMOTES);
+    } else
+    {
+        m_SelectedEyes = -1;
+        m_SelectedEmote = -1;
+    }
 
 	CUIRect Screen = *UI()->Screen();
 
@@ -127,17 +150,21 @@ void CEmoticon::OnRender()
 
 	Graphics()->BlendNormal();
 
-    // H-Client
 	Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(0,0,0,0.3f);
 	DrawCircle(Screen.w/2, Screen.h/2, 190.0f, 64);
 	Graphics()->QuadsEnd();
 
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(120,120,120,0.3f);
-	DrawCircle(Screen.w/2, Screen.h/2, 120.0f, 64);
-	Graphics()->QuadsEnd();
+    // H-Client
+    if (str_find_nocase(SInfo.m_aGameType, "ddrace"))
+    {
+        Graphics()->TextureSet(-1);
+        Graphics()->QuadsBegin();
+        Graphics()->SetColor(60,60,60,0.3f);
+        DrawCircle(Screen.w/2, Screen.h/2, 110.0f, 64);
+        Graphics()->QuadsEnd();
+	}
 	//
 
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
@@ -153,14 +180,41 @@ void CEmoticon::OnRender()
 
 		float Size = Selected ? 80.0f : 50.0f;
 
-		float NudgeX = 80.0f * cosf(Angle);
-		float NudgeY = 80.0f * sinf(Angle);
+		float NudgeX = 150.0f * cosf(Angle);
+		float NudgeY = 150.0f * sinf(Angle);
 		RenderTools()->SelectSprite(SPRITE_OOP + i);
 		IGraphics::CQuadItem QuadItem(Screen.w/2 + NudgeX, Screen.h/2 + NudgeY, Size, Size);
 		Graphics()->QuadsDraw(&QuadItem, 1);
 	}
+    Graphics()->QuadsEnd();
 
-	Graphics()->QuadsEnd();
+    if (str_find_nocase(SInfo.m_aGameType, "ddrace"))
+    {
+        for (int i = 0; i < NUM_EMOTES; i++)
+        {
+            float Angle = 2*pi*i/NUM_EMOTES;
+            if (Angle > pi)
+                Angle -= 2*pi;
+
+            bool Selected = m_SelectedEyes == i;
+
+            float Size = Selected ? 80.0f : 50.0f;
+
+            float NudgeX = 80.0f * cosf(Angle);
+            float NudgeY = 80.0f * sinf(Angle);
+
+            CTeeRenderInfo teeRenderInfo = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_RenderInfo;
+            teeRenderInfo.m_Size = Size;
+
+            RenderTools()->RenderTee(CAnimState::GetIdle(),
+                                    &teeRenderInfo,
+                                    i,
+                                    vec2(-1,0),
+                                    vec2(Screen.w/2 + NudgeX, Screen.h/2 + NudgeY));
+        }
+	}
+
+	//Graphics()->QuadsEnd();
 
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CURSOR].m_Id);
 	Graphics()->QuadsBegin();
@@ -176,3 +230,16 @@ void CEmoticon::Emote(int Emoticon)
 	Msg.m_Emoticon = Emoticon;
 	Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 }
+
+// H-Client
+void CEmoticon::Eyes(int SelEyes)
+{
+    const char *emoteNames[] = { "normal", "pain", "happy", "surprise", "angry", "blink" };
+    char cmdEmote[128];
+    str_format(cmdEmote, sizeof(cmdEmote), "/emote %s 3", emoteNames[SelEyes]);
+	CNetMsg_Cl_Say Msg;
+	Msg.m_Team = 0;
+	Msg.m_pMessage = cmdEmote;
+	Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+}
+//
