@@ -1027,8 +1027,6 @@ void CGameClient::OnNewSnapshot()
         str_format(preview, sizeof(preview), "mappreviews/%s.png", Client()->GetCurrentMap());
         Graphics()->TakeScreenshotFree(preview, true);
 
-        dbg_msg("")
-
         m_pMenus->GetImageMapPreview(0);
 
         m_TakeInitScreenShot = false;

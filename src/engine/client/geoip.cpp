@@ -56,7 +56,7 @@ CGeoIP::CGeoIP()
 
 void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
 {
-    dbg_msg("GeoIP", "Searching geolocation of '%s'..." ip.c_str());
+    dbg_msg("GeoIP", "Searching geolocation of '%s'...", ip.c_str());
 
     NETSOCKET Socket = invalid_socket;
     NETADDR HostAddress;
