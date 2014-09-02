@@ -244,19 +244,19 @@ void CMapLayers::OnRender()
                     {
                         Graphics()->BlendNone();
                         // FIXME: 100000000000000 parameters for the method not its a good implementation uh?
-                        RenderTools()->RenderTilemap(pFrontTiles, pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+                        RenderTools()->RenderTilemap(pFrontTiles, pFTMap->m_Width, pFTMap->m_Height, pGameTiles, pGTMap->m_Width, pGTMap->m_Height, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
                                                          EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                         Graphics()->BlendNormal();
-                        RenderTools()->RenderTilemap(pFrontTiles, pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+                        RenderTools()->RenderTilemap(pFrontTiles, pFTMap->m_Width, pFTMap->m_Height, pGameTiles, pGTMap->m_Width, pGTMap->m_Height, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
                                                         EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                     }
                     else
                     {
                         Graphics()->BlendNone();
-                        RenderTools()->RenderTilemap(0x0, 0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+                        RenderTools()->RenderTilemap(0x0, -1, -1, 0x0, -1, -1, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
                                                         EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                         Graphics()->BlendNormal();
-                        RenderTools()->RenderTilemap(0x0, 0x0, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+                        RenderTools()->RenderTilemap(0x0, -1, -1, 0x0, -1, -1, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
                                                         EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                     }
 				}

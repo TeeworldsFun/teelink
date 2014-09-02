@@ -67,10 +67,10 @@ void CLayerTiles::Render()
 	Graphics()->TextureSet(m_Texture);
 	vec4 Color = vec4(m_Color.r/255.0f, m_Color.g/255.0f, m_Color.b/255.0f, m_Color.a/255.0f);
 	Graphics()->BlendNone();
-	m_pEditor->RenderTools()->RenderTilemap(0x0, 0x0, m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_OPAQUE,
+	m_pEditor->RenderTools()->RenderTilemap(0x0, -1, -1, 0x0, -1, -1, m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_OPAQUE,
 												m_pEditor->EnvelopeEval, m_pEditor, m_ColorEnv, m_ColorEnvOffset);
 	Graphics()->BlendNormal();
-	m_pEditor->RenderTools()->RenderTilemap(0x0, 0x0, m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_TRANSPARENT,
+	m_pEditor->RenderTools()->RenderTilemap(0x0, -1, -1, 0x0, -1, -1, m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_TRANSPARENT,
 												m_pEditor->EnvelopeEval, m_pEditor, m_ColorEnv, m_ColorEnvOffset);
 }
 
