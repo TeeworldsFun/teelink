@@ -455,6 +455,7 @@ static CKeyInfo gs_aKeys[] =
 	{ "Screenshot", "screenshot", 0 },
 	{ "Scoreboard", "+scoreboard", 0 },
 	{ "Respawn", "kill", 0 },
+	{ "Zoom mode", "switch_camera_mode", 0 },
 };
 
 /*	This is for scripts/update_localization.py to work, don't remove!
@@ -589,7 +590,7 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 	{
 	    CUIRect rTitle;
 		ChatSettings.HSplitTop(10.0f, 0, &ChatSettings);
-		ChatSettings.HSplitTop(MainView.h/3-45.0f, &ChatSettings, &MiscSettings);
+		ChatSettings.HSplitTop(MainView.h/3-55.0f, &ChatSettings, &MiscSettings);
 	    ChatSettings.HSplitTop(22.0f, &rTitle, &ChatSettings);
 		RenderTools()->DrawUIRect(&rTitle, HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), CUI::CORNER_T, 10.0f);
 		RenderTools()->DrawUIRect(&ChatSettings, HexToVec4(g_Config.m_hcSubcontainerBackgroundColor), 0, 0.0f);
@@ -611,7 +612,7 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
         rTitle.Margin(5.0f, &rTitle);
 		TextRender()->Text(0, rTitle.x, rTitle.y-3.0f, 14.0f*UI()->Scale(), Localize("Miscellaneus"), -1);
         MiscSettings.Margin(10.0f, &MiscSettings);
-		UiDoGetButtons(18, 27, MiscSettings);
+		UiDoGetButtons(18, 28, MiscSettings);
 	}
 
 }
