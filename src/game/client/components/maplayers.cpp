@@ -239,9 +239,11 @@ void CMapLayers::OnRender()
 					Graphics()->BlendNone();
 					vec4 Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
 
+                    // H-Client
                     if (pGameTiles && g_Config.m_ddrShowHiddenWays && str_find_nocase(Info.m_aGameType, "race"))
                     {
                         Graphics()->BlendNone();
+                        // FIXME: 100000000000000 parameters for the method not its a good implementation uh?
                         RenderTools()->RenderTilemap(pFrontTiles, pGameTiles, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
                                                          EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                         Graphics()->BlendNormal();
