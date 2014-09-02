@@ -139,7 +139,7 @@ void CMapLayers::OnRender()
     CMapItemLayerTilemap *pFTMap = m_pLayers->FrontLayer();
     CTile *pGameTiles = (CTile *)m_pLayers->Map()->GetData(pGTMap->m_Data);
     CTile *pFrontTiles = 0x0;
-    if (pFrontTiles)
+    if (pFTMap)
         pFrontTiles = (CTile *)m_pLayers->Map()->GetData(pFTMap->m_Data);
 
     CServerInfo Info;
@@ -244,10 +244,10 @@ void CMapLayers::OnRender()
                     {
                         Graphics()->BlendNone();
                         // FIXME: 100000000000000 parameters for the method not its a good implementation uh?
-                        RenderTools()->RenderTilemap(pFrontTiles, pFTMap->m_Width, pFTMap->m_Height, pGameTiles, pGTMap->m_Width, pGTMap->m_Height, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+                        RenderTools()->RenderTilemap(pFrontTiles, (pFTMap)?pFTMap->m_Width:-1, (pFTMap)?pFTMap->m_Height:-1, pGameTiles, pGTMap->m_Width, pGTMap->m_Height, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
                                                          EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                         Graphics()->BlendNormal();
-                        RenderTools()->RenderTilemap(pFrontTiles, pFTMap->m_Width, pFTMap->m_Height, pGameTiles, pGTMap->m_Width, pGTMap->m_Height, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+                        RenderTools()->RenderTilemap(pFrontTiles, (pFTMap)?pFTMap->m_Width:-1, (pFTMap)?pFTMap->m_Height:-1, pGameTiles, pGTMap->m_Width, pGTMap->m_Height, pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
                                                         EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
                     }
                     else
