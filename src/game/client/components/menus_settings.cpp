@@ -1048,15 +1048,19 @@ void CMenus::RenderSettings(CUIRect MainView)
 void CMenus::RenderSettingsHClient(CUIRect MainView)
 {
 	//char aBuf[128];
+	CUIRect PanelL, PanelR;
 	CUIRect StandartGame, DDRaceGame, HUDItem;
+
+	MainView.VSplitMid(&PanelL, &PanelR);
+    PanelL.VSplitRight(10.0f, &PanelL, 0x0);
+    PanelR.VSplitLeft(10.0f, 0x0, &PanelR);
+
 	//TODO: Need be change...
 	float splitTop = 240.0f;
     if (g_Config.m_hcLaserCustomColor)
         splitTop += 105.0f;
 
-    MainView.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
-	StandartGame.VSplitLeft(400.0f, &StandartGame, 0x0);
-	DDRaceGame.VSplitLeft(400.0f, &DDRaceGame, 0x0);
+    PanelL.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
 
 	// Logo
 //    IGraphics::CQuadItem QuadItem(450, 50, 206, 206);
@@ -1238,18 +1242,24 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         if(DoButton_CheckBox(&g_Config.m_ddrShowHiddenWays, Localize("View hidden ways"), g_Config.m_ddrShowHiddenWays, &HUDItem))
             g_Config.m_ddrShowHiddenWays ^= 1;
 
-        DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
         DDRaceGameB.HSplitTop(20.0f, &HUDItem, &DDRaceGameB);
         if(DoButton_CheckBox(&g_Config.m_ddrShowTeeDirection, Localize("View Tee Direction"), g_Config.m_ddrShowTeeDirection, &HUDItem))
             g_Config.m_ddrShowTeeDirection ^= 1;
+
+        CUIRect Edit;
+        static float Offset = 0.0f;
+        DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
+        HUDItem.VSplitLeft(80.0f, &HUDItem, &Edit);
+        TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+        UI()->DoLabelScaled(&HUDItem, "Eyes Time:", 14.0f, -1);
+        DoEditBox(&g_Config.m_hcEyesSelectorTime, &Edit, g_Config.m_hcEyesSelectorTime, sizeof(g_Config.m_hcEyesSelectorTime), 12.0f, &Offset, false, CUI::CORNER_ALL);
 	}
 
 	//Feet
 	{
-    	CUIRect Feet;
-        MainView.HSplitBottom(10.0f, &MainView, &Feet);
+        MainView.HSplitBottom(10.0f, &MainView, &HUDItem);
         TextRender()->TextColor(1.0f, 0.39f, 0.0f, 1.0f);
-		UI()->DoLabelScaled(&Feet, "H-Client Mod by unsigned char*", 14.0f, -1);
+		UI()->DoLabelScaled(&HUDItem, "H-Client Mod by unsigned char*", 14.0f, -1);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
@@ -1263,6 +1273,12 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         if (DoButton_Menu((void*)&s_ButtonClearCache, Localize("Clear Map-Preview Cache"), 0, &Button))
             DeleteMapPreviewCache();*/
 	}
+
+	/// PANEL RIGTH
+    //PanelR.HSplitTop(ms_ListheaderHeight, &HUDItem, &PanelR);
+    //RenderTools()->DrawUIRect(&HUDItem, HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), CUI::CORNER_TR, 5.0f);
+    //UI()->DoLabel(&HUDItem, Localize("HUD"), HUDItem.h*ms_FontmodHeight, 0);
+
 
     TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 }

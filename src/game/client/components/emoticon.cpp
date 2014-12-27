@@ -11,6 +11,7 @@
 #include <game/client/render.h>
 #include <game/client/animstate.h> //H-Client
 #include "emoticon.h"
+#include <cstdio>
 
 CEmoticon::CEmoticon()
 {
@@ -267,7 +268,10 @@ void CEmoticon::Eyes(int SelEyes)
 {
     const char *emoteNames[] = { "normal", "pain", "happy", "surprise", "angry", "blink" };
     char cmdEmote[128];
-    str_format(cmdEmote, sizeof(cmdEmote), "/emote %s 3", emoteNames[SelEyes]);
+
+    int time = 3;
+    sscanf(g_Config.m_hcEyesSelectorTime, "%d", &time);
+    str_format(cmdEmote, sizeof(cmdEmote), "/emote %s %d", emoteNames[SelEyes], time);
 	CNetMsg_Cl_Say Msg;
 	Msg.m_Team = 0;
 	Msg.m_pMessage = cmdEmote;
