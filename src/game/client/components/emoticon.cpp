@@ -206,11 +206,42 @@ void CEmoticon::OnRender()
             CTeeRenderInfo teeRenderInfo = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_RenderInfo;
             teeRenderInfo.m_Size = Size;
 
-            RenderTools()->RenderTee(CAnimState::GetIdle(),
-                                    &teeRenderInfo,
-                                    i,
-                                    vec2(-1,0),
-                                    vec2(Screen.w/2 + NudgeX, Screen.h/2 + NudgeY));
+            Graphics()->TextureSet(teeRenderInfo.m_Texture);
+            Graphics()->QuadsBegin();
+            Graphics()->SetColor(teeRenderInfo.m_ColorBody.r, teeRenderInfo.m_ColorBody.g, teeRenderInfo.m_ColorBody.b, teeRenderInfo.m_ColorBody.a);
+
+            switch (i)
+            {
+                case EMOTE_PAIN:
+                    RenderTools()->SelectSprite(SPRITE_TEE_EYE_PAIN, 0, 0, 0);
+                    break;
+                case EMOTE_HAPPY:
+                    RenderTools()->SelectSprite(SPRITE_TEE_EYE_HAPPY, 0, 0, 0);
+                    break;
+                case EMOTE_SURPRISE:
+                    RenderTools()->SelectSprite(SPRITE_TEE_EYE_SURPRISE, 0, 0, 0);
+                    break;
+                case EMOTE_ANGRY:
+                    RenderTools()->SelectSprite(SPRITE_TEE_EYE_ANGRY, 0, 0, 0);
+                    break;
+                default:
+                    RenderTools()->SelectSprite(SPRITE_TEE_EYE_NORMAL, 0, 0, 0);
+                    break;
+            }
+
+            vec2 Direction = vec2(-1,0);
+            float BaseSize = teeRenderInfo.m_Size;
+            float EyeScale = BaseSize*0.40f;
+            float h = i == EMOTE_BLINK ? BaseSize*0.15f : EyeScale;
+            float EyeSeparation = (0.075f - 0.010f*absolute(Direction.x))*BaseSize;
+            vec2 Offset = vec2(Direction.x*0.125f, -0.05f+Direction.y*0.10f)*BaseSize;
+            vec2 BodyPos = vec2(Screen.w/2 + NudgeX, Screen.h/2 + NudgeY);
+            IGraphics::CQuadItem Array[2] = {
+                IGraphics::CQuadItem(BodyPos.x-EyeSeparation+Offset.x, BodyPos.y+Offset.y, EyeScale, h),
+                IGraphics::CQuadItem(BodyPos.x+EyeSeparation+Offset.x, BodyPos.y+Offset.y, -EyeScale, h)};
+            Graphics()->QuadsDraw(Array, 2);
+
+            Graphics()->QuadsEnd();
         }
 	}
 
