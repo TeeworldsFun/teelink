@@ -354,46 +354,75 @@ void CPlayers::RenderPlayer(
         Graphics()->TextureSet(-1);
         vec2 finishPos = Position + ExDirection * (m_pClient->m_Tuning.m_HookLength-42.0f);
 
-        Graphics()->LinesBegin();
-        Graphics()->SetColor(1.00f, 0.0f, 0.0f, 1.0f);
-
         bool doBreak = false;
         int Hit = 0;
 
-        static const float PhysSize = 28.0f;
-        vec2 orgPos = Position+ExDirection*PhysSize*1.5f;
+        static const float RealPhysSize = 28.0f * 1.5f;
+        vec2 PositionTmp = Position;
+        vec2 orgPos = PositionTmp+ExDirection*RealPhysSize;
         vec2 curPos = orgPos;
+        vec2 hookNewStart = vec2(0, 0);
+        bool teleHook;
+
+        Graphics()->LinesBegin();
 
         do
         {
-            curPos += ExDirection * m_pClient->m_Tuning.m_HookFireSpeed;
+            teleHook = false;
+            Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 
-            Hit = Collision()->IntersectLine(orgPos, curPos, &finishPos, 0x0, true);
-            if(!doBreak && Hit && !(Collision()->GetCollisionAt(finishPos.x, finishPos.y)&CCollision::COLFLAG_NOHOOK))
-                Graphics()->SetColor(130.0f/255.0f, 232.0f/255.0f, 160.0f/255.0f, 1.0f);
-
-            if(m_pClient->m_Tuning.m_PlayerHooking && m_pClient->IntersectCharacter(orgPos, curPos, curPos, pPlayerInfo->m_ClientID) != -1)
+            do
             {
-                Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
-                doBreak = true;
+                curPos += ExDirection * m_pClient->m_Tuning.m_HookFireSpeed;
+
+                if (distance(PositionTmp, curPos) > m_pClient->m_Tuning.m_HookLength-RealPhysSize)
+                {
+                    finishPos = (orgPos + ExDirection * (m_pClient->m_Tuning.m_HookLength-RealPhysSize));
+                    doBreak = true;
+                }
+
+                int teleNr = 0;
+                Hit = Collision()->IntersectLineTeleHook(orgPos, curPos, &finishPos, 0, &teleNr, true);
+                if (Hit && !(Collision()->GetCollisionAt(finishPos.x, finishPos.y)&CCollision::COLFLAG_NOHOOK))
+                    Graphics()->SetColor(130.0f/255.0f, 232.0f/255.0f, 160.0f/255.0f, 1.0f);
+
+                if(m_pClient->m_Tuning.m_PlayerHooking && m_pClient->IntersectCharacter(orgPos, curPos, curPos, pPlayerInfo->m_ClientID) != -1)
+                {
+                    finishPos = curPos;
+                    Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
+                    doBreak = true;
+                }
+
+                if(Hit)
+                {
+                    if (Hit&CCollision::COLFLAG_TELE && (*Collision()->GetTeleOuts())[teleNr-1].size())
+                    {
+                        int Num = (*Collision()->GetTeleOuts())[teleNr-1].size();
+                        hookNewStart = (*Collision()->GetTeleOuts())[teleNr-1][(Num == 1)?0:rand() % Num] + ExDirection*RealPhysSize;
+                        teleHook = true;
+                    }
+
+                    doBreak = true;
+                }
+                //orgPos = curPos;
+            } while (!doBreak);
+
+            if (distance(finishPos, PositionTmp) > 0.0f)
+            {
+                IGraphics::CLineItem LineItem(PositionTmp.x, PositionTmp.y, finishPos.x, finishPos.y);
+                Graphics()->LinesDraw(&LineItem, 1);
             }
 
-            if(Hit)
-                doBreak = true;
+            curPos = hookNewStart;
+            PositionTmp = curPos;
+            orgPos = curPos;
+            doBreak = false;
 
-            if (distance(Position, curPos) > m_pClient->m_Tuning.m_HookLength)
-            {
-                finishPos = orgPos + ExDirection * m_pClient->m_Tuning.m_HookLength;
-                doBreak = true;
-            }
+        } while (teleHook);
 
-            //orgPos = curPos;
-        } while (!doBreak);
-
-        IGraphics::CLineItem LineItem(Position.x, Position.y, finishPos.x, finishPos.y);
-        Graphics()->LinesDraw(&LineItem, 1);
         Graphics()->LinesEnd();
     }
+    //
 
 
 	// draw gun

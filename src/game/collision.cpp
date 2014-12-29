@@ -20,11 +20,13 @@ CCollision::CCollision()
 	m_pLayers = 0;
 
 	m_pFront = 0x0; // H-Client
+	m_pTele = 0x0; // H-Client
 }
 
 void CCollision::Init(class CLayers *pLayers)
 {
-    m_pFront = 0; //H-Client
+    m_pFront = 0x0; // H-Client
+    m_pTele = 0x0; // H-Client
 
 	m_pLayers = pLayers;
 	m_Width = m_pLayers->GameLayer()->m_Width;
@@ -34,6 +36,12 @@ void CCollision::Init(class CLayers *pLayers)
 	// H-Client
 	if(m_pLayers->FrontLayer())
 		m_pFront = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->FrontLayer()->m_Front));
+	if(m_pLayers->TeleLayer())
+	{
+		unsigned int Size = m_pLayers->Map()->GetUncompressedDataSize(m_pLayers->TeleLayer()->m_Tele);
+		if (Size >= m_Width*m_Height*sizeof(CTeleTile))
+			m_pTele = static_cast<CTeleTile *>(m_pLayers->Map()->GetData(m_pLayers->TeleLayer()->m_Tele));
+	}
 
 	for(int i = 0; i < m_Width*m_Height; i++)
 	{
@@ -81,9 +89,27 @@ void CCollision::Init(class CLayers *pLayers)
         if(Index == TILE_THROUGH || (Index >= TILE_FREEZE && Index <= TILE_UNFREEZE) || (Index >= TILE_BEGIN && Index <= TILE_STOPA))
         	m_pTiles[i].m_Index = Index;
 	}
+
+	InitTeleports(); // H-Client: DDNet
 }
 
-// H-Client: DDRace
+// H-Client: DDNet
+void CCollision::InitTeleports()
+{
+    if (!m_pLayers->TeleLayer())
+        return;
+
+    int Width = m_pLayers->TeleLayer()->m_Width;
+    int Height = m_pLayers->TeleLayer()->m_Height;
+
+    for (int i = 0; i < Width * Height; i++)
+    {
+        if (m_pTele[i].m_Number > 0 && m_pTele[i].m_Type == TILE_TELEOUT)
+            m_TeleOuts[m_pTele[i].m_Number - 1].push_back(vec2(i % Width * 32 + 16, i / Width * 32 + 16));
+    }
+}
+//
+
 int CCollision::GetTile(int x, int y)
 {
 	int Nx = clamp(x/32, 0, m_Width-1);
@@ -319,4 +345,77 @@ void ThroughOffset(vec2 Pos0, vec2 Pos1, int *Ox, int *Oy)
 			*Oy = 32;
 		}
 	}
+}
+
+int CCollision::IntersectLineTeleHook(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, int *pTeleNr, bool AllowThrough)
+{
+    float Distance = distance(Pos0, Pos1);
+    int End(Distance+1);
+    vec2 Last = Pos0;
+    int ix = 0, iy = 0; // Temporary position for checking collision
+    int dx = 0, dy = 0; // Offset for checking the "through" tile
+
+    if (AllowThrough)
+        ThroughOffset(Pos0, Pos1, &dx, &dy);
+
+    for(int i = 0; i <= End; i++)
+    {
+        float a = i/(float)End;
+        vec2 Pos = mix(Pos0, Pos1, a);
+        ix = round(Pos.x);
+        iy = round(Pos.y);
+        int Nx = clamp(ix/32, 0, m_Width-1);
+        int Ny = clamp(iy/32, 0, m_Height-1);
+
+        *pTeleNr = IsTeleportHook(Ny*m_Width+Nx);
+
+        if(*pTeleNr)
+        {
+            if(pOutCollision)
+                *pOutCollision = Pos;
+            if(pOutBeforeCollision)
+                *pOutBeforeCollision = Last;
+
+            return COLFLAG_TELE;
+        }
+        if((CheckPoint(ix, iy) && !(AllowThrough && IsThrough(ix + dx, iy + dy))))
+        {
+            if(pOutCollision)
+                *pOutCollision = Pos;
+            if(pOutBeforeCollision)
+                *pOutBeforeCollision = Last;
+
+            return GetCollisionAt(ix, iy);
+        }
+        Last = Pos;
+    }
+
+    if(pOutCollision)
+        *pOutCollision = Pos1;
+    if(pOutBeforeCollision)
+        *pOutBeforeCollision = Pos1;
+
+    return 0;
+}
+
+int CCollision::IsTeleportHook(int Index)
+{
+    if(Index < 0 || !m_pTele)
+        return 0;
+
+    if(m_pTele[Index].m_Type == TILE_TELEINHOOK)
+        return m_pTele[Index].m_Number;
+
+    return 0;
+}
+
+int CCollision::IsTeleport(int Index)
+{
+	if(Index < 0 || !m_pTele)
+		return 0;
+
+	if(m_pTele[Index].m_Type == TILE_TELEIN)
+		return m_pTele[Index].m_Number;
+
+	return 0;
 }

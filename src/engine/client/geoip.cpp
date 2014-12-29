@@ -61,10 +61,10 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     NETSOCKET Socket = invalid_socket;
     NETADDR HostAddress;
     char aNetBuff[1024];
-    std::string csvData;
+    std::string jsonData;
 
     //Lookup
-    if(net_host_lookup("freegeoip.net", &HostAddress, NETTYPE_IPV4) != 0)
+    if(net_host_lookup("www.telize.com", &HostAddress, NETTYPE_IPV4) != 0)
     {
             dbg_msg("GeoIP","ERROR: Can't run host lookup.");
             geoInfo->m_CountryCode = "NULL";
@@ -96,7 +96,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     }
 
     //Send request
-    str_format(aNetBuff, sizeof(aNetBuff), "GET /csv/%s HTTP/1.0\r\nHost: %s\r\n\r\n", ip.c_str(), aAddrStr);
+    str_format(aNetBuff, sizeof(aNetBuff), "GET /geoip/%s HTTP/1.0\r\nHost: www.telize.com\r\n\r\n", ip.c_str());
     net_tcp_send(Socket, aNetBuff, strlen(aNetBuff));
 
     //read data
@@ -148,7 +148,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
                     return;
                 }
 
-                csvData += aNetBuff[i];
+                jsonData += aNetBuff[i];
 
                 TotalRecv++;
                 if (TotalRecv == TotalBytes)
@@ -160,28 +160,24 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     //Finish
     net_tcp_close(Socket);
 
-    int posIdel = -1;
-    unsigned int posFdel = csvData.find_first_of(",", posIdel+1);
-    int itemPos = 0;
-    do
-    {
-        std::string rawCell = csvData.substr(posIdel+1, posFdel-posIdel-1);
-        if (rawCell.length() > 2)
-        {
-            std::string cell = rawCell.substr(1, rawCell.length()-2);
+    // parse json data
+	json_settings JsonSettings;
+	mem_zero(&JsonSettings, sizeof(JsonSettings));
+	char aError[256];
+	json_value *pJsonData = json_parse_ex(&JsonSettings, jsonData.c_str(), jsonData.length(), aError);
+	if (pJsonData == 0)
+	{
+		dbg_msg("GeoIP", "Error: %s", aError);
+		return;
+	}
 
-            if (itemPos == 1) { geoInfo->m_CountryCode = cell; }
-            else if (itemPos == 2) { geoInfo->m_CountryName = cell; }
-            else if (itemPos == 3) { geoInfo->m_RegionCode = atoi(cell.c_str()); }
-            else if (itemPos == 4) { geoInfo->m_RegionName = cell; }
-            else if (itemPos == 5) { geoInfo->m_City = cell; }
-            else if (itemPos == 6) { geoInfo->m_ZipCode = cell; break; }
-        }
-
-        itemPos++;
-        posIdel = posFdel;
-        posFdel = csvData.find_first_of(",", posIdel+1);
-    } while ((int)posFdel >= 0);
+	// generate configurations
+	const json_value &countryCode = (*pJsonData)["country_code"];
+	if (countryCode.type == json_string) geoInfo->m_CountryCode = (const char *)countryCode;
+	const json_value &countryName = (*pJsonData)["country"];
+	if (countryName.type == json_string) geoInfo->m_CountryName = (const char *)countryName;
+	const json_value &isp = (*pJsonData)["isp"];
+	if (isp.type == json_string) geoInfo->m_Isp = (const char *)isp;
 }
 
 void ThreadGeoIP(void *params)

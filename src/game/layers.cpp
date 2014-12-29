@@ -13,11 +13,13 @@ CLayers::CLayers()
 	m_pMap = 0;
 
 	m_pFrontLayer = 0; // H-Client
+	m_pTeleLayer = 0; // H-Client
 }
 
 void CLayers::Init(class IKernel *pKernel)
 {
     m_pFrontLayer = 0; // H-Client
+    m_pTeleLayer = 0; // H-Client
 
 	m_pMap = pKernel->RequestInterface<IMap>();
 	m_pMap->GetType(MAPITEMTYPE_GROUP, &m_GroupsStart, &m_GroupsNum);
@@ -55,6 +57,7 @@ void CLayers::Init(class IKernel *pKernel)
 
 					//break;
 				}
+				// H-Client: DDNet
                 else if(pTilemap->m_Flags&TILESLAYERFLAG_FRONT)
                 {
                     if(pTilemap->m_Version <= 2)
@@ -62,6 +65,14 @@ void CLayers::Init(class IKernel *pKernel)
 
                     m_pFrontLayer = pTilemap;
                 }
+                if(pTilemap->m_Flags&TILESLAYERFLAG_TELE)
+                {
+                    if(pTilemap->m_Version <= 2)
+                        pTilemap->m_Tele = *((int*)(pTilemap) + 15);
+
+                    m_pTeleLayer = pTilemap;
+                }
+                //
 			}
 		}
 	}

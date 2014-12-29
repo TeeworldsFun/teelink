@@ -19,10 +19,7 @@ public:
 
         std::string m_CountryCode;
         std::string m_CountryName;
-        int m_RegionCode;
-        std::string m_RegionName;
-        std::string m_City;
-        std::string m_ZipCode;
+        std::string m_Isp;
     };
 
     virtual void GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo) = 0;

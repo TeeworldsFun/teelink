@@ -41,6 +41,8 @@ public:
 	{
 		return m_DataFile.Crc();
 	}
+
+	virtual int GetUncompressedDataSize(int Index) { return m_DataFile.GetUncompressedDataSize(Index); } // H-Client: DDNet
 };
 
 extern IEngineMap *CreateEngineMap() { return new CMap; }

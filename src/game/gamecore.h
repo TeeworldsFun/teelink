@@ -11,6 +11,10 @@
 #include <engine/shared/protocol.h>
 #include <game/teamscore.h>
 #include <game/generated/protocol.h>
+// H-Client: DDNet
+#include <map>
+#include <vector>
+//
 
 
 class CTuneParam
@@ -186,6 +190,11 @@ public:
 	int m_HookTick;
 	int m_HookState;
 	int m_HookedPlayer;
+
+	// H-Client: DDNet
+	vec2 m_HookTeleBase;
+	bool m_NewHook;
+	//
 
 	int m_Jumped;
 

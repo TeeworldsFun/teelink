@@ -4,11 +4,14 @@
 #define GAME_COLLISION_H
 
 #include <base/vmath.h>
+// H-Client: DDNet
+#include <map>
+#include <vector>
+//
 
 class CCollision
 {
 	class CTile *m_pTiles;
-	class CTile *m_pFront;
 	int m_Width;
 	int m_Height;
 	class CLayers *m_pLayers;
@@ -16,12 +19,20 @@ class CCollision
 	bool IsTileSolid(int x, int y);
 	int GetTile(int x, int y);
 
+	// H-Client: DDNet
+    class CTile *m_pFront;
+	class CTeleTile *m_pTele;
+	std::map<int, std::vector<vec2> > m_TeleOuts;
+	//
+
 public:
 	enum
 	{
 		COLFLAG_SOLID=1,
 		COLFLAG_DEATH=2,
 		COLFLAG_NOHOOK=4,
+
+		COLFLAG_TELE=32, // H-Client: DDNet
 	};
 
 	CCollision();
@@ -37,9 +48,14 @@ public:
 	bool TestBox(vec2 Pos, vec2 Size);
 
 	//H-Client: Ghost Stuff & DDRace Stuff
+	void InitTeleports();
 	int IsThrough(int x, int y);
 	int GetTileIndex(int Index);
     int GetPureMapIndex(vec2 Pos);
+    int IsTeleportHook(int Index);
+    int IsTeleport(int Index);
+    int IntersectLineTeleHook(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, int *pTeleNr, bool AllowThrough);
+    std::map<int, std::vector<vec2> > *GetTeleOuts() { return &m_TeleOuts; }
 };
 
 void ThroughOffset(vec2 Pos0, vec2 Pos1, int *Ox, int *Oy); //H-Client: DDRace

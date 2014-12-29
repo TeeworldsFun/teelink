@@ -72,6 +72,8 @@ void CCharacterCore::Reset()
 	m_HookedPlayer = -1;
 	m_Jumped = 0;
 	m_TriggeredEvents = 0;
+
+	m_NewHook = false; // H-Client: DDNet
 }
 
 void CCharacterCore::Tick(bool UseInput)
@@ -188,7 +190,8 @@ void CCharacterCore::Tick(bool UseInput)
 	else if(m_HookState == HOOK_FLYING)
 	{
 		vec2 NewPos = m_HookPos+m_HookDir*m_pWorld->m_Tuning.m_HookFireSpeed;
-		if(distance(m_Pos, NewPos) > m_pWorld->m_Tuning.m_HookLength)
+		if((!m_NewHook && distance(m_Pos, NewPos) > m_pWorld->m_Tuning.m_HookLength)
+		|| (m_NewHook && distance(m_HookTeleBase, NewPos) > m_pWorld->m_Tuning.m_HookLength))
 		{
 			m_HookState = HOOK_RETRACT_START;
 			NewPos = m_Pos + normalize(NewPos-m_Pos) * m_pWorld->m_Tuning.m_HookLength;
@@ -196,12 +199,16 @@ void CCharacterCore::Tick(bool UseInput)
 
 		// make sure that the hook doesn't go though the ground
 		bool GoingToHitGround = false;
+		bool GoingThroughTele = false; // H-Client: DDNet
 		bool GoingToRetract = false;
-		int Hit = m_pCollision->IntersectLine(m_HookPos, NewPos, &NewPos, 0, true); // H-Client
+		int teleNr = 0;
+		int Hit = m_pCollision->IntersectLineTeleHook(m_HookPos, NewPos, &NewPos, 0, &teleNr, true); // H-Client: DDNet
 		if(Hit)
 		{
 			if(Hit&CCollision::COLFLAG_NOHOOK)
 				GoingToRetract = true;
+			else if (Hit&CCollision::COLFLAG_TELE)
+				GoingThroughTele = true;
 			else
 				GoingToHitGround = true;
 		}
@@ -244,7 +251,21 @@ void CCharacterCore::Tick(bool UseInput)
 				m_HookState = HOOK_RETRACT_START;
 			}
 
-			m_HookPos = NewPos;
+			// H-Client: DDNet
+            if(GoingThroughTele && m_pCollision->GetTeleOuts() && m_pCollision->GetTeleOuts()->size() && (*m_pCollision->GetTeleOuts())[teleNr-1].size())
+			{
+				m_TriggeredEvents = 0;
+				m_HookedPlayer = -1;
+
+				m_NewHook = true;
+				int Num = (*m_pCollision->GetTeleOuts())[teleNr-1].size();
+				m_HookPos = (*m_pCollision->GetTeleOuts())[teleNr-1][(Num==1)?0:rand() % Num]+TargetDirection*PhysSize*1.5f;
+				m_HookDir = TargetDirection;
+				m_HookTeleBase = m_HookPos;
+			}
+			else
+				m_HookPos = NewPos;
+            //
 		}
 	}
 
@@ -350,6 +371,11 @@ void CCharacterCore::Tick(bool UseInput)
 			}
 		}
 	}
+
+	// H-Clent: DDNet
+    if (m_HookState != HOOK_FLYING)
+        m_NewHook = false;
+    //
 
 	// clamp the velocity to something sane
 	if(length(m_Vel) > 6000)

@@ -32,6 +32,8 @@ public:
 	void Unload();
 
 	unsigned Crc();
+
+	int GetUncompressedDataSize(int Index); // H-Client: DDNet
 };
 
 // write access
