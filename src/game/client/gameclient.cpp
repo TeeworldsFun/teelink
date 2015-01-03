@@ -952,17 +952,19 @@ void CGameClient::OnNewSnapshot()
 			m_aClients[i].m_Friend = true;
 
         // H-Client: update freeze state
-        if (str_find_nocase(SInfo.m_aGameType, "ddrace") && (Collision()->GetTileIndex(Collision()->GetPureMapIndex(m_aClients[i].m_Predicted.m_Pos)) == TILE_FREEZE || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
+        if (str_find_nocase(SInfo.m_aGameType, "ddrace") && (m_aClients[i].m_Predicted.m_InTileFreeze || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
         {
             if (!m_aClients[i].m_FreezedState.m_Freezed)
                 m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();
             m_aClients[i].m_FreezedState.m_Freezed = true;
+            m_aClients[i].m_Predicted.m_Freezes = true;
         }
         else
         {
             if (m_aClients[i].m_FreezedState.m_Freezed)
                 m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();
             m_aClients[i].m_FreezedState.m_Freezed = false;
+            m_aClients[i].m_Predicted.m_Freezes = false;
         }
         //
 	}

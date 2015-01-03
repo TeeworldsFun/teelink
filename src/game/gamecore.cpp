@@ -74,6 +74,8 @@ void CCharacterCore::Reset()
 	m_TriggeredEvents = 0;
 
 	m_NewHook = false; // H-Client: DDNet
+	m_Freezes = false; // H-Client: DDNet
+	m_InTileFreeze = false; // H-Client: DDNet
 }
 
 void CCharacterCore::Tick(bool UseInput)
@@ -87,6 +89,13 @@ void CCharacterCore::Tick(bool UseInput)
 		Grounded = true;
 	if(m_pCollision->CheckPoint(m_Pos.x-PhysSize/2, m_Pos.y+PhysSize/2+5))
 		Grounded = true;
+
+    // H-Client: DDNet
+    m_InTileFreeze = false;
+	if(m_pCollision->CheckPointFreeze(m_Pos.x, m_Pos.y))
+		m_InTileFreeze = true;
+    //
+
 
 	vec2 TargetDirection = normalize(vec2(m_Input.m_TargetX, m_Input.m_TargetY));
 
@@ -114,7 +123,7 @@ void CCharacterCore::Tick(bool UseInput)
 		m_Angle = (int)(a*256.0f);
 
 		// handle jump
-		if(m_Input.m_Jump)
+		if(m_Input.m_Jump && !m_Freezes && !m_InTileFreeze) // H-Client: DDNet
 		{
 			if(!(m_Jumped&1))
 			{
@@ -136,7 +145,7 @@ void CCharacterCore::Tick(bool UseInput)
 			m_Jumped &= ~1;
 
 		// handle hook
-		if(m_Input.m_Hook)
+		if(m_Input.m_Hook && !m_Freezes && !m_InTileFreeze) // H-Client: DDNet
 		{
 			if(m_HookState == HOOK_IDLE)
 			{
@@ -157,12 +166,18 @@ void CCharacterCore::Tick(bool UseInput)
 	}
 
 	// add the speed modification according to players wanted direction
-	if(m_Direction < 0)
-		m_Vel.x = SaturatedAdd(-MaxSpeed, MaxSpeed, m_Vel.x, -Accel);
-	if(m_Direction > 0)
-		m_Vel.x = SaturatedAdd(-MaxSpeed, MaxSpeed, m_Vel.x, Accel);
-	if(m_Direction == 0)
-		m_Vel.x *= Friction;
+	// H-Client: DDNet
+	if (m_Freezes || m_InTileFreeze)
+        m_Vel.x *= Friction;
+    else
+    {
+        if (m_Direction < 0)
+            m_Vel.x = SaturatedAdd(-MaxSpeed, MaxSpeed, m_Vel.x, -Accel);
+        else if (m_Direction > 0)
+            m_Vel.x = SaturatedAdd(-MaxSpeed, MaxSpeed, m_Vel.x, Accel);
+        else
+            m_Vel.x *= Friction;
+    }
 
 	// handle jumping
 	// 1 bit = to keep track if a jump has been made on this input

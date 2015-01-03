@@ -58,11 +58,13 @@ void CCollision::Init(class CLayers *pLayers)
                 case TILE_DEATH:
                     m_pFront[i].m_Index = COLFLAG_DEATH;
                     break;
+                case TILE_FREEZE:
+                    m_pFront[i].m_Index = COLFLAG_FREEZE;
                 default:
                     m_pFront[i].m_Index = 0;
             }
 
-            if(Index == TILE_THROUGH || (Index >= TILE_FREEZE && Index <= TILE_UNFREEZE) || (Index >= TILE_BEGIN && Index <= TILE_STOPA))
+            if(Index == TILE_THROUGH || (Index > TILE_FREEZE && Index <= TILE_UNFREEZE) || (Index >= TILE_BEGIN && Index <= TILE_STOPA))
                 m_pFront[i].m_Index = Index;
         }
 
@@ -81,12 +83,15 @@ void CCollision::Init(class CLayers *pLayers)
 		case TILE_NOHOOK:
 			m_pTiles[i].m_Index = COLFLAG_SOLID|COLFLAG_NOHOOK;
 			break;
+		case TILE_FREEZE:
+			m_pTiles[i].m_Index = COLFLAG_FREEZE;
+			break;
 		default:
 			m_pTiles[i].m_Index = 0;
 		}
 
         //H-Client: DDRace Stuff
-        if(Index == TILE_THROUGH || (Index >= TILE_FREEZE && Index <= TILE_UNFREEZE) || (Index >= TILE_BEGIN && Index <= TILE_STOPA))
+        if(Index == TILE_THROUGH || (Index > TILE_FREEZE && Index <= TILE_UNFREEZE) || (Index >= TILE_BEGIN && Index <= TILE_STOPA))
         	m_pTiles[i].m_Index = Index;
 	}
 
@@ -119,7 +124,8 @@ int CCollision::GetTile(int x, int y)
 
 	if(m_pTiles[Ny*m_Width+Nx].m_Index == COLFLAG_SOLID
 		|| m_pTiles[Ny*m_Width+Nx].m_Index == (COLFLAG_SOLID|COLFLAG_NOHOOK)
-		|| m_pTiles[Ny*m_Width+Nx].m_Index == COLFLAG_DEATH)
+		|| m_pTiles[Ny*m_Width+Nx].m_Index == COLFLAG_DEATH
+		|| m_pTiles[Ny*m_Width+Nx].m_Index == COLFLAG_FREEZE)
 		return m_pTiles[Ny*m_Width+Nx].m_Index;
 
 	return 0;
@@ -129,6 +135,7 @@ bool CCollision::IsTileSolid(int x, int y)
 {
 	return GetTile(x, y)&COLFLAG_SOLID;
 }
+
 
 // TODO: rewrite this smarter!
 int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, bool AllowThrough)
@@ -358,7 +365,7 @@ int CCollision::IntersectLineTeleHook(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision,
     if (AllowThrough)
         ThroughOffset(Pos0, Pos1, &dx, &dy);
 
-    for(int i = 0; i <= End; i++)
+    for(int i = 0; i < End; i++)
     {
         float a = i/(float)End;
         vec2 Pos = mix(Pos0, Pos1, a);
@@ -418,4 +425,9 @@ int CCollision::IsTeleport(int Index)
 		return m_pTele[Index].m_Number;
 
 	return 0;
+}
+
+bool CCollision::IsTileFreeze(int x, int y)
+{
+	return GetTile(x, y)&COLFLAG_FREEZE;
 }

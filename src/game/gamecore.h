@@ -194,6 +194,8 @@ public:
 	// H-Client: DDNet
 	vec2 m_HookTeleBase;
 	bool m_NewHook;
+	bool m_Freezes;
+	bool m_InTileFreeze;
 	//
 
 	int m_Jumped;

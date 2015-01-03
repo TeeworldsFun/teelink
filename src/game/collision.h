@@ -23,6 +23,8 @@ class CCollision
     class CTile *m_pFront;
 	class CTeleTile *m_pTele;
 	std::map<int, std::vector<vec2> > m_TeleOuts;
+	bool IsTileFreeze(int x, int y);
+	void InitTeleports();
 	//
 
 public:
@@ -31,6 +33,7 @@ public:
 		COLFLAG_SOLID=1,
 		COLFLAG_DEATH=2,
 		COLFLAG_NOHOOK=4,
+		COLFLAG_FREEZE=8, // H-Client: DDNet
 
 		COLFLAG_TELE=32, // H-Client: DDNet
 	};
@@ -48,7 +51,9 @@ public:
 	bool TestBox(vec2 Pos, vec2 Size);
 
 	//H-Client: Ghost Stuff & DDRace Stuff
-	void InitTeleports();
+	bool CheckPointFreeze(float x, float y, bool nocoll=true) { return IsTileFreeze(round(x), round(y)); }
+	bool CheckPointFreeze(vec2 Pos, bool nocoll=true) { return CheckPointFreeze(Pos.x, Pos.y); }
+
 	int IsThrough(int x, int y);
 	int GetTileIndex(int Index);
     int GetPureMapIndex(vec2 Pos);

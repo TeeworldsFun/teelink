@@ -85,7 +85,7 @@ void CNamePlates::RenderNameplate(
         Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), IntraTick);
 
         char aBuf[17];
-        if (m_pClient->Collision()->GetTileIndex(m_pClient->Collision()->GetPureMapIndex(Position)) == TILE_FREEZE)
+        if (m_pClient->Collision()->CheckPointFreeze(Position))
             str_copy(aBuf, "Freezed: <Undef>", sizeof(aBuf));
         else
             str_format(aBuf, sizeof(aBuf), "Freezed: %d", 10-pPlayerChar->m_Armor);

@@ -161,7 +161,7 @@ void CPlayers::RenderHook(
 		Graphics()->QuadsSetRotation(GetAngle(Dir)+pi);
 
 		// H-Client
-        const float DropHookTime = 60.0f;
+        const float DropHookTime = SERVER_TICK_SPEED+SERVER_TICK_SPEED/5;
         if (pPlayerChar->m_HookedPlayer != -1 && pPlayerChar->m_HookTick <= DropHookTime)
         {
             float restRGB = pPlayerChar->m_HookTick / DropHookTime;
@@ -346,28 +346,27 @@ void CPlayers::RenderPlayer(
 	// H-Client: Draw AIM Line
     if (Player.m_PlayerFlags&PLAYERFLAG_AIM)
     {
+        Graphics()->TextureSet(-1);
+
+        static const float RealPhysSize = 28.0f * 1.5f;
         vec2 ExDirection = Direction;
+        vec2 ExPosition = Position;
 
         if (pPlayerInfo->m_Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
             ExDirection = normalize(vec2(m_pClient->m_pControls->m_InputData.m_TargetX, m_pClient->m_pControls->m_InputData.m_TargetY));
 
-        Graphics()->TextureSet(-1);
-        vec2 finishPos = Position + ExDirection * (m_pClient->m_Tuning.m_HookLength-42.0f);
-
-        bool doBreak = false;
-        int Hit = 0;
-
-        static const float RealPhysSize = 28.0f * 1.5f;
-        vec2 PositionTmp = Position;
-        vec2 orgPos = PositionTmp+ExDirection*RealPhysSize;
+        vec2 orgPos = ExPosition+ExDirection*RealPhysSize;
         vec2 curPos = orgPos;
+        vec2 finishPos;
         vec2 hookNewStart = vec2(0, 0);
-        bool teleHook;
+        bool teleHook, doBreak;
+        int Hit = 0;
 
         Graphics()->LinesBegin();
 
         do
         {
+            doBreak = false;
             teleHook = false;
             Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 
@@ -375,49 +374,58 @@ void CPlayers::RenderPlayer(
             {
                 curPos += ExDirection * m_pClient->m_Tuning.m_HookFireSpeed;
 
-                if (distance(PositionTmp, curPos) > m_pClient->m_Tuning.m_HookLength-RealPhysSize)
+                if (curPos == orgPos) // ExDirection 0,0?
+                    doBreak = true;
+
+                // Exceed Hook Length?
+                if (distance(ExPosition, curPos) > m_pClient->m_Tuning.m_HookLength)
                 {
-                    finishPos = (orgPos + ExDirection * (m_pClient->m_Tuning.m_HookLength-RealPhysSize));
+                    Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
+                    finishPos = ExPosition + ExDirection * m_pClient->m_Tuning.m_HookLength;
+
+                    curPos = finishPos;
                     doBreak = true;
                 }
 
+                // Collide with walls or special tiles?
                 int teleNr = 0;
                 Hit = Collision()->IntersectLineTeleHook(orgPos, curPos, &finishPos, 0, &teleNr, true);
-                if (Hit && !(Collision()->GetCollisionAt(finishPos.x, finishPos.y)&CCollision::COLFLAG_NOHOOK))
-                    Graphics()->SetColor(130.0f/255.0f, 232.0f/255.0f, 160.0f/255.0f, 1.0f);
-
-                if(m_pClient->m_Tuning.m_PlayerHooking && m_pClient->IntersectCharacter(orgPos, curPos, curPos, pPlayerInfo->m_ClientID) != -1)
+                if (Hit)
                 {
-                    finishPos = curPos;
-                    Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
-                    doBreak = true;
-                }
+                    if (!(Hit&CCollision::COLFLAG_NOHOOK)) // Hookable Tile
+                        Graphics()->SetColor(130.0f/255.0f, 232.0f/255.0f, 160.0f/255.0f, 1.0f);
 
-                if(Hit)
-                {
-                    if (Hit&CCollision::COLFLAG_TELE && (*Collision()->GetTeleOuts())[teleNr-1].size())
+                    if (Hit&CCollision::COLFLAG_TELE && (*Collision()->GetTeleOuts())[teleNr-1].size()) // Tele Hook Tile
                     {
                         int Num = (*Collision()->GetTeleOuts())[teleNr-1].size();
                         hookNewStart = (*Collision()->GetTeleOuts())[teleNr-1][(Num == 1)?0:rand() % Num] + ExDirection*RealPhysSize;
                         teleHook = true;
                     }
 
+                    curPos = finishPos;
                     doBreak = true;
                 }
-                //orgPos = curPos;
+
+                // Collide with characters?
+                if(m_pClient->m_Tuning.m_PlayerHooking && m_pClient->IntersectCharacter(orgPos, curPos, finishPos, pPlayerInfo->m_ClientID) != -1)
+                {
+                    Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
+
+                    curPos = finishPos;
+                    doBreak = true;
+                    teleHook = false;
+                }
             } while (!doBreak);
 
-            if (distance(finishPos, PositionTmp) > 0.0f)
+            // Don't draw 0 length lines
+            if (distance(finishPos, orgPos) > 0.0f)
             {
-                IGraphics::CLineItem LineItem(PositionTmp.x, PositionTmp.y, finishPos.x, finishPos.y);
+                IGraphics::CLineItem LineItem(ExPosition.x, ExPosition.y, finishPos.x, finishPos.y);
                 Graphics()->LinesDraw(&LineItem, 1);
             }
 
-            curPos = hookNewStart;
-            PositionTmp = curPos;
-            orgPos = curPos;
-            doBreak = false;
-
+            // Ok! start again from tile tele-hook
+            ExPosition = curPos = orgPos = hookNewStart;
         } while (teleHook);
 
         Graphics()->LinesEnd();
@@ -606,19 +614,6 @@ void CPlayers::RenderPlayer(
     }
 	if (str_find_nocase(SInfo.m_aGameType, "ddrace"))
 	{
-        if (Collision()->GetTileIndex(Collision()->GetPureMapIndex(Position)) == TILE_FREEZE || (pInfo.m_ClientID == m_pClient->m_Snap.m_LocalClientID && m_pClient->m_Snap.m_pLocalCharacter->m_Armor < 10))
-        {
-            if (!m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Freezed)
-                m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
-            m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Freezed = true;
-        }
-        else
-        {
-            if (m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Freezed)
-                m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
-            m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Freezed = false;
-        }
-
         //Tee Direction Info
         if (g_Config.m_ddrShowTeeDirection && !pInfo.m_Local)
         {
