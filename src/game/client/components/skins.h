@@ -26,9 +26,13 @@ public:
 	vec4 GetColorV4(int v);
 	int Num();
 	const CSkin *Get(int Index);
-	int Find(const char *pName);
+	int Find(const char *pName, bool tryDownload = false); // H-Client
 
-	static int SkinScan(const char *pName, int IsDir, int DirType, void *pUser); // H-Client
+    // H-Client
+	static int SkinScan(const char *pName, int IsDir, int DirType, void *pUser);
+	int LoadSkinFromFile(const char *pPath, const char *pName, int DirType);
+	int DownloadSkin(const char *pName);
+	//
 
 private:
 	sorted_array<CSkin> m_aSkins;

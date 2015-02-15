@@ -268,7 +268,7 @@ public:
     class CPlayerInfo *m_pPlayerInfo; // H-Client
     class CTeamsCore m_Teams; // H-Client: DDNet
 	bool m_TakeInitScreenShot; // H-Client
-	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2& NewPos2, int ownID); // H-Client
+	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 *pNewPos2, int ownID); // H-Client
 
 	// H-Client
 	struct {

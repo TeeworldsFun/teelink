@@ -496,9 +496,26 @@ void CGameClient::OnRender()
 	// dispatch all input to systems
 	DispatchInput();
 
+	// H-Client
+    if (g_Config.m_hcShowPreviewMap && m_TakeInitScreenShot && Client()->State() == IClient::STATE_ONLINE)
+    {
+        ServerBrowser()->UpdateServerInfo(g_Config.m_UiServerAddress);
+
+        char preview[255];
+        str_format(preview, sizeof(preview), "mappreviews/%s.png", Client()->GetCurrentMap());
+        Graphics()->TakeScreenshotFree(preview, true);
+
+        m_pMenus->GetImageMapPreview(0);
+    }
+	//
+
 	// render all systems
 	for(int i = 0; i < m_All.m_Num; i++)
 		m_All.m_paComponents[i]->OnRender();
+
+	// H-Client
+    if (g_Config.m_hcShowPreviewMap && m_TakeInitScreenShot && Client()->State() == IClient::STATE_ONLINE)
+        m_TakeInitScreenShot = false;
 
 	// clear new tick flags
 	m_NewTick = false;
@@ -789,10 +806,12 @@ void CGameClient::OnNewSnapshot()
 			{
 				const CNetObj_ClientInfo *pInfo = (const CNetObj_ClientInfo *)pData;
 				int ClientID = Item.m_ID;
+                char tmpSkinName[64] = {0}; // H-Client
+
 				IntsToStr(&pInfo->m_Name0, 4, m_aClients[ClientID].m_aName);
 				IntsToStr(&pInfo->m_Clan0, 3, m_aClients[ClientID].m_aClan);
 				m_aClients[ClientID].m_Country = pInfo->m_Country;
-				IntsToStr(&pInfo->m_Skin0, 6, m_aClients[ClientID].m_aSkinName);
+				IntsToStr(&pInfo->m_Skin0, 6, tmpSkinName); // H-Client
 
 				m_aClients[ClientID].m_UseCustomColor = pInfo->m_UseCustomColor;
 				m_aClients[ClientID].m_ColorBody = pInfo->m_ColorBody;
@@ -806,14 +825,20 @@ void CGameClient::OnNewSnapshot()
 				m_aClients[ClientID].m_SkinInfo.m_ColorFeet = m_pSkins->GetColorV4(m_aClients[ClientID].m_ColorFeet);
 				m_aClients[ClientID].m_SkinInfo.m_Size = 64;
 
+                // H-Client
 				// find new skin
-				m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(m_aClients[ClientID].m_aSkinName);
-				if(m_aClients[ClientID].m_SkinID < 0)
-				{
-					m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find("default");
-					if(m_aClients[ClientID].m_SkinID < 0)
-						m_aClients[ClientID].m_SkinID = 0;
-				}
+				if (str_comp(m_aClients[ClientID].m_aSkinName, tmpSkinName) != 0)
+                {
+                    str_copy(m_aClients[ClientID].m_aSkinName, tmpSkinName, sizeof(m_aClients[ClientID].m_aSkinName));
+                    m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(m_aClients[ClientID].m_aSkinName, true);
+                    if(m_aClients[ClientID].m_SkinID < 0)
+                    {
+                        m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find("default");
+                        if(m_aClients[ClientID].m_SkinID < 0)
+                            m_aClients[ClientID].m_SkinID = 0;
+                    }
+                }
+                //
 
 				if(m_aClients[ClientID].m_UseCustomColor)
 					m_aClients[ClientID].m_SkinInfo.m_Texture = g_GameClient.m_pSkins->Get(m_aClients[ClientID].m_SkinID)->m_ColorTexture;
@@ -1020,19 +1045,6 @@ void CGameClient::OnNewSnapshot()
 			m_ServerMode = SERVERMODE_PUREMOD;
 	}
 
-    //H-Client
-    if (g_Config.m_hcShowPreviewMap && m_TakeInitScreenShot)
-    {
-        ServerBrowser()->UpdateServerInfo(g_Config.m_UiServerAddress);
-
-        char preview[255];
-        str_format(preview, sizeof(preview), "mappreviews/%s.png", Client()->GetCurrentMap());
-        Graphics()->TakeScreenshotFree(preview, true);
-
-        m_pMenus->GetImageMapPreview(0);
-
-        m_TakeInitScreenShot = false;
-    }
     //H-Client: DDNet
 	if(!m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
 	{
@@ -1293,14 +1305,14 @@ IGameClient *CreateGameClient()
 }
 
 // H-Client
-int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2& NewPos2, int ownID)
+int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 *pNewPos2, int ownID)
 {
 	float PhysSize = 28.0f;
 	float Distance = 0.0f;
 	int ClosestID = -1;
 
 	if (!m_Tuning.m_PlayerHooking)
-	return ClosestID;
+        return ClosestID;
 
 	for (int i=0; i<MAX_CLIENTS; i++)
 	{
@@ -1318,7 +1330,7 @@ int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2& NewPos2, in
 		{
 			if(ClosestID == -1 || distance(HookPos, Position) < Distance)
 			{
-				NewPos2 = ClosestPoint;
+				*pNewPos2 = Position;
 				ClosestID = i;
 				Distance = distance(HookPos, Position);
 			}

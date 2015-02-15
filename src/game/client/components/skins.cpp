@@ -10,6 +10,9 @@
 #include <engine/shared/config.h>
 
 #include "skins.h"
+#include <string> // H-Client
+#include <algorithm> // H-Client
+#include <cstdio> // H-Client
 
 int CSkins::SkinScan(const char *pName, int IsDir, int DirType, void *pUser)
 {
@@ -18,18 +21,26 @@ int CSkins::SkinScan(const char *pName, int IsDir, int DirType, void *pUser)
 	if(l < 4 || IsDir || str_comp(pName+l-4, ".png") != 0)
 		return 0;
 
-	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "skins/%s", pName);
+    pSelf->LoadSkinFromFile("skins", pName, DirType);
+
+	return 0;
+}
+
+int CSkins::LoadSkinFromFile(const char *pPath, const char *pName, int DirType)
+{
+    char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "%s/%s", pPath, pName);
+
 	CImageInfo Info;
-	if(!pSelf->Graphics()->LoadPNG(&Info, aBuf, DirType))
+	if(!Graphics()->LoadPNG(&Info, aBuf, DirType))
 	{
-		str_format(aBuf, sizeof(aBuf), "failed to load skin from %s", pName);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "game", aBuf);
-		return 0;
+		str_format(aBuf, sizeof(aBuf), "failed to load skin from %s", pPath);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "game", aBuf);
+		return -1;
 	}
 
 	CSkin Skin;
-	Skin.m_OrgTexture = pSelf->Graphics()->LoadTextureRaw(Info.m_Width, Info.m_Height, Info.m_Format, Info.m_pData, Info.m_Format, 0);
+	Skin.m_OrgTexture = Graphics()->LoadTextureRaw(Info.m_Width, Info.m_Height, Info.m_Format, Info.m_pData, Info.m_Format, 0);
 
 	int BodySize = 96; // body size
 	unsigned char *d = (unsigned char *)Info.m_pData;
@@ -99,21 +110,19 @@ int CSkins::SkinScan(const char *pName, int IsDir, int DirType, void *pUser)
 			d[y*Pitch+x*4+2] = v;
 		}
 
-	Skin.m_ColorTexture = pSelf->Graphics()->LoadTextureRaw(Info.m_Width, Info.m_Height, Info.m_Format, Info.m_pData, Info.m_Format, 0);
+	Skin.m_ColorTexture = Graphics()->LoadTextureRaw(Info.m_Width, Info.m_Height, Info.m_Format, Info.m_pData, Info.m_Format, 0);
 	mem_free(Info.m_pData);
 
 	// set skin data
-	str_copy(Skin.m_aName, pName, min((int)sizeof(Skin.m_aName),l-3));
+	str_copy(Skin.m_aName, pName, min((int)sizeof(Skin.m_aName), str_length(pName)-3));
 	if(g_Config.m_Debug)
 	{
 		str_format(aBuf, sizeof(aBuf), "load skin %s", Skin.m_aName);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "game", aBuf);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "game", aBuf);
 	}
-	pSelf->m_aSkins.add(Skin);
 
-	return 0;
+	return m_aSkins.add(Skin);
 }
-
 
 void CSkins::OnInit()
 {
@@ -142,14 +151,18 @@ const CSkins::CSkin *CSkins::Get(int Index)
 	return &m_aSkins[max(0, Index%m_aSkins.size())];
 }
 
-int CSkins::Find(const char *pName)
+int CSkins::Find(const char *pName, bool tryDownload)
 {
 	for(int i = 0; i < m_aSkins.size(); i++)
 	{
 		if(str_comp(m_aSkins[i].m_aName, pName) == 0)
 			return i;
 	}
-	return -1;
+
+    if (tryDownload)
+        return DownloadSkin(pName); // H-Client
+
+    return -1;
 }
 
 vec3 CSkins::GetColorV3(int v)
@@ -161,4 +174,123 @@ vec4 CSkins::GetColorV4(int v)
 {
 	vec3 r = GetColorV3(v);
 	return vec4(r.r, r.g, r.b, 1.0f);
+}
+
+// H-Client
+int CSkins::DownloadSkin(const char *pName)
+{
+    dbg_msg("skins", "Try download '%s'...", pName);
+
+    NETSOCKET sockDDNet;
+    NETADDR naddDDNet, bindAddr;
+    mem_zero(&naddDDNet, sizeof(naddDDNet));
+    mem_zero(&bindAddr, sizeof(bindAddr));
+    bindAddr.type = NETTYPE_IPV4;
+
+    if (net_host_lookup("ddnet.tw", &naddDDNet, NETTYPE_IPV4) != 0)
+    {
+        dbg_msg("skins", "Error can't found DDNet DataBase :(", pName);
+        return -1;
+    }
+    naddDDNet.port = 80;
+
+    sockDDNet = net_tcp_create(bindAddr);
+    if (net_tcp_connect(sockDDNet, &naddDDNet) != 0)
+    {
+        dbg_msg("skins", "Error can't connect with DDNet DataBase :(", pName);
+        net_tcp_close(sockDDNet);
+        return -1;
+    }
+
+    IOHANDLE dstFile = NULL;
+    char fullName[255] = {0};
+    str_format(fullName, sizeof(fullName), "skins/%s.png", pName);
+
+    char aNetBuff[255] = {0};
+    str_format(aNetBuff, sizeof(aNetBuff), "GET /skins/skin/%s.png HTTP/1.0\r\nHost: ddnet.tw\r\n\r\n", pName);
+	net_tcp_send(sockDDNet, aNetBuff, str_length(aNetBuff));
+
+	std::string NetData;
+	int TotalRecv = 0;
+	int TotalBytes = 0;
+	int CurrentRecv = 0;
+	int nlCount = 0;
+	while ((CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, sizeof(aNetBuff))) > 0)
+	{
+		for (int i=0; i<CurrentRecv ; i++)
+		{
+			if (nlCount < 2)
+			{
+				if (aNetBuff[i] == '\r' || aNetBuff[i] == '\n')
+				{
+				    ++nlCount;
+					if (NetData.size() > 0)
+					{
+                        std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
+                        if (NetData.find("404 not found") != std::string::npos)
+                        {
+                            dbg_msg("skins", "Can't found '%s' on DDNet DataBase...", pName);
+                            net_tcp_close(sockDDNet);
+                            return -1;
+                        }
+                        else if (NetData.find("content-length:") != std::string::npos)
+                        {
+                            sscanf(NetData.c_str(), "content-length:%d", &TotalBytes);
+                            if (TotalBytes == 0)
+                                sscanf(NetData.c_str(), "content-length: %d", &TotalBytes);
+                        }
+
+                        NetData.clear();
+					}
+
+					if (aNetBuff[i] == '\r') ++i;
+					continue;
+				}
+
+                nlCount = 0;
+                NetData += aNetBuff[i];
+			}
+			else
+			{
+			    if (nlCount == 2) // FIXE: Ugly check :/
+                {
+                    if (TotalBytes <= 0)
+                    {
+                        dbg_msg("skins", "Error downloading '%s'...", pName);
+                        break;
+                    }
+
+                    char aCompleteFilename[512];
+                    dstFile = Storage()->OpenFile(fullName, IOFLAG_WRITE, IStorage::TYPE_ALL, aCompleteFilename, sizeof(aCompleteFilename));
+                    if(!dstFile)
+                    {
+                        dbg_msg("skins", "Error creating '%s'...", fullName);
+                        net_tcp_close(sockDDNet);
+                        return -1;
+                    }
+
+                    ++nlCount;
+                }
+
+				io_write(dstFile, &aNetBuff[i], 1);
+
+				TotalRecv++;
+				if (TotalRecv == TotalBytes)
+					break;
+			}
+		}
+	}
+
+	net_tcp_close(sockDDNet);
+
+    if (dstFile)
+    {
+        io_close(dstFile);
+
+        dbg_msg("skins", "'%s' downloaded successfull :)", pName);
+        str_format(fullName, sizeof(fullName), "%s.png", pName);
+        return LoadSkinFromFile("skins", fullName, IStorage::TYPE_ALL);
+    }
+
+    return -1;
 }

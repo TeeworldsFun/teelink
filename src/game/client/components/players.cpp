@@ -1,5 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <base/system.h>
+#include <base/math.h>
+
+#include <math.h>
 #include <engine/demo.h>
 #include <engine/engine.h>
 #include <engine/graphics.h>
@@ -348,84 +352,54 @@ void CPlayers::RenderPlayer(
     {
         Graphics()->TextureSet(-1);
 
-        static const float RealPhysSize = 28.0f * 1.5f;
-        vec2 ExDirection = Direction;
-        vec2 ExPosition = Position;
+        static const float PhysSize = 28.0f;
+        static const float RealPhysSize = PhysSize * 1.5f;
+        vec2 orgPos, curPos, ExDirection = Direction, ExPosition = Position;
+        bool teleHook;
+        int Hit = 0;
 
         if (pPlayerInfo->m_Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
             ExDirection = normalize(vec2(m_pClient->m_pControls->m_InputData.m_TargetX, m_pClient->m_pControls->m_InputData.m_TargetY));
-
-        vec2 orgPos = ExPosition+ExDirection*RealPhysSize;
-        vec2 curPos = orgPos;
-        vec2 finishPos;
-        vec2 hookNewStart = vec2(0, 0);
-        bool teleHook, doBreak;
-        int Hit = 0;
 
         Graphics()->LinesBegin();
 
         do
         {
-            doBreak = false;
+            orgPos = ExPosition+ExDirection*RealPhysSize;
+            curPos = orgPos + ExDirection*(m_pClient->m_Tuning.m_HookLength - PhysSize*2 - 1.5f);
             teleHook = false;
+
             Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 
-            do
+            // Collide with characters?
+            if (m_pClient->IntersectCharacter(orgPos, curPos, &curPos, pPlayerInfo->m_ClientID) != -1)
             {
-                curPos += ExDirection * m_pClient->m_Tuning.m_HookFireSpeed;
-
-                if (curPos == orgPos) // ExDirection 0,0?
-                    doBreak = true;
-
-                // Exceed Hook Length?
-                if (distance(ExPosition, curPos) > m_pClient->m_Tuning.m_HookLength)
-                {
-                    Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
-                    finishPos = ExPosition + ExDirection * m_pClient->m_Tuning.m_HookLength;
-
-                    curPos = finishPos;
-                    doBreak = true;
-                }
-
-                // Collide with walls or special tiles?
-                int teleNr = 0;
-                Hit = Collision()->IntersectLineTeleHook(orgPos, curPos, &finishPos, 0, &teleNr, true);
-                if (Hit)
-                {
-                    if (!(Hit&CCollision::COLFLAG_NOHOOK)) // Hookable Tile
-                        Graphics()->SetColor(130.0f/255.0f, 232.0f/255.0f, 160.0f/255.0f, 1.0f);
-
-                    if (Hit&CCollision::COLFLAG_TELE && (*Collision()->GetTeleOuts())[teleNr-1].size()) // Tele Hook Tile
-                    {
-                        int Num = (*Collision()->GetTeleOuts())[teleNr-1].size();
-                        hookNewStart = (*Collision()->GetTeleOuts())[teleNr-1][(Num == 1)?0:rand() % Num] + ExDirection*RealPhysSize;
-                        teleHook = true;
-                    }
-
-                    curPos = finishPos;
-                    doBreak = true;
-                }
-
-                // Collide with characters?
-                if(m_pClient->m_Tuning.m_PlayerHooking && m_pClient->IntersectCharacter(orgPos, curPos, finishPos, pPlayerInfo->m_ClientID) != -1)
-                {
-                    Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
-
-                    curPos = finishPos;
-                    doBreak = true;
-                    teleHook = false;
-                }
-            } while (!doBreak);
-
-            // Don't draw 0 length lines
-            if (distance(finishPos, orgPos) > 0.0f)
-            {
-                IGraphics::CLineItem LineItem(ExPosition.x, ExPosition.y, finishPos.x, finishPos.y);
-                Graphics()->LinesDraw(&LineItem, 1);
+                Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
+                teleHook = false;
             }
 
-            // Ok! start again from tile tele-hook
-            ExPosition = curPos = orgPos = hookNewStart;
+            // Collide with walls or special tiles?
+            int teleNr = 0;
+            Hit = Collision()->IntersectLineTeleHook(orgPos, curPos, &curPos, 0, &teleNr, true);
+            if (Hit)
+            {
+                if (!(Hit&CCollision::COLFLAG_NOHOOK)) // Hookable Tile
+                    Graphics()->SetColor(130.0f/255.0f, 232.0f/255.0f, 160.0f/255.0f, 1.0f);
+
+                if (Hit&CCollision::COLFLAG_TELE && (*Collision()->GetTeleOuts())[teleNr-1].size()) // Tele Hook Tile
+                {
+                    int Num = (*Collision()->GetTeleOuts())[teleNr-1].size();
+                    ExPosition = (*Collision()->GetTeleOuts())[teleNr-1][(Num == 1)?0:rand() % Num];
+                    teleHook = true;
+                }
+            }
+
+            // Don't draw 0 length lines
+            if (distance(orgPos, curPos) > 0.0f)
+            {
+                IGraphics::CLineItem LineItem(ExPosition.x, ExPosition.y, curPos.x, curPos.y);
+                Graphics()->LinesDraw(&LineItem, 1);
+            }
         } while (teleHook);
 
         Graphics()->LinesEnd();

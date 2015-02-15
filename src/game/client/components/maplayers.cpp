@@ -46,7 +46,7 @@ void CMapLayers::EnvelopeUpdate()
 
 void CMapLayers::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup)
 {
-	if (Graphics()->ShowInfoKills())
+	if (Graphics()->ShowInfoKills() || Graphics()->Tumbtail())
         Graphics()->MapScreen(0, 0, Collision()->GetWidth()*32, Collision()->GetHeight()*32);
     else
     {
