@@ -5,6 +5,8 @@
 #include <base/vmath.h>
 #include <base/tl/sorted_array.h>
 #include <game/client/component.h>
+#include <map>
+#include <string>
 
 class CSkins : public CComponent
 {
@@ -20,6 +22,12 @@ public:
 		bool operator<(const CSkin &Other) { return str_comp(m_aName, Other.m_aName) < 0; }
 	};
 
+	struct InfoDownloadSkinThread
+	{
+        CSkins *m_pSkins;
+        char m_SkinName[64];
+    };
+
 	void OnInit();
 
 	vec3 GetColorV3(int v);
@@ -31,10 +39,13 @@ public:
     // H-Client
 	static int SkinScan(const char *pName, int IsDir, int DirType, void *pUser);
 	int LoadSkinFromFile(const char *pPath, const char *pName, int DirType);
-	int DownloadSkin(const char *pName);
+	void DownloadSkin(const char *pName);
 	//
 
 private:
 	sorted_array<CSkin> m_aSkins;
+
+	std::map<std::string, bool> m_DownloadedSkinsSet;
 };
+void ThreadDownloadSkin(void *params);
 #endif

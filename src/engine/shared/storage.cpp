@@ -239,7 +239,7 @@ public:
 		}
 	}
 
-	const char *GetPath(int Type, const char *pDir, char *pBuffer, unsigned BufferSize)
+	virtual const char *GetPath(int Type, const char *pDir, char *pBuffer, unsigned BufferSize)
 	{
 		str_format(pBuffer, BufferSize, "%s%s%s", m_aaStoragePaths[Type], !m_aaStoragePaths[Type][0] ? "" : "/", pDir);
 		return pBuffer;

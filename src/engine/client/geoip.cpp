@@ -1,43 +1,6 @@
 #include <base/math.h>
 #include <base/system.h>
 #include <game/version.h>
-
-#if defined(CONF_FAMILY_UNIX)
-	#include <sys/time.h>
-	#include <unistd.h>
-
-	/* unix net includes */
-	#include <sys/stat.h>
-	#include <sys/types.h>
-	#include <sys/socket.h>
-	#include <sys/ioctl.h>
-	#include <errno.h>
-	#include <netdb.h>
-	#include <netinet/in.h>
-	#include <fcntl.h>
-	#include <pthread.h>
-	#include <arpa/inet.h>
-
-	#include <dirent.h>
-
-	#if defined(CONF_PLATFORM_MACOSX)
-		#include <Carbon/Carbon.h>
-	#endif
-
-#elif defined(CONF_FAMILY_WINDOWS)
-	#define WIN32_LEAN_AND_MEAN
-	#define _WIN32_WINNT 0x0501 /* required for mingw to get getaddrinfo to work */
-	#include <windows.h>
-	#include <winsock2.h>
-	#include <ws2tcpip.h>
-	#include <Shellapi.h>
-	#include <shlobj.h>
-	#include <fcntl.h>
-	#include <direct.h>
-	#include <errno.h>
-#else
-	#error NOT IMPLEMENTED
-#endif
 #include <string>
 #include <algorithm>
 #include <stdio.h>
@@ -59,34 +22,24 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     dbg_msg("GeoIP", "Searching geolocation of '%s'...", ip.c_str());
 
     NETSOCKET Socket = invalid_socket;
-    NETADDR HostAddress;
+    NETADDR HostAddress, bindAddr;
+    mem_zero(&HostAddress, sizeof(HostAddress));
+    mem_zero(&bindAddr, sizeof(bindAddr));
     char aNetBuff[1024];
     std::string jsonData;
 
     //Lookup
     if(net_host_lookup("www.telize.com", &HostAddress, NETTYPE_IPV4) != 0)
     {
-            dbg_msg("GeoIP","ERROR: Can't run host lookup.");
-            geoInfo->m_CountryCode = "NULL";
-            return;
+        dbg_msg("GeoIP","ERROR: Can't run host lookup.");
+        geoInfo->m_CountryCode = "NULL";
+        return;
     }
-
-    char aAddrStr[NETADDR_MAXSTRSIZE];
-    net_addr_str(&HostAddress, aAddrStr, sizeof(aAddrStr), true);
-
-    //Connect
-    int socketID = socket(AF_INET, SOCK_STREAM, 0);
-    if(socketID < 0)
-    {
-            dbg_msg("GeoIP","ERROR: Can't create socket.");
-            geoInfo->m_CountryCode = "NULL";
-            return;
-    }
-
-    Socket.type = NETTYPE_IPV4;
-    Socket.ipv4sock = socketID;
     HostAddress.port = 80;
 
+    //Connect
+    bindAddr.type = NETTYPE_IPV4;
+    Socket = net_tcp_create(bindAddr);
     if(net_tcp_connect(Socket, &HostAddress) != 0)
     {
         dbg_msg("GeoIP","ERROR: Can't connect.");

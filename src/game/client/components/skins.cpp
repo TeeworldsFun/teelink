@@ -153,14 +153,33 @@ const CSkins::CSkin *CSkins::Get(int Index)
 
 int CSkins::Find(const char *pName, bool tryDownload)
 {
+    for (std::map<std::string,bool>::iterator it = m_DownloadedSkinsSet.begin(); it != m_DownloadedSkinsSet.end();) // H-Client: Check if Need Load
+    {
+        if (!it->second)
+        {
+            it++;
+            continue;
+        }
+
+        char fullName[128];
+        str_format(fullName, sizeof(fullName), "%s.png", it->first.c_str());
+        LoadSkinFromFile("skins", fullName, IStorage::TYPE_ALL);
+        m_DownloadedSkinsSet.erase(it++);
+    }
+
 	for(int i = 0; i < m_aSkins.size(); i++)
 	{
 		if(str_comp(m_aSkins[i].m_aName, pName) == 0)
 			return i;
 	}
 
-    if (tryDownload)
-        return DownloadSkin(pName); // H-Client
+    if (tryDownload) // H-Client
+    {
+        InfoDownloadSkinThread *pInfoDownloadSkinThread = new InfoDownloadSkinThread;
+        pInfoDownloadSkinThread->m_pSkins = this;
+        str_copy(pInfoDownloadSkinThread->m_SkinName, pName, sizeof(pInfoDownloadSkinThread->m_SkinName));
+		thread_create(ThreadDownloadSkin, pInfoDownloadSkinThread);
+    }
 
     return -1;
 }
@@ -177,10 +196,15 @@ vec4 CSkins::GetColorV4(int v)
 }
 
 // H-Client
-int CSkins::DownloadSkin(const char *pName)
+void CSkins::DownloadSkin(const char *pName)
 {
-    dbg_msg("skins", "Try download '%s'...", pName);
+    // Check if skins are in processing state
+    std::string sName(pName);
+    if (m_DownloadedSkinsSet.find(sName) != m_DownloadedSkinsSet.end())
+        return;
+    m_DownloadedSkinsSet.insert(std::pair<std::string,bool>(sName, false));
 
+    dbg_msg("skins", "Try download '%s'...", pName);
     NETSOCKET sockDDNet;
     NETADDR naddDDNet, bindAddr;
     mem_zero(&naddDDNet, sizeof(naddDDNet));
@@ -189,17 +213,19 @@ int CSkins::DownloadSkin(const char *pName)
 
     if (net_host_lookup("ddnet.tw", &naddDDNet, NETTYPE_IPV4) != 0)
     {
-        dbg_msg("skins", "Error can't found DDNet DataBase :(", pName);
-        return -1;
+        m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
+        dbg_msg("skins", "Error can't found DDNet DataBase :(");
+        return;
     }
     naddDDNet.port = 80;
 
     sockDDNet = net_tcp_create(bindAddr);
     if (net_tcp_connect(sockDDNet, &naddDDNet) != 0)
     {
-        dbg_msg("skins", "Error can't connect with DDNet DataBase :(", pName);
+        m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
+        dbg_msg("skins", "Error can't connect with DDNet DataBase :(");
         net_tcp_close(sockDDNet);
-        return -1;
+        return;
     }
 
     IOHANDLE dstFile = NULL;
@@ -229,9 +255,10 @@ int CSkins::DownloadSkin(const char *pName)
                         std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
                         if (NetData.find("404 not found") != std::string::npos)
                         {
+                            m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
                             dbg_msg("skins", "Can't found '%s' on DDNet DataBase...", pName);
                             net_tcp_close(sockDDNet);
-                            return -1;
+                            return;
                         }
                         else if (NetData.find("content-length:") != std::string::npos)
                         {
@@ -261,12 +288,14 @@ int CSkins::DownloadSkin(const char *pName)
                     }
 
                     char aCompleteFilename[512];
-                    dstFile = Storage()->OpenFile(fullName, IOFLAG_WRITE, IStorage::TYPE_ALL, aCompleteFilename, sizeof(aCompleteFilename));
+                    Storage()->GetPath(IStorage::TYPE_SAVE+1, fullName, aCompleteFilename, sizeof(aCompleteFilename));
+                    dstFile = io_open(aCompleteFilename, IOFLAG_WRITE);
                     if(!dstFile)
                     {
-                        dbg_msg("skins", "Error creating '%s'...", fullName);
+                        m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
+                        dbg_msg("skins", "Error creating '%s'...", aCompleteFilename);
                         net_tcp_close(sockDDNet);
-                        return -1;
+                        return;
                     }
 
                     ++nlCount;
@@ -286,11 +315,16 @@ int CSkins::DownloadSkin(const char *pName)
     if (dstFile)
     {
         io_close(dstFile);
-
-        dbg_msg("skins", "'%s' downloaded successfull :)", pName);
         str_format(fullName, sizeof(fullName), "%s.png", pName);
-        return LoadSkinFromFile("skins", fullName, IStorage::TYPE_ALL);
-    }
+        dbg_msg("skins", "'%s' downloaded successfully :)", pName);
+        m_DownloadedSkinsSet.find(sName)->second = true;
 
-    return -1;
+    }
+}
+
+void ThreadDownloadSkin(void *params)
+{
+    CSkins::InfoDownloadSkinThread *pInfoThread = static_cast<CSkins::InfoDownloadSkinThread*>(params);
+    pInfoThread->m_pSkins->DownloadSkin(pInfoThread->m_SkinName);
+    delete pInfoThread;
 }

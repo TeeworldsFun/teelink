@@ -616,7 +616,6 @@ void CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const ch
 
 void CScoreboard::RenderLocalTime()
 {
-
 	//draw the box
 	Graphics()->BlendNormal();
 	Graphics()->TextureSet(-1);
@@ -626,10 +625,10 @@ void CScoreboard::RenderLocalTime()
 	Graphics()->QuadsEnd();
 
 	//draw the text
-    char aBuf[11];
+    char aBuf[12];
     time_t rawtime = time(NULL);
     struct tm *timeinfo = localtime(&rawtime);
-    strftime(aBuf,80,"%I:%M:%S %p",timeinfo);
+    strftime(aBuf, sizeof(aBuf), "%I:%M:%S %p", timeinfo);
     TextRender()->Text(0, 10.0f, 190.0f, 20.0f, Localize("LOCAL TIME"), -1);
 	TextRender()->Text(0, 40.0f, 215.0f, 20.0f, aBuf, -1);
 }
