@@ -1249,9 +1249,9 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         CUIRect Edit;
         static float Offset = 0.0f;
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
-        HUDItem.VSplitLeft(80.0f, &HUDItem, &Edit);
+        HUDItem.VSplitLeft(135.0f, &HUDItem, &Edit);
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-        UI()->DoLabelScaled(&HUDItem, "Eyes Time:", 14.0f, -1);
+        UI()->DoLabelScaled(&HUDItem, Localize("Eyes Time (Secs.):"), 14.0f, -1);
         DoEditBox(&g_Config.m_hcEyesSelectorTime, &Edit, g_Config.m_hcEyesSelectorTime, sizeof(g_Config.m_hcEyesSelectorTime), 12.0f, &Offset, false, CUI::CORNER_ALL);
 	}
 
@@ -1259,7 +1259,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	{
         MainView.HSplitBottom(10.0f, &MainView, &HUDItem);
         TextRender()->TextColor(1.0f, 0.39f, 0.0f, 1.0f);
-		UI()->DoLabelScaled(&HUDItem, "H-Client Mod by unsigned char*", 14.0f, -1);
+		UI()->DoLabelScaled(&HUDItem, "H-Client Mod by unsigned char* - http://hclient.wordpress.com", 14.0f, -1);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 

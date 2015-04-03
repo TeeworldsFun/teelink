@@ -801,17 +801,17 @@ void CGameClient::OnNewSnapshot()
 
                 // H-Client
 				// find new skin
-				//if (str_comp(m_aClients[ClientID].m_aSkinName, tmpSkinName) != 0)
-                //{
-                    str_copy(m_aClients[ClientID].m_aSkinName, tmpSkinName, sizeof(m_aClients[ClientID].m_aSkinName));
-                    m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(m_aClients[ClientID].m_aSkinName, true);
+				if (str_comp(m_aClients[ClientID].m_aSkinName, tmpSkinName) != 0)
+                    m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(tmpSkinName, true); // Try Download Skin
+
+                str_copy(m_aClients[ClientID].m_aSkinName, tmpSkinName, sizeof(m_aClients[ClientID].m_aSkinName));
+                m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(m_aClients[ClientID].m_aSkinName);
+                if(m_aClients[ClientID].m_SkinID < 0)
+                {
+                    m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find("default");
                     if(m_aClients[ClientID].m_SkinID < 0)
-                    {
-                        m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find("default");
-                        if(m_aClients[ClientID].m_SkinID < 0)
-                            m_aClients[ClientID].m_SkinID = 0;
-                    }
-                //}
+                        m_aClients[ClientID].m_SkinID = 0;
+                }
                 //
 
 				if(m_aClients[ClientID].m_UseCustomColor)
