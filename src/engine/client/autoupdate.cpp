@@ -18,8 +18,11 @@
 
 static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
 
+static LOCK m_UpdatesLock = 0;
+
 CAutoUpdate::CAutoUpdate()
 {
+    m_UpdatesLock = lock_create();
 	Reset();
 }
 
@@ -30,6 +33,8 @@ void CAutoUpdate::Reset()
 	m_CurrentVersionCode = g_Config.m_hcVersionCode;
 	m_Updated = false;
 	mem_zero(m_NewVersion, sizeof(m_NewVersion));
+	mem_zero(m_CurrentDownloadFileName, sizeof(m_CurrentDownloadFileName));
+	m_CurrentDownloadProgress = 0;
 }
 
 void CAutoUpdate::AddFileToDownload(const char *pFile)
@@ -221,7 +226,7 @@ void CAutoUpdate::DoUpdates(CMenus *pMenus)
 }
 
 // TODO: Ugly but works
-bool CAutoUpdate::GetFile(const char *pToDownload, const char *pToPath)
+bool CAutoUpdate::GetFile(const char *url, const char *path)
 {
 	NETSOCKET Socket = invalid_socket;
 	NETADDR HostAddress, BindAddr;
@@ -246,7 +251,7 @@ bool CAutoUpdate::GetFile(const char *pToDownload, const char *pToPath)
 	}
 
 	//Send request
-	str_format(aNetBuff, sizeof(aNetBuff), "GET "UPDATES_BASE_PATH"%s HTTP/1.0\r\nHost: "UPDATES_HOST"\r\n\r\n", pToDownload);
+	str_format(aNetBuff, sizeof(aNetBuff), "GET "UPDATES_BASE_PATH"%s HTTP/1.0\r\nHost: "UPDATES_HOST"\r\n\r\n", url);
 	net_tcp_send(Socket, aNetBuff, str_length(aNetBuff));
 
 	//read data
@@ -268,13 +273,15 @@ bool CAutoUpdate::GetFile(const char *pToDownload, const char *pToPath)
 					enterCtrl++;
 					if (enterCtrl == 2)
 					{
-                        dstFile = io_open(pToPath, IOFLAG_WRITE);
+                        dstFile = io_open(path, IOFLAG_WRITE);
                         if (!dstFile)
                         {
                             net_tcp_close(Socket);
                             dbg_msg("autoupdate","Error writing to disk");
                             return false;
                         }
+
+                        str_copy(m_CurrentDownloadFileName, url, sizeof(m_CurrentDownloadFileName));
 
 						isHead = false;
 						NetData.clear();
@@ -317,6 +324,8 @@ bool CAutoUpdate::GetFile(const char *pToDownload, const char *pToPath)
 					return false;
 				}
 
+                m_CurrentDownloadProgress = (float)TotalRecv/(float)TotalBytes;
+
 				io_write(dstFile, &aNetBuff[i], 1);
 
 				TotalRecv++;
@@ -349,4 +358,13 @@ bool CAutoUpdate::SelfDelete()
 	#endif
 
 	return true;
+}
+
+void ThreadUpdates(void *params)
+{
+    InfoUpdatesThread *pInfoThread = static_cast<InfoUpdatesThread*>(params);
+
+    lock_wait(m_UpdatesLock);
+    pInfoThread->m_pAutoUpdate->DoUpdates(pInfoThread->m_pMenus);
+    lock_release(m_UpdatesLock);
 }

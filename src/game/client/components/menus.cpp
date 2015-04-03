@@ -1109,6 +1109,12 @@ int CMenus::Render()
             pExtraText = aBuff;
             ExtraAlign = -1;
         }
+        else if (m_Popup == POPUP_AUTOUPDATE_DOWNLOADING)
+        {
+            pTitle = Localize("Auto-Update");
+			pExtraText = "Downloading Files...";
+			ExtraAlign = -1;
+        }
         else if (m_Popup == POPUP_AUTOUPDATE_RESULT)
         {
             pTitle = Localize("Auto-Update");
@@ -1231,7 +1237,36 @@ int CMenus::Render()
 
             static int s_ButtonTryAgain = 0;
             if(DoButton_Menu(&s_ButtonTryAgain, Localize("Update"), 0, &Yes, vec4(0.0f, 0.50f, 0.10f, 0.5f)) || m_EnterPressed)
-                m_pClient->AutoUpdate()->DoUpdates(this);
+            {
+                SetPopup(POPUP_AUTOUPDATE_DOWNLOADING);
+
+                static InfoUpdatesThread infoUpdatesThread;
+                infoUpdatesThread.m_pAutoUpdate = AutoUpdate();
+                infoUpdatesThread.m_pMenus = this;
+                thread_create(ThreadUpdates, &infoUpdatesThread);
+            }
+        }
+        else if(m_Popup == POPUP_AUTOUPDATE_DOWNLOADING)
+        {
+            CUIRect button;
+            Box.HSplitBottom(20.f, &Box, &Part);
+            Box.HSplitBottom(24.f, &Box, &Part);
+            Part.VMargin(100.0f, &button);
+
+            Box.HSplitTop(64.f, 0, &Box);
+            Box.HSplitTop(24.f, &Part, &Box);
+            UI()->DoLabel(&Part, AutoUpdate()->GetCurrentDownloadFileName(), 20.f, 0, -1);
+
+            // progress bar
+            Box.HSplitTop(20.f, 0, &Box);
+            Box.HSplitTop(24.f, &Part, &Box);
+            Part.VMargin(40.0f, &Part);
+            RenderTools()->DrawUIRect(&Part, HexToVec4(g_Config.m_hcProgressbarBackgroundColor), CUI::CORNER_ALL, 5.0f);
+            //CUIRect PartOrg = Part;
+
+            Part.Margin(5.0f, &Part);
+            Part.w = max(10.0f, Part.w*AutoUpdate()->GetCurrentDownloadProgress());
+            RenderTools()->DrawUIRect(&Part, HexToVec4(g_Config.m_hcProgressbarSliderBackgroundColor), CUI::CORNER_ALL, 5.0f);
         }
         else if(m_Popup == POPUP_AUTOUPDATE_RESULT)
         {

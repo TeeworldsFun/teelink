@@ -12,8 +12,10 @@ class IGeoIP : public IInterface
 {
 	MACRO_INTERFACE("geoip", 0)
 public:
-    struct GeoInfo {
-        GeoInfo() {
+    struct GeoInfo
+    {
+        GeoInfo()
+        {
             m_CountryCode = "NULL";
         }
 
@@ -25,7 +27,8 @@ public:
     virtual void GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo) = 0;
 };
 
-struct InfoGeoIPThread {
+struct InfoGeoIPThread
+{
     IGeoIP *m_pGeoIP;
     IGeoIP::GeoInfo *m_pGeoInfo;
     char ip[64];

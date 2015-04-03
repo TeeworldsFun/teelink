@@ -20,7 +20,18 @@ public:
 	virtual const char* GetNewVersion() const = 0;
     virtual std::vector<std::string>& GetFilesToRemove() = 0;
 	virtual std::vector<std::string>& GetFilesToDownload() = 0;
+
+    virtual const char* GetCurrentDownloadFileName() const = 0;
+	virtual float GetCurrentDownloadProgress() = 0;
 };
+
+struct InfoUpdatesThread
+{
+    IAutoUpdate *m_pAutoUpdate;
+    CMenus *m_pMenus;
+};
+
+void ThreadUpdates(void *);
 
 #endif
 

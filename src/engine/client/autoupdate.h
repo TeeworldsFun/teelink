@@ -18,11 +18,15 @@ public:
 
 	void CheckUpdates(CMenus *pMenus);
 	void DoUpdates(CMenus *pMenus);
+
 	bool Updated() { return m_Updated; }
 	bool NeedResetClient() { return m_NeedUpdateClient; }
 	const char* GetNewVersion() const { return m_NewVersion; }
 	std::vector<std::string>& GetFilesToRemove() { return m_vToRemove; }
 	std::vector<std::string>& GetFilesToDownload() { return m_vToDownload; }
+
+	const char* GetCurrentDownloadFileName() const { return m_CurrentDownloadFileName; }
+	float GetCurrentDownloadProgress() { return m_CurrentDownloadProgress; }
 
 	void ExecuteExit();
 
@@ -35,9 +39,12 @@ private:
 	int m_CurrentVersionCode;
 	char m_NewVersion[6];
 
+    char m_CurrentDownloadFileName[128];
+	float m_CurrentDownloadProgress;
+
 protected:
 	bool SelfDelete();
-	bool GetFile(const char *pToDownload, const char *pToPath);
+	bool GetFile(const char *url, const char *path);
 	bool CanUpdate(const char *pFile);
 	void AddFileToDownload(const char *pFile);
 	void AddFileToRemove(const char *pFile);
