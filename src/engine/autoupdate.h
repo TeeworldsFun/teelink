@@ -17,6 +17,9 @@ public:
 	virtual bool Updated() = 0;
 	virtual bool NeedResetClient() = 0;
 	virtual void ExecuteExit() = 0;
+	virtual const char* GetNewVersion() const = 0;
+    virtual std::vector<std::string>& GetFilesToRemove() = 0;
+	virtual std::vector<std::string>& GetFilesToDownload() = 0;
 };
 
 #endif

@@ -275,35 +275,12 @@ void CGameClient::OnInit()
     // Load TexturePack
 	m_pTexturePack->Init();
 	m_pTexturePack->Load(g_Config.m_hcTheme);
-
 	// auto update
-    #if !defined(CONF_PLATFORM_MACOSX)
-        if (g_Config.m_hcAutoUpdate)
-        {
-            char aBuf[128];
-            str_format(aBuf, sizeof(aBuf), "Checking for updates");
-            g_GameClient.m_pMenus->RenderUpdating(aBuf);
-            AutoUpdate()->CheckUpdates(m_pMenus);
-            if (AutoUpdate()->Updated())
-            {
-                if (AutoUpdate()->NeedResetClient())
-                {
-                    Client()->Quit();
-                    return;
-                }
-                else
-                {
-                    str_format(aBuf, sizeof(aBuf), "H-Client Client updated successfully");
-                    g_GameClient.m_pMenus->RenderUpdating(aBuf);
-                }
-            }
-            else
-            {
-                str_format(aBuf, sizeof(aBuf), "No updates available");
-                g_GameClient.m_pMenus->RenderUpdating(aBuf);
-            }
-        }
-    #endif
+    if (g_Config.m_hcAutoUpdate)
+        AutoUpdate()->CheckUpdates(m_pMenus);
+
+    m_TakeInitScreenShot = false;
+    m_DDRaceMsgSent = false;
 	//
 
 	for(int i = 0; i < m_All.m_Num; i++)
@@ -315,9 +292,6 @@ void CGameClient::OnInit()
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "gameclient", aBuf);
 
 	m_ServerMode = SERVERMODE_PURE;
-
-	m_TakeInitScreenShot = false; //H-Client
-    m_DDRaceMsgSent = false;
 }
 
 void CGameClient::DispatchInput()

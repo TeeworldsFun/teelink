@@ -1064,6 +1064,15 @@ int fs_storage_path(const char *appname, char *path, int max);
 int fs_is_dir(const char *path);
 
 /*
+	Function: fs_is_file
+		Check if file exists
+
+	Returns:
+		Returns 1 on success, 0 on failure.
+*/
+int fs_is_file(const char *filename); // H-Client
+
+/*
 	Function: fs_chdir
 		Changes current working directory
 

@@ -317,4 +317,6 @@ public:
 
 	virtual const char* GetCurrentMap(); // H-Client
 };
+
+void init_openssl_library(); // H-Client
 #endif

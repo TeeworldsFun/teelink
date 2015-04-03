@@ -1,46 +1,20 @@
 #include <base/math.h>
 #include <base/system.h>
 #include <game/version.h>
-
+#include <cstring>
+#include <cstdio>
+#include <algorithm>
 #if defined(CONF_FAMILY_UNIX)
-	#include <sys/time.h>
-	#include <unistd.h>
-
-	/* unix net includes */
-	#include <sys/stat.h>
-	#include <sys/types.h>
-	#include <sys/socket.h>
-	#include <sys/ioctl.h>
-	#include <errno.h>
-	#include <netdb.h>
-	#include <netinet/in.h>
-	#include <fcntl.h>
-	#include <pthread.h>
-	#include <arpa/inet.h>
-
-	#include <dirent.h>
-
-#elif defined(CONF_FAMILY_WINDOWS)
-	#define WIN32_LEAN_AND_MEAN
-	#define _WIN32_WINNT 0x0501 /* required for mingw to get getaddrinfo to work */
-	#include <windows.h>
-	#include <winsock2.h>
-	#include <ws2tcpip.h>
-	#include <Shellapi.h>
-	#include <shlobj.h>
-	#include <fcntl.h>
-	#include <direct.h>
-	#include <errno.h>
-#else
-	#error NOT IMPLEMENTED
+    #include <unistd.h>
 #endif
-#include <string.h>
-#include <stdio.h> //remove
-#include <algorithm> // H-Client
-
+#include <engine/external/json-parser/json.h>
 #include <engine/shared/config.h>
-
+#include <game/client/components/menus.h>
 #include "autoupdate.h"
+
+#define UPDATES_HOST            "hclient-updater.redneboa.es"
+#define UPDATES_BASE_PATH       "/"
+#define UPDATES_MANIFEST_FILE   "updates.json"
 
 static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
 
@@ -51,317 +25,219 @@ CAutoUpdate::CAutoUpdate()
 
 void CAutoUpdate::Reset()
 {
-	m_NeedUpdate = false;
-	m_NeedUpdateBackground = false;
 	m_NeedUpdateClient = false;
 	m_NeedUpdateServer = false;
-	m_NeedResetClient = false;
+	m_CurrentVersionCode = g_Config.m_hcVersionCode;
 	m_Updated = false;
-	m_vFiles.clear();
+	mem_zero(m_NewVersion, sizeof(m_NewVersion));
 }
 
-bool CAutoUpdate::CanUpdate(const char *pFile)
+void CAutoUpdate::AddFileToDownload(const char *pFile)
 {
-	std::list<std::string>::iterator it = m_vFiles.begin();
-	while (it != m_vFiles.end())
-	{
-		if ((*it).compare(pFile) == 0)
-			return false;
+    // Remove it from remove list
+    for (std::vector<std::string>::iterator it=m_vToRemove.begin(); it!=m_vToRemove.end();)
+    {
+        if (str_comp(it->c_str(), pFile) == 0) it = m_vToRemove.erase(it++);
+        else ++it;
+    }
 
-		it++;
-	}
+    // Check if already in the list
+    for (std::vector<std::string>::iterator it=m_vToDownload.begin(); it!=m_vToDownload.end(); ++it)
+        if (str_comp(it->c_str(), pFile) == 0) return;
 
-	return true;
+    m_vToDownload.push_back(pFile);
+}
+
+void CAutoUpdate::AddFileToRemove(const char *pFile)
+{
+    // Remove it from download list
+    for (std::vector<std::string>::iterator it=m_vToDownload.begin(); it!=m_vToDownload.end();)
+    {
+        if (str_comp(it->c_str(), pFile) == 0) it = m_vToDownload.erase(it++);
+        else ++it;
+    }
+
+    // Check if already in the list
+    for (std::vector<std::string>::iterator it=m_vToRemove.begin(); it!=m_vToRemove.end(); ++it)
+        if (str_comp(it->c_str(), pFile) == 0) return;
+
+    m_vToRemove.push_back(pFile);
 }
 
 void CAutoUpdate::ExecuteExit()
 {
-	if (!m_NeedResetClient)
+	if (!NeedResetClient())
 		return
 
 	dbg_msg("autoupdate", "Executing pre-quiting...");
 
-	if (m_NeedUpdateClient)
-	{
-		SelfDelete();
-		#if defined(CONF_FAMILY_WINDOWS)
-			ShellExecuteA(0,0,"du.bat",0,0,SW_HIDE);
-		#elif defined(CONF_PLATFORM_LINUX)
-			if (rename("tw_tmp","teeworlds"))
-				dbg_msg("autoupdate", "Error renaming binary file");
-			if (system("chmod +x teeworlds"))
-				dbg_msg("autoupdate", "Error setting executable bit");
-        #else
-           #error NOT IMPLEMENTED
-		#endif
-	}
-
-	#if defined(CONF_FAMILY_WINDOWS)
-	if (!m_NeedUpdateClient)
-		ShellExecuteA(0,0,"teeworlds.exe",0,0,SW_SHOW);
-	#elif defined(CONF_PLATFORM_LINUX)
-		pid_t pid;
-		pid=fork();
-		if (pid==0)
-		{
-			char* argv[1];
-			argv[0] = NULL;
-			execv("teeworlds", argv);
-		}
-		else
-			return;
+    SelfDelete();
+    #ifdef CONF_FAMILY_WINDOWS
+        ShellExecuteA(0,0,"du.bat",0,0,SW_HIDE);
     #else
-        #error NOT IMPLEMENTED
-	#endif
+        if (rename("tw_tmp","teeworlds"))
+            dbg_msg("autoupdate", "Error renaming binary file");
+        if (system("chmod +x teeworlds"))
+            dbg_msg("autoupdate", "Error setting executable bit");
+
+        pid_t pid;
+        pid = fork();
+        if (pid == 0)
+        {
+            char* argv[1];
+            argv[0] = NULL;
+            execv("teeworlds", argv);
+        }
+        else
+            return;
+    #endif
 }
 
 void CAutoUpdate::CheckUpdates(CMenus *pMenus)
 {
-	char aReadBuf[512];
-	dbg_msg("autoupdate", "Checking for updates");
-	if (!GetFile("hclient.upd", "hclient.upd"))
+	dbg_msg("autoupdate", "Checking for updates...");
+	if (!GetFile(UPDATES_MANIFEST_FILE, UPDATES_MANIFEST_FILE))
 	{
-		dbg_msg("autoupdate", "Error downloading update list");
+		dbg_msg("autoupdate", "Error downloading updates manifest :/");
 		return;
 	}
 
-	dbg_msg("autoupdate", "Processing data");
+    Reset();
 
-	Reset();
-	IOHANDLE updFile = io_open("hclient.upd", IOFLAG_READ);
-	if (!updFile)
-		return;
+    IOHANDLE fileAutoUpdate = io_open(UPDATES_MANIFEST_FILE, IOFLAG_READ);
+    io_seek(fileAutoUpdate, 0, IOSEEK_END);
+    std::streamsize size = io_tell(fileAutoUpdate);
+    io_seek(fileAutoUpdate, 0, IOSEEK_START);
 
-	//read data
-	std::string ReadData;
-	char last_version[15];
-	char cmd;
-	while (io_read(updFile, aReadBuf, sizeof(aReadBuf)) > 0)
-	{
-		for (size_t i=0; i<sizeof(aReadBuf); i++)
-		{
-			if (aReadBuf[i]=='\n')
-			{
-				if (i>0 && aReadBuf[i-1] == '\r')
-					ReadData = ReadData.substr(0, -2);
+    std::vector<char> buffer(size);
+    if (io_read(fileAutoUpdate, buffer.data(), size))
+    {
+        int curVerCode = g_Config.m_hcVersionCode;
+        bool needUpdate = false;
 
-				//Parse Command
-				cmd = ReadData[0];
-				if (cmd == '#')
-				{
-					str_copy(last_version, ReadData.substr(1).c_str(), sizeof(last_version));
+        json_settings JsonSettings;
+        mem_zero(&JsonSettings, sizeof(JsonSettings));
+        char aError[256];
+        json_value *pJsonNodeMain = json_parse_ex(&JsonSettings, buffer.data(), size, aError);
+        if (pJsonNodeMain == 0)
+        {
+            dbg_msg("autoupdate", "Error: %s", aError);
+            return;
+        }
 
-					if (ReadData.substr(1).compare(HCLIENT_VERSION) != 0)
-						pMenus->SetPopup(CMenus::POPUP_AUTOUPDATE);
-					else
-						dbg_msg("autoupdate", "Version match");
+        int verCode = -1;
+        for(int j=pJsonNodeMain->u.object.length-1; j>=0; j--)
+        {
+            sscanf((const char *)pJsonNodeMain->u.object.values[j].name, "%d", &verCode);
+            json_value *pNodeCode = pJsonNodeMain->u.object.values[j].value;
 
-					io_close(updFile);
-					return;
-				}
-				ReadData.clear();
-			}
+            if (verCode <= curVerCode)
+                continue;
 
-			ReadData+=aReadBuf[i];
-		}
-	}
+            needUpdate = true;
+            m_CurrentVersionCode = verCode;
 
-	io_close(updFile);
+            const json_value &rVersion = (*pNodeCode)["version"];
+            str_copy(m_NewVersion, (const char *)rVersion, sizeof(m_NewVersion));
+
+            // Need update client?
+            const json_value &rClient = (*pNodeCode)["client"];
+            if (rClient.u.boolean) m_NeedUpdateClient = true;
+
+            // Need update server?
+            const json_value &rServer = (*pNodeCode)["server"];
+            if (rServer.u.boolean) m_NeedUpdateServer = true;
+
+            // Get files to download
+            const json_value &rDownload = (*pNodeCode)["download"];
+            for(unsigned k = 0; k < rDownload.u.array.length; k++)
+                AddFileToDownload((const char *)rDownload[k]);
+            // Get files to remove
+            const json_value &rRemove = (*pNodeCode)["remove"];
+            for(unsigned k = 0; k < rRemove.u.array.length; k++)
+                AddFileToRemove((const char *)rRemove[k]);
+        }
+
+        if (needUpdate) pMenus->SetPopup(CMenus::POPUP_AUTOUPDATE);
+        else m_Updated = true;
+    }
+
+    io_close(fileAutoUpdate);
+    fs_remove(UPDATES_MANIFEST_FILE);
 }
 
 void CAutoUpdate::DoUpdates(CMenus *pMenus)
 {
-	char aReadBuf[512];
-	char aBuf[512];
+    bool noErrors = true;
 
-	dbg_msg("autoupdate", "Processing data");
+    // Remove Files
+    for (std::vector<std::string>::iterator it=m_vToRemove.begin(); it!=m_vToRemove.end(); ++it)
+        if (fs_is_file(it->c_str()) && fs_remove(it->c_str()) != 0) noErrors = false;
+    m_vToRemove.clear();
 
-	Reset();
-	IOHANDLE updFile = io_open("hclient.upd", IOFLAG_READ);
-	if (!updFile)
-		return;
+    // Download Files
+    for (std::vector<std::string>::iterator it=m_vToDownload.begin(); it!=m_vToDownload.end(); ++it)
+        if (!GetFile(it->c_str(), it->c_str())) noErrors = false;
+    m_vToDownload.clear();
 
-	//read data
-	std::string ReadData;
-	char last_version[15], current_version[15];
-	char cmd;
-	while (io_read(updFile, aReadBuf, sizeof(aReadBuf)) > 0)
-	{
-		for (size_t i=0; i<sizeof(aReadBuf); i++)
-		{
-			if (aReadBuf[i]=='\n')
-			{
-				if (i>0 && aReadBuf[i-1] == '\r')
-					ReadData = ReadData.substr(0, -2);
+    if (m_NeedUpdateClient)
+    {
+        #ifdef CONF_FAMILY_WINDOWS
+            if (!GetFile("teeworlds.exe", "tw_tmp"))
+        #elif defined(CONF_FAMILY_UNIX)
+            #ifdef CONF_PLATFORM_MACOSX
+                if (!GetFile("teeworlds_mac", "tw_tmp"))
+            #else
+                if (!GetFile("teeworlds", "tw_tmp"))
+            #endif
+        #endif
+        {
+            noErrors = false;
+        }
+    }
 
-				//Parse Command
-				cmd = ReadData[0];
-				if (cmd == '#')
-				{
-					if (!m_NeedUpdate)
-						str_copy(last_version, ReadData.substr(1).c_str(), sizeof(last_version));
-					if (ReadData.substr(1).compare(HCLIENT_VERSION) != 0)
-						m_NeedUpdate = true;
-					else
-					{
-						dbg_msg("autoupdate", "Version match");
-						goto finish;
-					}
+    if (m_NeedUpdateServer)
+    {
+        #ifdef CONF_FAMILY_WINDOWS
+            if (!GetFile("teeworlds_srv.exe", "teeworlds_srv.exe")){
+        #elif defined(CONF_FAMILY_UNIX)
+            #ifdef CONF_PLATFORM_MACOSX
+                if (!GetFile("teeworlds_srv_mac", "teeworlds_srv")){
+            #else
+                if (!GetFile("teeworlds_srv", "teeworlds_srv")){
+            #endif
+        #endif
+            noErrors = false;
+        }
+    }
 
-					str_copy(current_version, ReadData.substr(1).c_str(), sizeof(current_version));
-				}
+    if (noErrors)
+    {
+        m_Updated = true;
+        g_Config.m_hcVersionCode = m_CurrentVersionCode;
+    }
 
-				if (m_NeedUpdate)
-				{
-					if (cmd == '@')
-					{
-						if (!m_NeedUpdateClient && ReadData.substr(2).compare("UPDATE_CLIENT") == 0)
-						{
-							str_format(aBuf, sizeof(aBuf), "Updating H-Client Client to %s", last_version);
-							pMenus->RenderUpdating(aBuf);
-
-							m_NeedUpdateClient = true;
-							m_NeedResetClient = true;
-							dbg_msg("autoupdate", "Updating client");
-							#if defined(CONF_FAMILY_WINDOWS)
-							if (!GetFile("teeworlds.exe", "tw_tmp.exe"))
-							#elif defined(CONF_PLATFORM_LINUX)
-							if (!GetFile("teeworlds", "tw_tmp"))
-                            #else
-                                #error NOT IMPLEMENTED
-							#endif
-								dbg_msg("autoupdate", "Error downloading new version");
-						}
-						if (!m_NeedUpdateServer && ReadData.substr(2).compare("UPDATE_SERVER") == 0)
-						{
-							str_format(aBuf, sizeof(aBuf), "Updating H-Client Server to %s", last_version);
-							pMenus->RenderUpdating(aBuf);
-
-							m_NeedUpdateServer = true;
-							dbg_msg("autoupdate", "Updating server");
-							#if defined(CONF_FAMILY_WINDOWS)
-							if (!GetFile("teeworlds_srv.exe", "teeworlds_srv.exe"))
-							#elif defined(CONF_PLATFORM_LINUX)
-							if (!GetFile("teeworlds_srv", "teeworlds_srv"))
-                            #else
-                                #error NOT IMPLEMENTED
-							#endif
-								dbg_msg("autoupdate", "Error downloading new version");
-						}
-						else if (!m_NeedUpdateClient && ReadData.substr(2).compare("RESET_CLIENT") == 0)
-							m_NeedResetClient = true;
-					}
-					else if (cmd == 'D')
-					{
-						int posDel=0;
-						ReadData = ReadData.substr(2);
-						posDel = ReadData.find_first_of(":");
-
-						if (CanUpdate(ReadData.substr(posDel+1).c_str()))
-						{
-							str_format(aBuf, sizeof(aBuf), "Downloading '%s'", ReadData.substr(posDel+1).c_str());
-							pMenus->RenderUpdating(aBuf);
-
-							dbg_msg("autoupdate", "Updating file '%s'", ReadData.substr(posDel+1).c_str());
-							if (!GetFile(ReadData.substr(0, posDel).c_str(), ReadData.substr(posDel+1).c_str()))
-								dbg_msg("autoupdate", "Error downloading '%s'", ReadData.substr(0, posDel).c_str());
-							else
-								m_vFiles.push_back(ReadData.substr(posDel+1));
-						}
-					}
-					else if (cmd == 'R')
-					{
-						if (ReadData.substr(2).c_str()[0] == 0)
-							return;
-
-						if (CanUpdate(ReadData.substr(2).c_str()))
-						{
-							str_format(aBuf, sizeof(aBuf), "Deleting '%s'", ReadData.substr(2).c_str());
-							pMenus->RenderUpdating(aBuf);
-
-							dbg_msg("autoupdate", "Deleting file '%s'", ReadData.substr(2).c_str());
-							remove(ReadData.substr(2).c_str());
-
-							m_vFiles.push_back(ReadData.substr(2));
-						}
-					}
-				}
-
-				ReadData.clear();
-				continue;
-			}
-
-			ReadData+=aReadBuf[i];
-		}
-
-		if (!m_NeedUpdate)
-			break;
-	}
-
-	finish:
-	if (m_NeedUpdate)
-	{
-		m_Updated = true;
-		m_NeedUpdate = false;
-
-		if (!m_NeedUpdateClient)
-			dbg_msg("autoupdate", "Updated successfully");
-		else
-			dbg_msg("autoupdate", "Restart necessary");
-	}
-	else
-		dbg_msg("autoupdate", "No updates available");
-
-	io_close(updFile);
-
-	if (m_Updated)
-	{
-		if (m_NeedUpdateClient)
-		{
-			pMenus->SetPopup(CMenus::POPUP_QUIT);
-			return;
-		}
-
-		str_format(aBuf, sizeof(aBuf), "H-Client Client updated successfully");
-		pMenus->RenderUpdating(aBuf);
-		thread_sleep(200);
-	}
-	else
-	{
-		str_format(aBuf, sizeof(aBuf), "No update available");
-		pMenus->RenderUpdating(aBuf);
-		thread_sleep(200);
-	}
+    pMenus->SetPopup(CMenus::POPUP_AUTOUPDATE_RESULT);
 }
 
-bool CAutoUpdate::GetFile(const char *pFile, const char *dst)
+// TODO: Ugly but works
+bool CAutoUpdate::GetFile(const char *pToDownload, const char *pToPath)
 {
 	NETSOCKET Socket = invalid_socket;
-	NETADDR HostAddress;
+	NETADDR HostAddress, BindAddr;
 	char aNetBuff[1024];
 
 	//Lookup
-	if(net_host_lookup(g_Config.m_hcAutoUpdateServer, &HostAddress, NETTYPE_IPV4) != 0)
+	if(net_host_lookup(UPDATES_HOST, &HostAddress, NETTYPE_IPV4) != 0)
 	{
 		dbg_msg("autoupdate", "Error running host lookup");
 		return false;
 	}
-
-	char aAddrStr[NETADDR_MAXSTRSIZE];
-	net_addr_str(&HostAddress, aAddrStr, sizeof(aAddrStr), 80);
-
-	//Connect
-	int socketID = socket(AF_INET, SOCK_STREAM, 0);
-	if(socketID < 0)
-	{
-		dbg_msg("autoupdate", "Error creating socket");
-		return false;
-	}
-
-	Socket.type = NETTYPE_IPV4;
-	Socket.ipv4sock = socketID;
 	HostAddress.port = 80;
 
+	//Connect
+    BindAddr.type = NETTYPE_IPV4;
+	Socket = net_tcp_create(BindAddr);
 	if(net_tcp_connect(Socket, &HostAddress) != 0)
 	{
 		net_tcp_close(Socket);
@@ -370,24 +246,16 @@ bool CAutoUpdate::GetFile(const char *pFile, const char *dst)
 	}
 
 	//Send request
-	str_format(aNetBuff, sizeof(aNetBuff), "GET %s/%s HTTP/1.0\r\nHost: %s\r\n\r\n", g_Config.m_hcAutoUpdateServerExtra, pFile, g_Config.m_hcAutoUpdateServer);
+	str_format(aNetBuff, sizeof(aNetBuff), "GET "UPDATES_BASE_PATH"%s HTTP/1.0\r\nHost: "UPDATES_HOST"\r\n\r\n", pToDownload);
 	net_tcp_send(Socket, aNetBuff, str_length(aNetBuff));
 
 	//read data
-	IOHANDLE dstFile = io_open(dst, IOFLAG_WRITE);
-	if (!dstFile)
-	{
-		net_tcp_close(Socket);
-		dbg_msg("autoupdate","Error writing to disk");
-		return false;
-	}
+	IOHANDLE dstFile;
 
 	std::string NetData;
-	int TotalRecv = 0;
-	int TotalBytes = 0;
-	int CurrentRecv = 0;
+	int TotalRecv = 0, TotalBytes = 0, CurrentRecv = 0;
+	int enterCtrl = 0, headLine = 0;
 	bool isHead = true;
-	int enterCtrl = 0;
 	while ((CurrentRecv = net_tcp_recv(Socket, aNetBuff, sizeof(aNetBuff))) > 0)
 	{
 		for (int i=0; i<CurrentRecv ; i++)
@@ -396,15 +264,34 @@ bool CAutoUpdate::GetFile(const char *pFile, const char *dst)
 			{
 				if (aNetBuff[i]=='\n')
 				{
+                    headLine++;
 					enterCtrl++;
 					if (enterCtrl == 2)
 					{
+                        dstFile = io_open(pToPath, IOFLAG_WRITE);
+                        if (!dstFile)
+                        {
+                            net_tcp_close(Socket);
+                            dbg_msg("autoupdate","Error writing to disk");
+                            return false;
+                        }
+
 						isHead = false;
 						NetData.clear();
 						continue;
 					}
 
                     std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
+
+                    // Check Result Code
+                    if (headLine == 1 && NetData.find("200") == std::string::npos)
+                    {
+                        net_tcp_close(Socket);
+                        dbg_msg("autoupdate","Error receiving file");
+                        return false;
+                    }
+
+                    // Get File Size
 					if (NetData.find("content-length:") != std::string::npos)
                     {
                         sscanf(NetData.c_str(), "content-length:%d", &TotalBytes);
@@ -449,20 +336,17 @@ bool CAutoUpdate::GetFile(const char *pFile, const char *dst)
 bool CAutoUpdate::SelfDelete()
 {
 	#ifdef CONF_FAMILY_WINDOWS
-	IOHANDLE bhFile = io_open("du.bat", IOFLAG_WRITE);
-	if (!bhFile)
-		return false;
+        IOHANDLE bhFile = io_open("du.bat", IOFLAG_WRITE);
+        if (!bhFile)
+            return false;
 
-	char aFileData[512];
-	str_format(aFileData, sizeof(aFileData), ":_R\r\ndel \"teeworlds.exe\"\r\nif exist \"teeworlds.exe\" goto _R\r\nrename \"tw_tmp.exe\" \"teeworlds.exe\"\r\n:_T\r\nif not exist \"teeworlds.exe\" goto _T\r\nstart teeworlds.exe\r\ndel \"du.bat\"\r\n");
-	io_write(bhFile, aFileData, str_length(aFileData));
-	io_close(bhFile);
-	#elif defined(CONF_PLATFORM_LINUX)
-		remove("teeworlds");
-    #else
-        #error NOT IMPLEMENTED
+        char aFileData[512];
+        str_format(aFileData, sizeof(aFileData), ":_R\r\ndel \"teeworlds.exe\"\r\nif exist \"teeworlds.exe\" goto _R\r\nrename \"tw_tmp.exe\" \"teeworlds.exe\"\r\n:_T\r\nif not exist \"teeworlds.exe\" goto _T\r\nstart teeworlds.exe\r\ndel \"du.bat\"\r\n");
+        io_write(bhFile, aFileData, str_length(aFileData));
+        io_close(bhFile);
+	#else
+		fs_remove("teeworlds");
 	#endif
 
 	return true;
 }
-

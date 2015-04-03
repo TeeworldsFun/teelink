@@ -112,8 +112,7 @@ MACRO_CONFIG_INT(DbgResizable, dbg_resizable, 0, 0, 0, CFGFLAG_CLIENT, "Enables 
 
 /** H-Client **/
 //MACRO_CONFIG_INT(hc3DRender, hc_3d_render, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enables/Disable 3D Render")
-MACRO_CONFIG_STR(hcAutoUpdateServer, hc_auto_update_server, 128, "dl.dropboxusercontent.com", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update Server")
-MACRO_CONFIG_STR(hcAutoUpdateServerExtra, hc_auto_update_server_extra, 512, "/u/30566237/generic-hclient", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update Server Extra Params")
+MACRO_CONFIG_INT(hcVersionCode, hc_version_code, 1, 1, 99, CFGFLAG_SAVE|CFGFLAG_CLIENT, "H-Client Version Code")
 MACRO_CONFIG_INT(hcAutoUpdate, hc_auto_update, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update")
 MACRO_CONFIG_INT(hcUseHUD, hc_use_hud, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Uses H-Client HUD")
 MACRO_CONFIG_INT(hcColorClan, hc_color_clan, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "HighLight Clan Members")

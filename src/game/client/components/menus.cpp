@@ -1100,14 +1100,31 @@ int CMenus::Render()
 			pButtonText = Localize("Ok");
 			ExtraAlign = -1;
 		}
-        #if !defined(CONF_PLATFORM_MACOSX)
         else if(m_Popup == POPUP_AUTOUPDATE)
         {
             pTitle = Localize("Auto-Update");
-            pExtraText = Localize("An update to H-Client client is available. Do you want to update now? This may restart the client. If an update fails, make sure the client has permissions to modify files.");
+            pExtraText = Localize("New H-Client v\%s available!");
+            char aBuff[32];
+            str_format(aBuff, sizeof(aBuff), pExtraText, AutoUpdate()->GetNewVersion());
+            pExtraText = aBuff;
             ExtraAlign = -1;
         }
-        #endif
+        else if (m_Popup == POPUP_AUTOUPDATE_RESULT)
+        {
+            pTitle = Localize("Auto-Update");
+
+            if (AutoUpdate()->Updated())
+            {
+                if (AutoUpdate()->NeedResetClient())
+                    pExtraText = Localize("Client updated succesfully, need restart to apply all changes.");
+                else
+                    pExtraText = Localize("Client Updated Succesfully! :)");
+            }
+            else
+                pExtraText = Localize("An error has occurred while try update the client. Please retry it.");
+
+            ExtraAlign = -1;
+        }
 
 		CUIRect Box, Part;
 		Box = Screen;
@@ -1161,12 +1178,46 @@ int CMenus::Render()
 			if(DoButton_Menu(&s_ButtonTryAgain, Localize("Yes"), 0, &Yes, vec4(0.0f, 0.50f, 0.10f, 0.5f)) || m_EnterPressed)
 				Client()->Quit();
 		}
-        #if !defined(CONF_PLATFORM_MACOSX)
         else if(m_Popup == POPUP_AUTOUPDATE)
         {
-            CUIRect Yes, No;
+            CUIRect Yes, No, ListDownload, ListRemove;
+            char aBuff[128];
+            static int s_DownloadList = 0;
+            static int s_RemoveList = 0;
+            static float s_ScrollDownloadValue = 0;
+            static float s_ScrollRemoveValue = 0;
+
             Box.HSplitBottom(20.f, &Box, &Part);
             Box.HSplitBottom(24.f, &Box, &Part);
+            Box.VSplitMid(&ListDownload, &ListRemove);
+            ListDownload.Margin(10.0f, &ListDownload);
+            ListRemove.Margin(10.0f, &ListRemove);
+
+            str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), AutoUpdate()->GetFilesToDownload().size());
+            UiDoListboxStart(&s_DownloadList, &ListDownload, 24.0f, "TO DOWNLOAD", aBuff, AutoUpdate()->GetFilesToDownload().size(), 1, -1, s_ScrollDownloadValue);
+
+            for(std::vector<std::string>::iterator it=AutoUpdate()->GetFilesToDownload().begin(); it!=AutoUpdate()->GetFilesToDownload().end(); ++it)
+            {
+                CListboxItem Item = UiDoListboxNextItem(it->c_str());
+
+                if(Item.m_Visible)
+                    UI()->DoLabelScaled(&Item.m_Rect, it->c_str(), 16.0f, -1);
+            }
+
+            UiDoListboxEnd(&s_ScrollDownloadValue, 0);
+
+            str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), AutoUpdate()->GetFilesToRemove().size());
+            UiDoListboxStart(&s_RemoveList, &ListRemove, 24.0f, "TO REMOVE", aBuff, AutoUpdate()->GetFilesToRemove().size(), 1, -1, s_ScrollRemoveValue);
+
+            for(std::vector<std::string>::iterator it=AutoUpdate()->GetFilesToRemove().begin(); it!=AutoUpdate()->GetFilesToRemove().end(); ++it)
+            {
+                CListboxItem Item = UiDoListboxNextItem(it->c_str());
+
+                if(Item.m_Visible)
+                    UI()->DoLabelScaled(&Item.m_Rect, it->c_str(), 16.0f, -1);
+            }
+
+            UiDoListboxEnd(&s_ScrollRemoveValue, 0);
 
             // buttons
             Part.VMargin(80.0f, &Part);
@@ -1175,14 +1226,30 @@ int CMenus::Render()
             No.VMargin(20.0f, &No);
 
             static int s_ButtonAbort = 0;
-            if(DoButton_Menu(&s_ButtonAbort, Localize("No"), 0, &No) || m_EscapePressed)
-            m_Popup = POPUP_NONE;
+            if(DoButton_Menu(&s_ButtonAbort, Localize("Cancel"), 0, &No) || m_EscapePressed)
+                m_Popup = POPUP_NONE;
 
             static int s_ButtonTryAgain = 0;
-            if(DoButton_Menu(&s_ButtonTryAgain, Localize("Yes"), 0, &Yes) || m_EnterPressed)
-            m_pClient->AutoUpdate()->DoUpdates(this);
+            if(DoButton_Menu(&s_ButtonTryAgain, Localize("Update"), 0, &Yes, vec4(0.0f, 0.50f, 0.10f, 0.5f)) || m_EnterPressed)
+                m_pClient->AutoUpdate()->DoUpdates(this);
         }
-        #endif
+        else if(m_Popup == POPUP_AUTOUPDATE_RESULT)
+        {
+            Box.HSplitBottom(20.f, &Box, &Part);
+            Box.HSplitBottom(24.f, &Box, &Part);
+
+            // buttons
+            Part.VMargin(100.0f, &Part);
+
+            static int s_ButtonAbort = 0;
+            if(DoButton_Menu(&s_ButtonAbort, Localize("Ok"), 0, &Part) || m_EscapePressed || m_EnterPressed)
+            {
+                if (AutoUpdate()->Updated() && AutoUpdate()->NeedResetClient())
+                    Client()->Quit();
+                else
+                    m_Popup = POPUP_NONE;
+            }
+        }
 		else if(m_Popup == POPUP_PASSWORD)
 		{
 			CUIRect Label, TextBox, TryAgain, Abort;
@@ -1803,12 +1870,15 @@ void CMenus::RenderBackground()
 	Graphics()->QuadsEnd();
 
 	// render splashtee
-    Graphics()->TextureSet(gs_TextureSplashTee);
-    Graphics()->QuadsBegin();
-        //Graphics()->SetColor(0,0,0,1.0f);
-        QuadItem = IGraphics::CQuadItem(sw/2-30, sh/2-30, 60, 60);
-        Graphics()->QuadsDrawTL(&QuadItem, 1);
-    Graphics()->QuadsEnd();
+	if (gs_TextureSplashTee != -1)
+	{
+        Graphics()->TextureSet(gs_TextureSplashTee);
+        Graphics()->QuadsBegin();
+            //Graphics()->SetColor(0,0,0,1.0f);
+            QuadItem = IGraphics::CQuadItem(sw/2-30, sh/2-30, 60, 60);
+            Graphics()->QuadsDrawTL(&QuadItem, 1);
+        Graphics()->QuadsEnd();
+    }
 
     /*
 	// render the tiles

@@ -1448,6 +1448,24 @@ int fs_is_dir(const char *path)
 #endif
 }
 
+int fs_is_file(const char *filename) // H-Client
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	/* TODO: do this smarter */
+	WIN32_FIND_DATA finddata;
+	HANDLE handle;
+
+	if ((handle = FindFirstFileA(filename, &finddata)) == INVALID_HANDLE_VALUE)
+		return 0;
+
+	FindClose(handle);
+	return 1;
+#else
+  struct stat sb;
+  return (stat(filename, &sb) == 0);
+#endif
+}
+
 int fs_chdir(const char *path)
 {
 	if(fs_is_dir(path))

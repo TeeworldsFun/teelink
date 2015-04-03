@@ -286,6 +286,7 @@ public:
 		POPUP_QUIT,
 
 		POPUP_AUTOUPDATE, // H-Client
+		POPUP_AUTOUPDATE_RESULT, //H-CLIENT
 	};
 
 	void RenderBackground();
