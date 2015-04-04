@@ -17,7 +17,6 @@
 #define UPDATES_MANIFEST_FILE   "updates.json"
 
 static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
-
 static LOCK m_UpdatesLock = 0;
 
 CAutoUpdate::CAutoUpdate()
@@ -80,7 +79,7 @@ void CAutoUpdate::ExecuteExit()
     #ifdef CONF_FAMILY_WINDOWS
         ShellExecuteA(0,0,"du.bat",0,0,SW_HIDE);
     #else
-        if (rename("tw_tmp","teeworlds"))
+        if (fs_rename("tw_tmp","teeworlds"))
             dbg_msg("autoupdate", "Error renaming binary file");
         if (system("chmod +x teeworlds"))
             dbg_msg("autoupdate", "Error setting executable bit");
@@ -93,6 +92,8 @@ void CAutoUpdate::ExecuteExit()
             argv[0] = NULL;
             execv("teeworlds", argv);
         }
+        else if (pid > 0)
+            return;
         else
             return;
     #endif
@@ -258,9 +259,8 @@ bool CAutoUpdate::GetFile(const char *url, const char *path)
 	IOHANDLE dstFile;
 
 	std::string NetData;
-	int TotalRecv = 0, TotalBytes = 0, CurrentRecv = 0;
-	int enterCtrl = 0, headLine = 0;
-	bool isHead = true;
+	int TotalRecv = 0, TotalBytes = 0, CurrentRecv = 0, enterCtrl = 0;
+	bool isHead = true, isStatusLine = true;
 	while ((CurrentRecv = net_tcp_recv(Socket, aNetBuff, sizeof(aNetBuff))) > 0)
 	{
 		for (int i=0; i<CurrentRecv ; i++)
@@ -269,9 +269,7 @@ bool CAutoUpdate::GetFile(const char *url, const char *path)
 			{
 				if (aNetBuff[i]=='\n')
 				{
-                    headLine++;
-					enterCtrl++;
-					if (enterCtrl == 2)
+					if (++enterCtrl == 2) // Go To Body Part
 					{
                         dstFile = io_open(path, IOFLAG_WRITE);
                         if (!dstFile)
@@ -290,21 +288,25 @@ bool CAutoUpdate::GetFile(const char *url, const char *path)
 
                     std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
 
-                    // Check Result Code
-                    if (headLine == 1 && NetData.find("200") == std::string::npos)
+                    // Check Status
+                    if (isStatusLine)
                     {
-                        net_tcp_close(Socket);
-                        dbg_msg("autoupdate","Error receiving file");
-                        return false;
+                        bool isCodeOk = NetData.find("200") != std::string::npos;
+                        bool isStatusOk = NetData.find("ok") != std::string::npos;
+
+                        if (!isCodeOk || !isStatusOk)
+                        {
+                            net_tcp_close(Socket);
+                            dbg_msg("autoupdate","Server Host returns error code");
+                            return false;
+                        }
                     }
+                    isStatusLine = false;
 
                     // Get File Size
-					if (NetData.find("content-length:") != std::string::npos)
-                    {
-                        sscanf(NetData.c_str(), "content-length:%d", &TotalBytes);
-                        if (TotalBytes == 0)
-                            sscanf(NetData.c_str(), "content-length: %d", &TotalBytes);
-                    }
+                    std::size_t fpos = std::string::npos;
+					if ((fpos=NetData.find("content-length:")) != std::string::npos)
+                        sscanf(NetData.substr(fpos+15).c_str(), "%d", &TotalBytes);
 
 					NetData.clear();
 					continue;
@@ -314,9 +316,9 @@ bool CAutoUpdate::GetFile(const char *url, const char *path)
 
 				NetData+=aNetBuff[i];
 			}
-			else
+			else // Body Part
 			{
-				if (TotalBytes == 0)
+				if (TotalBytes <= 0)
 				{
 					io_close(dstFile);
 					net_tcp_close(Socket);
@@ -349,9 +351,8 @@ bool CAutoUpdate::SelfDelete()
         if (!bhFile)
             return false;
 
-        char aFileData[512];
-        str_format(aFileData, sizeof(aFileData), ":_R\r\ndel \"teeworlds.exe\"\r\nif exist \"teeworlds.exe\" goto _R\r\nrename \"tw_tmp.exe\" \"teeworlds.exe\"\r\n:_T\r\nif not exist \"teeworlds.exe\" goto _T\r\nstart teeworlds.exe\r\ndel \"du.bat\"\r\n");
-        io_write(bhFile, aFileData, str_length(aFileData));
+        const char *fileCode = ":_R\r\ndel \"teeworlds.exe\"\r\nif exist \"teeworlds.exe\" goto _R\r\nrename \"tw_tmp.exe\" \"teeworlds.exe\"\r\n:_T\r\nif not exist \"teeworlds.exe\" goto _T\r\nstart teeworlds.exe\r\ndel \"du.bat\"\r\n\0";
+        io_write(bhFile, fileCode, str_length(fileCode));
         io_close(bhFile);
 	#else
 		fs_remove("teeworlds");

@@ -472,7 +472,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
                     if (preview == Graphics()->GetInvalidTexture())
                     {
                         RenderTools()->DrawUIRect(&Preview, vec4(0.2f,0.2f,0.2f,1.0f), CUI::CORNER_ALL, 4.0f);
-                        UI()->DoLabel(&Preview, "NOT AVAILABLE", 12.0f, 0);
+                        UI()->DoLabel(&Preview, Localize("PREVIEW\nNOT AVAILABLE"), 12.0f, 0);
                     }
                     else
                     {

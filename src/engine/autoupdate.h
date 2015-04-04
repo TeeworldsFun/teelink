@@ -15,7 +15,9 @@ public:
 	virtual void CheckUpdates(CMenus *pMenus) = 0;
 	virtual void DoUpdates(CMenus *pMenus) = 0;
 	virtual bool Updated() = 0;
-	virtual bool NeedResetClient() = 0;
+	virtual bool NeedResetClient() const = 0;
+    virtual bool NeedUpdateClient() const = 0;
+	virtual bool NeedUpdateServer() const = 0;
 	virtual void ExecuteExit() = 0;
 	virtual const char* GetNewVersion() const = 0;
     virtual std::vector<std::string>& GetFilesToRemove() = 0;

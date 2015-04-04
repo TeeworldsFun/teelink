@@ -1199,8 +1199,30 @@ int CMenus::Render()
             ListDownload.Margin(10.0f, &ListDownload);
             ListRemove.Margin(10.0f, &ListRemove);
 
-            str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), AutoUpdate()->GetFilesToDownload().size());
-            UiDoListboxStart(&s_DownloadList, &ListDownload, 24.0f, "TO DOWNLOAD", aBuff, AutoUpdate()->GetFilesToDownload().size(), 1, -1, s_ScrollDownloadValue);
+            unsigned numItems = AutoUpdate()->GetFilesToDownload().size();
+            if (AutoUpdate()->NeedUpdateClient()) numItems++;
+            if (AutoUpdate()->NeedUpdateServer()) numItems++;
+
+            str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), numItems);
+            UiDoListboxStart(&s_DownloadList, &ListDownload, 24.0f, "TO DOWNLOAD", aBuff, numItems, 1, -1, s_ScrollDownloadValue);
+
+            if (AutoUpdate()->NeedUpdateClient())
+            {
+                static const char *txtClient = Localize("New Client");
+                CListboxItem Item = UiDoListboxNextItem(txtClient);
+
+                if(Item.m_Visible)
+                    UI()->DoLabelScaled(&Item.m_Rect, txtClient, 16.0f, -1);
+            }
+
+            if (AutoUpdate()->NeedUpdateServer())
+            {
+                static const char *txtServer = Localize("New Server");
+                CListboxItem Item = UiDoListboxNextItem(txtServer);
+
+                if(Item.m_Visible)
+                    UI()->DoLabelScaled(&Item.m_Rect, txtServer, 16.0f, -1);
+            }
 
             for(std::vector<std::string>::iterator it=AutoUpdate()->GetFilesToDownload().begin(); it!=AutoUpdate()->GetFilesToDownload().end(); ++it)
             {
@@ -1846,12 +1868,15 @@ void CMenus::OnRender()
 		Render();
 
 	// render cursor
-	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CURSOR].m_Id);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(1,1,1,1);
-	IGraphics::CQuadItem QuadItem(mx, my, 24, 24);
-	Graphics()->QuadsDrawTL(&QuadItem, 1);
-	Graphics()->QuadsEnd();
+	if (!Graphics()->Tumbtail()) // H-Client
+	{
+        Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CURSOR].m_Id);
+        Graphics()->QuadsBegin();
+        Graphics()->SetColor(1,1,1,1);
+        IGraphics::CQuadItem QuadItem(mx, my, 24, 24);
+        Graphics()->QuadsDrawTL(&QuadItem, 1);
+        Graphics()->QuadsEnd();
+	}
 
 	// render debug information
 	if(g_Config.m_Debug)
@@ -1887,6 +1912,7 @@ void CMenus::RenderBackground()
 	float sh = 300;
 	Graphics()->MapScreen(0, 0, sw, sh);
 
+
 	// render background color
 	Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
@@ -1904,8 +1930,8 @@ void CMenus::RenderBackground()
 		Graphics()->QuadsDrawTL(&QuadItem, 1);
 	Graphics()->QuadsEnd();
 
-	// render splashtee
-	if (gs_TextureSplashTee != -1)
+	// H-Client: render splashtee
+	if (gs_TextureSplashTee != -1 && Client()->State() == IClient::STATE_OFFLINE)
 	{
         Graphics()->TextureSet(gs_TextureSplashTee);
         Graphics()->QuadsBegin();

@@ -20,7 +20,9 @@ public:
 	void DoUpdates(CMenus *pMenus);
 
 	bool Updated() { return m_Updated; }
-	bool NeedResetClient() { return m_NeedUpdateClient; }
+	bool NeedResetClient() const { return m_NeedUpdateClient; }
+	bool NeedUpdateClient() const { return m_NeedUpdateClient; }
+	bool NeedUpdateServer() const { return m_NeedUpdateServer; }
 	const char* GetNewVersion() const { return m_NewVersion; }
 	std::vector<std::string>& GetFilesToRemove() { return m_vToRemove; }
 	std::vector<std::string>& GetFilesToDownload() { return m_vToDownload; }

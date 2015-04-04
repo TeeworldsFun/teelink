@@ -474,9 +474,11 @@ void CGameClient::OnRender()
     if (g_Config.m_hcShowPreviewMap && m_TakeInitScreenShot && Client()->State() == IClient::STATE_ONLINE)
     {
         ServerBrowser()->UpdateServerInfo(g_Config.m_UiServerAddress);
-
-        char preview[255];
-        str_format(preview, sizeof(preview), "mappreviews/%s.png", Client()->GetCurrentMap());
+        char preview[255], mapName[255];
+        mem_zero(mapName, sizeof(mapName));
+        str_copy(mapName, Client()->GetCurrentMap(), sizeof(mapName));
+        str_sanitize_cc(mapName);
+        str_format(preview, sizeof(preview), "mappreviews/%s.png", mapName);
         Graphics()->TakeScreenshotFree(preview, true);
 
         m_pMenus->GetImageMapPreview(0);
