@@ -156,15 +156,31 @@ void CRenderTools::DrawRoundRect(float x, float y, float w, float h, float r)
 	DrawRoundRectExt(x,y,w,h,r,0xf);
 }
 
-void CRenderTools::DrawUIRect(const CUIRect *r, vec4 Color, int Corners, float Rounding)
+void CRenderTools::DrawUIRect(const CUIRect *pRect, vec4 Color, int Corners, float Rounding)
 {
 	Graphics()->TextureSet(-1);
 
 	// TODO: FIX US
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(Color.r, Color.g, Color.b, Color.a);
-	DrawRoundRectExt(r->x,r->y,r->w,r->h,Rounding*UI()->Scale(), Corners);
+	DrawRoundRectExt(pRect->x,pRect->y,pRect->w,pRect->h,Rounding*UI()->Scale(), Corners);
 	Graphics()->QuadsEnd();
+}
+
+void CRenderTools::DrawUIRect(const CUIRect *pRect, vec4 Colors[4]) // H-Client
+{
+    Graphics()->TextureSet(-1);
+
+    Graphics()->QuadsBegin();
+        IGraphics::CColorVertex Array[4] = {
+            IGraphics::CColorVertex(0, Colors[0].r, Colors[0].g, Colors[0].b, Colors[0].a),
+            IGraphics::CColorVertex(1, Colors[1].r, Colors[1].g, Colors[1].b, Colors[1].a),
+            IGraphics::CColorVertex(2, Colors[2].r, Colors[2].g, Colors[2].b, Colors[2].a),
+            IGraphics::CColorVertex(3, Colors[3].r, Colors[3].g, Colors[3].b, Colors[3].a)};
+        Graphics()->SetColorVertex(Array, 4);
+        IGraphics::CQuadItem QuadItem(pRect->x, pRect->y, pRect->w, pRect->h);
+        Graphics()->QuadsDrawTL(&QuadItem, 1);
+    Graphics()->QuadsEnd();
 }
 
 void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote, vec2 Dir, vec2 Pos)

@@ -1048,6 +1048,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 void CMenus::RenderSettingsHClient(CUIRect MainView)
 {
 	//char aBuf[128];
+    static vec4 s_HeaderColors[] = {HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), vec4(0.0f,0.0f,0.0f,0.0f), vec4(0.0f,0.0f,0.0f,0.0f), HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor)};
 	CUIRect PanelL, PanelR;
 	CUIRect StandartGame, DDRaceGame, HUDItem;
 
@@ -1056,7 +1057,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
     PanelR.VSplitLeft(10.0f, 0x0, &PanelR);
 
 	//TODO: Need be change...
-	float splitTop = 240.0f;
+	float splitTop = 260.0f;
     if (g_Config.m_hcLaserCustomColor)
         splitTop += 105.0f;
 
@@ -1074,8 +1075,10 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
     {
         //Head
         StandartGame.HSplitTop(ms_ListheaderHeight, &HUDItem, &StandartGame);
-        RenderTools()->DrawUIRect(&HUDItem, HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), CUI::CORNER_TR, 5.0f);
-        UI()->DoLabel(&HUDItem, Localize("General"), HUDItem.h*ms_FontmodHeight, 0);
+        HUDItem.VSplitLeft(400.0f, &HUDItem, 0x0);
+        RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
+        HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
+        UI()->DoLabel(&HUDItem, Localize("⚫·· General"), HUDItem.h*ms_FontmodHeight, -1);
 
         //H-Client HUD
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
@@ -1099,13 +1102,18 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 
         //Disable Chat Sound Notification
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
-        if(DoButton_CheckBox(&g_Config.m_hcDisableChatSoundNotification, Localize("Disable Chat Sound Notification"), g_Config.m_hcDisableChatSoundNotification, &HUDItem))
+        if(DoButton_CheckBox(&g_Config.m_hcDisableChatSoundNotification, Localize("Disable chat sound notification"), g_Config.m_hcDisableChatSoundNotification, &HUDItem))
             g_Config.m_hcDisableChatSoundNotification ^= 1;
 
         //Show Player Info
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
-        if(DoButton_CheckBox(&g_Config.m_hcPlayerInfo, Localize("Show Player Info"), g_Config.m_hcPlayerInfo, &HUDItem))
+        if(DoButton_CheckBox(&g_Config.m_hcPlayerInfo, Localize("Show player info"), g_Config.m_hcPlayerInfo, &HUDItem))
             g_Config.m_hcPlayerInfo ^= 1;
+
+        //Auto-Download Skins
+        StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+        if(DoButton_CheckBox(&g_Config.m_hcAutoDownloadSkins, Localize("Auto download skins (Thanks to DDNet Database)"), g_Config.m_hcAutoDownloadSkins, &HUDItem))
+            g_Config.m_hcAutoDownloadSkins ^= 1;
 
         //Dinamyc Camera Effect
         /*StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
@@ -1191,7 +1199,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         //LaserColorArea.HSplitTop(5.0f, 0, &LaserColorArea);
         LaserColorArea.HSplitTop(20.0f, &Text, &LaserColorArea);
         //Text.VSplitLeft(5.0f, 0, &Text);
-        if(DoButton_CheckBox(&g_Config.m_hcLaserCustomColor, Localize("Custom Laser Color"), g_Config.m_hcLaserCustomColor, &Text))
+        if(DoButton_CheckBox(&g_Config.m_hcLaserCustomColor, Localize("Custom laser color"), g_Config.m_hcLaserCustomColor, &Text))
             g_Config.m_hcLaserCustomColor ^= 1;
 
         //UI()->DoLabelScaled(&Text, Localize("Laser Color"), 14.0f, -1);
@@ -1228,12 +1236,13 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         StandartGame.HSplitTop(5.0f, 0, &StandartGame);
     }
 
-	// DDRace
+	// DDRace/DDNet
 	{
         DDRaceGame.HSplitTop(ms_ListheaderHeight, &HUDItem, &DDRaceGame);
         HUDItem.VSplitLeft(400.0f, &HUDItem, 0x0);
-        RenderTools()->DrawUIRect(&HUDItem, HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), CUI::CORNER_TR, 5.0f);
-        UI()->DoLabel(&HUDItem, "DDRace", HUDItem.h*ms_FontmodHeight, 0);
+        RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
+        HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
+        UI()->DoLabel(&HUDItem, "⚫·· DDRace/DDNet", HUDItem.h*ms_FontmodHeight, -1);
 
         CUIRect DDRaceGameB;
         DDRaceGame.VSplitMid(&DDRaceGame, &DDRaceGameB);
@@ -1243,15 +1252,19 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             g_Config.m_ddrShowHiddenWays ^= 1;
 
         DDRaceGameB.HSplitTop(20.0f, &HUDItem, &DDRaceGameB);
-        if(DoButton_CheckBox(&g_Config.m_ddrShowTeeDirection, Localize("View Tee Direction"), g_Config.m_ddrShowTeeDirection, &HUDItem))
+        if(DoButton_CheckBox(&g_Config.m_ddrShowTeeDirection, Localize("View tee direction"), g_Config.m_ddrShowTeeDirection, &HUDItem))
             g_Config.m_ddrShowTeeDirection ^= 1;
+
+        DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
+        if(DoButton_CheckBox(&g_Config.m_ddrPreventPrediction, Localize("Prevent prediction when you are 'frozen' (experimental)"), g_Config.m_ddrPreventPrediction, &HUDItem))
+            g_Config.m_ddrPreventPrediction ^= 1;
 
         CUIRect Edit;
         static float Offset = 0.0f;
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
         HUDItem.VSplitLeft(135.0f, &HUDItem, &Edit);
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-        UI()->DoLabelScaled(&HUDItem, Localize("Eyes Time (Secs.):"), 14.0f, -1);
+        UI()->DoLabelScaled(&HUDItem, Localize("Eyes time (Secs.):"), 14.0f, -1);
         DoEditBox(&g_Config.m_hcEyesSelectorTime, &Edit, g_Config.m_hcEyesSelectorTime, sizeof(g_Config.m_hcEyesSelectorTime), 12.0f, &Offset, false, CUI::CORNER_ALL);
 	}
 

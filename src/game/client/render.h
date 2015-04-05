@@ -64,6 +64,7 @@ public:
 	void DrawRoundRectExt(float x, float y, float w, float h, float r, int Corners);
 
 	void DrawUIRect(const CUIRect *pRect, vec4 Color, int Corners, float Rounding);
+	void DrawUIRect(const CUIRect *pRect, vec4 Colors[4]); // H-Client
 
 	// larger rendering methods
 	void RenderTilemapGenerateSkip(class CLayers *pLayers);

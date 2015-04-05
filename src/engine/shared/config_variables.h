@@ -114,6 +114,7 @@ MACRO_CONFIG_INT(DbgResizable, dbg_resizable, 0, 0, 0, CFGFLAG_CLIENT, "Enables 
 //MACRO_CONFIG_INT(hc3DRender, hc_3d_render, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enables/Disable 3D Render")
 MACRO_CONFIG_INT(hcVersionCode, hc_version_code, 1, 1, 99, CFGFLAG_SAVE|CFGFLAG_CLIENT, "H-Client Version Code")
 MACRO_CONFIG_INT(hcAutoUpdate, hc_auto_update, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update")
+MACRO_CONFIG_INT(hcAutoDownloadSkins, hc_auto_download_skins, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins from DDNet Database")
 MACRO_CONFIG_INT(hcUseHUD, hc_use_hud, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Uses H-Client HUD")
 MACRO_CONFIG_INT(hcColorClan, hc_color_clan, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "HighLight Clan Members")
 MACRO_CONFIG_INT(hcChatEmoticons, hc_chat_emoticons, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat emoticons")
@@ -136,6 +137,7 @@ MACRO_CONFIG_STR(hcEyesSelectorTime, hc_eyes_selector_time, 4, "3", CFGFLAG_CLIE
 
 MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")
 MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")
+MACRO_CONFIG_INT(ddrPreventPrediction, ddr_prevent_prediction, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Prevent Predection When Freeze")
 // Theme Vars
 MACRO_CONFIG_STR(hcTheme, theme, 25, "default", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
 

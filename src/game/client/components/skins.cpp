@@ -173,7 +173,7 @@ int CSkins::Find(const char *pName, bool tryDownload)
 			return i;
 	}
 
-    if (tryDownload) // H-Client
+    if (g_Config.m_hcAutoDownloadSkins && tryDownload) // H-Client
     {
         InfoDownloadSkinThread *pInfoDownloadSkinThread = new InfoDownloadSkinThread;
         pInfoDownloadSkinThread->m_pSkins = this;

@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "gamecore.h"
+#include <engine/shared/config.h> // H-Client
 
 const char *CTuningParams::m_apNames[] =
 {
@@ -123,7 +124,7 @@ void CCharacterCore::Tick(bool UseInput)
 		m_Angle = (int)(a*256.0f);
 
 		// handle jump
-		if(m_Input.m_Jump && !m_Freezes && !m_InTileFreeze) // H-Client: DDNet
+		if((g_Config.m_ddrPreventPrediction && m_Input.m_Jump && !m_Freezes && !m_InTileFreeze) || (!g_Config.m_ddrPreventPrediction && m_Input.m_Jump)) // H-Client: DDNet
 		{
 			if(!(m_Jumped&1))
 			{
@@ -145,7 +146,7 @@ void CCharacterCore::Tick(bool UseInput)
 			m_Jumped &= ~1;
 
 		// handle hook
-		if(m_Input.m_Hook && !m_Freezes && !m_InTileFreeze) // H-Client: DDNet
+		if((g_Config.m_ddrPreventPrediction && m_Input.m_Hook && !m_Freezes && !m_InTileFreeze) || (!g_Config.m_ddrPreventPrediction && m_Input.m_Hook)) // H-Client: DDNet
 		{
 			if(m_HookState == HOOK_IDLE)
 			{
@@ -167,7 +168,7 @@ void CCharacterCore::Tick(bool UseInput)
 
 	// add the speed modification according to players wanted direction
 	// H-Client: DDNet
-	if (m_Freezes || m_InTileFreeze)
+	if (g_Config.m_ddrPreventPrediction && (m_Freezes || m_InTileFreeze))
         m_Vel.x *= Friction;
     else
     {

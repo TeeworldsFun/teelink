@@ -256,7 +256,7 @@ bool CAutoUpdate::GetFile(const char *url, const char *path)
 	net_tcp_send(Socket, aNetBuff, str_length(aNetBuff));
 
 	//read data
-	IOHANDLE dstFile;
+	IOHANDLE dstFile = 0;
 
 	std::string NetData;
 	int TotalRecv = 0, TotalBytes = 0, CurrentRecv = 0, enterCtrl = 0;

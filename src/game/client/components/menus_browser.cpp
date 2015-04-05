@@ -468,16 +468,18 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 
                 if (g_Config.m_hcShowPreviewMap)
                 {
-                    int preview = GetImageMapPreview(pItem->m_aMap);
-                    if (preview == Graphics()->GetInvalidTexture())
+                    int previewImgID = GetImageMapPreview(pItem->m_aMap);
+                    if (previewImgID == Graphics()->GetInvalidTexture())
                     {
                         RenderTools()->DrawUIRect(&Preview, vec4(0.2f,0.2f,0.2f,1.0f), CUI::CORNER_ALL, 4.0f);
-                        UI()->DoLabel(&Preview, Localize("PREVIEW\nNOT AVAILABLE"), 12.0f, 0);
+                        CUIRect label = Preview;
+                        label.y+=Preview.h/2.0f - 16.0f;
+                        UI()->DoLabel(&label, Localize("     PREVIEW\nNOT AVAILABLE"), 12.0f, 0);
                     }
                     else
                     {
                         IGraphics::CQuadItem QuadItem(Preview.x, Preview.y, Preview.w, Preview.h);
-                        Graphics()->TextureSet(preview);
+                        Graphics()->TextureSet(previewImgID);
                         Graphics()->QuadsBegin();
                             Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
                             Graphics()->QuadsDrawTL(&QuadItem, 1);
