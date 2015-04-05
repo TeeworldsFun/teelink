@@ -6,6 +6,8 @@
 #include <algorithm>
 #if defined(CONF_FAMILY_UNIX)
     #include <unistd.h>
+#elif defined(CONF_FAMILY_WINDOWS)
+    #include <windows.h>
 #endif
 #include <engine/external/json-parser/json.h>
 #include <engine/shared/config.h>
@@ -70,7 +72,7 @@ void CAutoUpdate::AddFileToRemove(const char *pFile)
 
 void CAutoUpdate::ExecuteExit()
 {
-	if (!NeedResetClient())
+	if (!NeedResetClient() || !m_Updated)
 		return
 
 	dbg_msg("autoupdate", "Executing pre-quiting...");
@@ -231,6 +233,8 @@ bool CAutoUpdate::GetFile(const char *url, const char *path)
 {
 	NETSOCKET Socket = invalid_socket;
 	NETADDR HostAddress, BindAddr;
+    mem_zero(&HostAddress, sizeof(HostAddress));
+    mem_zero(&BindAddr, sizeof(BindAddr));
 	char aNetBuff[1024];
 
 	//Lookup

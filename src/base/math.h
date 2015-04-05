@@ -20,12 +20,16 @@ inline float sign(float f)
 	return f<0.0f?-1.0f:1.0f;
 }
 
+// H-Client (round defined in MSVC++ 11.0 or higher)
+#if !defined(_MSC_VER) || _MSC_VER <= 1600
 inline int round(float f)
 {
 	if(f > 0)
 		return (int)(f+0.5f);
 	return (int)(f-0.5f);
 }
+#endif
+//
 
 template<typename T, typename TB>
 inline T mix(const T a, const T b, TB amount)

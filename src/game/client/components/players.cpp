@@ -374,10 +374,6 @@ void CPlayers::RenderPlayer(
 
             Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 
-            // Collide with characters?
-            if (m_pClient->IntersectCharacter(orgPos, curPos, &curPos, pPlayerInfo->m_ClientID) != -1)
-                Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
-
             // Collide with walls or special tiles?
             int teleNr = 0;
             Hit = Collision()->IntersectLineTeleHook(orgPos, curPos, &curPos, 0, &teleNr, true);
@@ -393,6 +389,13 @@ void CPlayers::RenderPlayer(
                     teleHook = true;
                     bounces++;
                 }
+            }
+
+            // Collide with characters?
+            if (m_pClient->IntersectCharacter(orgPos, curPos, &curPos, pPlayerInfo->m_ClientID) != -1)
+            {
+                Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
+                teleHook = false;
             }
 
             // Don't draw 0 length lines
