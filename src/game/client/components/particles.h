@@ -22,6 +22,7 @@ struct CParticle
 		m_Color = vec4(1,1,1,1);
 		m_Collide = false; // H-Client
 		m_ToBlack = false; // H-Client
+		m_Type = 0; // H-Client
 	}
 
 	vec2 m_Pos;

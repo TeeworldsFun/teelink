@@ -571,6 +571,11 @@ public:
 		m_SelectedEnvelopePoint = -1;
 
 		ms_pUiGotContext = 0;
+
+		// H-Client
+		m_SelectedEditorEnvelopeChannel = -1;
+		m_SelectedEditorEnvelopePoint = -1;
+		//
 	}
 
 	virtual void Init();
@@ -694,6 +699,11 @@ public:
 	int m_SelectedEnvelopePoint;
     int m_SelectedQuadEnvelope;
 	int m_SelectedImage;
+
+	// H-Client
+	int m_SelectedEditorEnvelopeChannel;
+	int m_SelectedEditorEnvelopePoint;
+	//
 
 	int m_CheckerTexture;
 	int m_BackgroundTexture;

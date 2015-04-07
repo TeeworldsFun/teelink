@@ -73,11 +73,10 @@ void CAutoUpdate::AddFileToRemove(const char *pFile)
 void CAutoUpdate::ExecuteExit()
 {
 	if (!NeedResetClient() || !m_Updated)
-		return
-
-	dbg_msg("autoupdate", "Executing pre-quiting...");
+		return;
 
     SelfDelete();
+
     #ifdef CONF_FAMILY_WINDOWS
         ShellExecuteA(0,0,"du.bat",0,0,SW_HIDE);
     #else
@@ -94,8 +93,6 @@ void CAutoUpdate::ExecuteExit()
             argv[0] = NULL;
             execv("teeworlds", argv);
         }
-        else if (pid > 0)
-            return;
         else
             return;
     #endif
@@ -191,10 +188,16 @@ void CAutoUpdate::DoUpdates(CMenus *pMenus)
     if (m_NeedUpdateClient)
     {
         #ifdef CONF_FAMILY_WINDOWS
-            if (!GetFile("teeworlds.exe", "tw_tmp"))
+            #ifdef CONF_PLATFORM_WIN64
+                if (!GetFile("teeworlds64.exe", "tw_tmp"))
+            #else
+                if (!GetFile("teeworlds.exe", "tw_tmp"))
+            #endif
         #elif defined(CONF_FAMILY_UNIX)
             #ifdef CONF_PLATFORM_MACOSX
                 if (!GetFile("teeworlds_mac", "tw_tmp"))
+            #elif defined(CONF_ARCH_IA64) || defined(CONF_ARCH_AMD64)
+                if (!GetFile("teeworlds64", "tw_tmp"))
             #else
                 if (!GetFile("teeworlds", "tw_tmp"))
             #endif
@@ -207,14 +210,21 @@ void CAutoUpdate::DoUpdates(CMenus *pMenus)
     if (m_NeedUpdateServer)
     {
         #ifdef CONF_FAMILY_WINDOWS
-            if (!GetFile("teeworlds_srv.exe", "teeworlds_srv.exe")){
+            #ifdef CONF_PLATFORM_WIN64
+                if (!GetFile("teeworlds_srv64.exe", "teeworlds_srv.exe"))
+            #else
+                if (!GetFile("teeworlds_srv.exe", "teeworlds_srv.exe"))
+            #endif
         #elif defined(CONF_FAMILY_UNIX)
             #ifdef CONF_PLATFORM_MACOSX
-                if (!GetFile("teeworlds_srv_mac", "teeworlds_srv")){
+                if (!GetFile("teeworlds_srv_mac", "teeworlds_srv"))
+            #elif defined(CONF_ARCH_IA64) || defined(CONF_ARCH_AMD64)
+                if (!GetFile("teeworlds_srv64", "teeworlds_srv"))
             #else
-                if (!GetFile("teeworlds_srv", "teeworlds_srv")){
+                if (!GetFile("teeworlds_srv", "teeworlds_srv"))
             #endif
         #endif
+        {
             noErrors = false;
         }
     }

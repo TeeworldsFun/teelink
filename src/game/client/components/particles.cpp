@@ -260,10 +260,10 @@ void CParticles::RenderGroup(int Group)
 			m_aParticles[i].m_Color.a); // pow(a, 0.75f) *
 
         IGraphics::CQuadItem QuadItem(p.x, p.y, Size, Size);
-
         Graphics()->QuadsDraw(&QuadItem, 1);
 
         Graphics()->QuadsEnd();
+
 		if (m_aParticles[i].m_Type == PARTICLE_BLOOD_L)
             Graphics()->ClipDisable();
 

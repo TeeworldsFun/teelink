@@ -3593,6 +3593,14 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 	if(m_SelectedEnvelope >= 0 && m_SelectedEnvelope < m_Map.m_lEnvelopes.size())
 		pEnvelope = m_Map.m_lEnvelopes[m_SelectedEnvelope];
 
+    // H-Client
+    if (pEnvelope && m_SelectedEditorEnvelopePoint >= pEnvelope->m_lPoints.size())
+    {
+        m_SelectedEditorEnvelopeChannel = -1;
+        m_SelectedEditorEnvelopePoint = -1;
+    }
+    //
+
 	CUIRect ToolBar, CurveBar, ColorBar;
 	View.HSplitTop(15.0f, &ToolBar, &View);
 	View.HSplitTop(15.0f, &CurveBar, &View);
@@ -3634,6 +3642,11 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 				if(m_SelectedEnvelope >= m_Map.m_lEnvelopes.size())
 					m_SelectedEnvelope = m_Map.m_lEnvelopes.size()-1;
 				pEnvelope = m_SelectedEnvelope >= 0 ? m_Map.m_lEnvelopes[m_SelectedEnvelope] : 0;
+
+				// H-Client
+                m_SelectedEditorEnvelopeChannel = -1;
+                m_SelectedEditorEnvelopePoint = -1;
+				//
 			}
 		}
 
@@ -3662,11 +3675,25 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 
 		static int s_PrevButton = 0;
 		if(DoButton_ButtonDec(&s_PrevButton, 0, 0, &Dec, 0, "Previous Envelope"))
+		{
 			m_SelectedEnvelope--;
+
+            // H-Client
+            m_SelectedEditorEnvelopeChannel = -1;
+            m_SelectedEditorEnvelopePoint = -1;
+            //
+        }
 
 		static int s_NextButton = 0;
 		if(DoButton_ButtonInc(&s_NextButton, 0, 0, &Inc, 0, "Next Envelope"))
+		{
 			m_SelectedEnvelope++;
+
+            // H-Client
+            m_SelectedEditorEnvelopeChannel = -1;
+            m_SelectedEditorEnvelopePoint = -1;
+            //
+        }
 
 		if(pEnvelope)
 		{
@@ -3885,8 +3912,23 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 			Graphics()->QuadsEnd();
 		}
 
+		// H-Client: render time line
+		if (m_Animate)
+		{
+            float cTime = fmod((m_AnimateTime*m_AnimateSpeed), EndTime);
+            float offset = (cTime*View.w)/EndTime;
+
+            Graphics()->TextureSet(-1);
+			Graphics()->LinesBegin();
+            IGraphics::CLineItem LineItem(View.x + offset, View.y, View.x + offset, View.y+View.h);
+            Graphics()->LinesDraw(&LineItem, 1);
+            Graphics()->LinesEnd();
+		}
+		//
+
 		// render handles
 		{
+            bool insideSelector = false;
 			int CurrentValue = 0, CurrentTime = 0;
 
 			Graphics()->TextureSet(-1);
@@ -3907,6 +3949,13 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 					Final.y -= 2.0f;
 					Final.w = 4.0f;
 					Final.h = 4.0f;
+
+                    if(i == m_SelectedEditorEnvelopePoint && c == m_SelectedEditorEnvelopeChannel)
+                    {
+                        Graphics()->SetColor(1,1,1,1);
+                        IGraphics::CQuadItem QuadItem(Final.x+Final.w/2, Final.y+Final.h/2, 7.0f, 7.0f);
+                        Graphics()->QuadsDraw(&QuadItem, 1);
+                    }
 
 					void *pID = &pEnvelope->m_lPoints[i].m_aValues[c];
 
@@ -3952,6 +4001,11 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 							m_ShowEnvelopePreview = 1;
 							m_SelectedEnvelopePoint = i;
 							m_Map.m_Modified = true;
+
+							// H-Client
+							m_SelectedEditorEnvelopePoint = i;
+                            m_SelectedEditorEnvelopeChannel = c;
+                            //
 						}
 
 						ColorMod = 100.0f;
@@ -3961,6 +4015,11 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 					{
 						if(UI()->MouseButton(0))
 						{
+                            // H-Client
+                            if (i < m_SelectedEditorEnvelopePoint)
+                                m_SelectedEditorEnvelopePoint++;
+                            //
+
 							Selection.clear();
 							Selection.add(i);
 							UI()->SetActiveItem(pID);
@@ -3969,6 +4028,15 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 						// remove point
 						if(UI()->MouseButtonClicked(1))
 						{
+                            // H-Client
+                            if (i == m_SelectedEditorEnvelopePoint)
+                            {
+                                m_SelectedEditorEnvelopeChannel = -1;
+                                m_SelectedEditorEnvelopePoint = -1;
+                            } else if (i < m_SelectedEditorEnvelopePoint)
+                                m_SelectedEditorEnvelopePoint--;
+                            //
+
 							pEnvelope->m_lPoints.remove_index(i);
 							m_Map.m_Modified = true;
 						}
@@ -3983,6 +4051,7 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 					{
 						CurrentTime = pEnvelope->m_lPoints[i].m_Time;
 						CurrentValue = pEnvelope->m_lPoints[i].m_aValues[c];
+						insideSelector = true; // H-Client
 					}
 
 					if (m_SelectedQuadEnvelope == m_SelectedEnvelope && m_SelectedEnvelopePoint == i)
@@ -3995,9 +4064,64 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 			}
 			Graphics()->QuadsEnd();
 
-			char aBuf[512];
-			str_format(aBuf, sizeof(aBuf),"%.3f %.3f", CurrentTime/1000.0f, fx2f(CurrentValue));
-			UI()->DoLabel(&ToolBar, aBuf, 10.0f, 0, -1);
+            // H-Client
+            if (!insideSelector && m_SelectedEditorEnvelopeChannel != -1 && m_SelectedEditorEnvelopePoint != -1)
+            {
+                CurrentTime = pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint].m_Time;
+                CurrentValue = pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint].m_aValues[m_SelectedEditorEnvelopeChannel];
+
+                if (UI()->MouseInside(&View) && UI()->MouseButton(0))
+                {
+                    m_SelectedEditorEnvelopeChannel = -1;
+                    m_SelectedEditorEnvelopePoint = -1;
+                }
+            }
+
+            static float s_CTBoxID = 0;
+            static float s_CVBoxID = 0;
+            CUIRect rCurrentTime, rCurrentValue;
+			char aBuf[25];
+
+            ToolBar.VSplitLeft(80.0f, 0x0, &ToolBar);
+            ToolBar.VSplitLeft(70.0f, &rCurrentTime, &ToolBar);
+            ToolBar.VSplitLeft(5.0f, 0x0, &ToolBar);
+            ToolBar.VSplitLeft(70.0f, &rCurrentValue, &ToolBar);
+
+			str_format(aBuf, sizeof(aBuf),"%.3f", CurrentTime/1000.0f);
+            if(DoEditBox(&s_CTBoxID, &rCurrentTime, aBuf, sizeof(aBuf), 10.0f, &s_CTBoxID))
+            {
+                for(int i = 0; aBuf[i]; ++i)
+                    if(aBuf[i] < '.' || aBuf[i] > '9' || aBuf[i] == '/')
+                        str_copy(&aBuf[i], &aBuf[i+1], (int)(sizeof(aBuf))-i);
+
+                if (m_SelectedEditorEnvelopePoint > 0)
+                {
+                    float val = atof(aBuf);
+                    int resVal = (int)(val * 1000.0f);
+
+                    if (resVal < pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint-1].m_Time)
+                        pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint].m_Time = pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint-1].m_Time;
+                    else if (m_SelectedEditorEnvelopePoint+1 < pEnvelope->m_lPoints.size() && resVal > pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint+1].m_Time)
+                        pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint].m_Time = pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint+1].m_Time;
+                    else
+                        pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint].m_Time = resVal;
+                }
+            }
+
+            str_format(aBuf, sizeof(aBuf),"%.3f", fx2f(CurrentValue));
+            if(DoEditBox(&s_CVBoxID, &rCurrentValue, aBuf, sizeof(aBuf), 10.0f, &s_CVBoxID))
+            {
+                for(int i = 0; aBuf[i]; ++i)
+                    if(aBuf[i] < '.' || aBuf[i] > '9' || aBuf[i] == '/')
+                        str_copy(&aBuf[i], &aBuf[i+1], (int)(sizeof(aBuf))-i);
+
+                if (m_SelectedEditorEnvelopePoint != -1)
+                {
+                    float val = atof(aBuf);
+                    pEnvelope->m_lPoints[m_SelectedEditorEnvelopePoint].m_aValues[m_SelectedEditorEnvelopeChannel] = f2fx(val);
+                }
+            }
+            //
 		}
 	}
 }
@@ -4219,7 +4343,7 @@ void CEditor::Render()
 
 		View.HSplitTop(16.0f, &MenuBar, &View);
 		View.HSplitTop(53.0f, &ToolBar, &View);
-		View.VSplitLeft(100.0f, &ToolBox, &View);
+		View.VSplitLeft(110.0f, &ToolBox, &View);
 		View.HSplitBottom(16.0f, &View, &StatusBar);
 
 		if(m_ShowEnvelopeEditor && !m_ShowPicker)
@@ -4299,7 +4423,7 @@ void CEditor::Render()
 		RenderMenubar(MenuBar);
 
 		RenderModebar(CModeBar);
-		if(m_ShowEnvelopeEditor)
+		if(m_ShowEnvelopeEditor && !m_ShowPicker) // H-Client
 			RenderEnvelopeEditor(EnvelopeEditor);
 	}
 
@@ -4400,6 +4524,11 @@ void CEditor::Reset(bool CreateDefault)
 	m_Map.m_Modified = false;
 
 	m_ShowEnvelopePreview = 0;
+
+	// H-Client
+	m_SelectedEditorEnvelopeChannel = -1;
+	m_SelectedEditorEnvelopePoint = -1;
+	//
 }
 
 int CEditor::GetLineDistance()
