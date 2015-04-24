@@ -74,6 +74,16 @@ inline float GetAngle(vec2 Dir)
 	return a;
 }
 
+// H-Client
+inline float GetAngleDegrees(vec2 posA, vec2 posB)
+{
+    float deltaX = posB.x - posA.x;
+    float deltaY = posB.y - posA.y;
+
+    return atan2(deltaY, deltaX) * 180 / M_PI;
+}
+//
+
 inline void StrToInts(int *pInts, int Num, const char *pStr)
 {
 	int Index = 0;

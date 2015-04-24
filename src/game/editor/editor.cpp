@@ -526,6 +526,18 @@ int CEditor::DoButton_Editor_Common(const void *pID, const char *pText, int Chec
 	//return UI()->DoButton(id, text, checked, r, draw_func, 0);
 }
 
+int CEditor::DoButton_Editor(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, vec4 color)
+{
+	RenderTools()->DrawUIRect(pRect, color, CUI::CORNER_ALL, 3.0f);
+	CUIRect NewRect = *pRect;
+	NewRect.y += NewRect.h/2.0f-7.0f;
+	float tw = min(TextRender()->TextWidth(0, 10.0f, pText, -1), NewRect.w);
+	CTextCursor Cursor;
+	TextRender()->SetCursor(&Cursor, NewRect.x + NewRect.w/2-tw/2, NewRect.y - 1.0f, 10.0f, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
+	Cursor.m_LineWidth = NewRect.w;
+	TextRender()->TextEx(&Cursor, pText, -1);
+	return DoButton_Editor_Common(pID, pText, Checked, pRect, Flags, pToolTip);
+}
 
 int CEditor::DoButton_Editor(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip)
 {
@@ -907,12 +919,47 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 	// animation button
 	TB_Top.VSplitLeft(40.0f, &Button, &TB_Top);
 	static int s_AnimateButton = 0;
-	if(DoButton_Editor(&s_AnimateButton, "Anim", m_Animate, &Button, 0, "[ctrl+m] Toggle animation") ||
-		(Input()->KeyDown('m') && (Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL))))
+	bool dotask = false;
+	if(m_AnimatePaused && m_Animate)
 	{
-		m_AnimateStart = time_get();
-		m_Animate = !m_Animate;
-	}
+        if (DoButton_Editor(&s_AnimateButton, "Anim", m_Animate, &Button, 0, "[ctrl+m] Toggle animation", vec4(0.3f, 0.23f, 0.7f, 1.0f)) || (Input()->KeyDown('m') && (Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL))))
+            dotask = true;
+    } else
+    {
+        if (DoButton_Editor(&s_AnimateButton, "Anim", m_Animate, &Button, 0, "[ctrl+m] Toggle animation") || (Input()->KeyDown('m') && (Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL))))
+            dotask = true;
+    }
+
+    if (dotask)
+    {
+        m_AnimateStart = time_get();
+        m_Animate = !m_Animate;
+
+        if (!m_Animate)
+        {
+            m_AnimatePaused = false;
+            m_AnimatePausedTime = 0;
+        }
+    }
+
+	// H-Client: pause handle
+	static bool pausePressed = false;
+	if (Input()->KeyPressed(KEY_SPACE) && GetSelectedLayerType(0, LAYERTYPE_QUADS))
+	{
+        if (!pausePressed)
+        {
+            if (m_Animate)
+                m_AnimatePaused = !m_AnimatePaused;
+
+            if (!m_AnimatePaused)
+                m_AnimateStart += time_get() - m_AnimatePausedTime;
+            else
+                m_AnimatePausedTime = time_get();
+        }
+
+        pausePressed = true;
+	} else
+        pausePressed = false;
 
 	TB_Top.VSplitLeft(5.0f, 0, &TB_Top);
 
@@ -1776,8 +1823,15 @@ void CEditor::DoQuadEnvPoint(const CQuad *pQuad, int QIndex, int PIndex)
 
 void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 {
+    // H-Client
+    static bool drawing = false;
+    static int64 startDrawingTime = 0;
+    static vec2 startPosition;
+    static vec2 lastPos;
+    //
+
 	// render all good stuff
-	if(!m_ShowPicker)
+	if(!m_ShowPicker || m_ModeDrawRoute)
 	{
 		for(int g = 0; g < m_Map.m_lGroups.size(); g++)
 		{
@@ -1918,207 +1972,283 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 			}
 		}
 
-		// brush editing
-		if(UI()->HotItem() == s_pEditorID)
+		if (m_ModeDrawRoute) // H-Client
 		{
-			if(m_Brush.IsEmpty())
-				m_pTooltip = "Use left mouse button to drag and create a brush.";
-			else
-				m_pTooltip = "Use left mouse button to paint with the brush. Right button clears the brush.";
+            CEnvelope *pEnvelope = 0;
+            if(m_SelectedEnvelope >= 0 && m_SelectedEnvelope < m_Map.m_lEnvelopes.size())
+                pEnvelope = m_Map.m_lEnvelopes[m_SelectedEnvelope];
 
-			if(UI()->ActiveItem() == s_pEditorID)
-			{
-				CUIRect r;
-				r.x = s_StartWx;
-				r.y = s_StartWy;
-				r.w = wx-s_StartWx;
-				r.h = wy-s_StartWy;
-				if(r.w < 0)
-				{
-					r.x += r.w;
-					r.w = -r.w;
-				}
+            if (pEnvelope)
+            {
+                if (UI()->MouseButton(0))
+                {
+                    vec2 mousePos = vec2(UI()->MouseWorldX(), UI()->MouseWorldY());
+                    UI()->SetActiveItem(s_pEditorID);
 
-				if(r.h < 0)
-				{
-					r.y += r.h;
-					r.h = -r.h;
-				}
+                    if (!drawing)
+                    {
+                        startDrawingTime = time_get();
+                        pEnvelope->m_lPoints.clear();
+                        startPosition = mousePos;
+                        pEnvelope->AddPoint(0, 0);
+                        lastPos = vec2(0, 0);
+                    }
+                    else
+                    {
+                        vec2 currentPos = vec2(mousePos.x-startPosition.x, mousePos.y-startPosition.y);
+                        float angleAB = 0.0f, angleAC = 0.0f;
 
-				if(s_Operation == OP_BRUSH_DRAW)
-				{
-					if(!m_Brush.IsEmpty())
-					{
-						// draw with brush
-						for(int k = 0; k < NumEditLayers; k++)
-						{
-							if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[0]->m_Type)
-								pEditLayers[k]->BrushDraw(m_Brush.m_lLayers[0], wx, wy);
-						}
-					}
-				}
-				else if(s_Operation == OP_BRUSH_GRAB)
-				{
-					if(!UI()->MouseButton(0))
-					{
-						// grab brush
-						char aBuf[256];
-						str_format(aBuf, sizeof(aBuf),"grabbing %f %f %f %f", r.x, r.y, r.w, r.h);
-						Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
+                        int numPoints = pEnvelope->m_lPoints.size();
+                        if (numPoints > 1)
+                        {
+                            angleAB = GetAngleDegrees(vec2(fx2f(pEnvelope->m_lPoints[numPoints-2].m_aValues[0]), fx2f(pEnvelope->m_lPoints[numPoints-2].m_aValues[1])), vec2(fx2f(pEnvelope->m_lPoints[numPoints-1].m_aValues[0]), fx2f(pEnvelope->m_lPoints[numPoints-1].m_aValues[1])));
+                            angleAC = GetAngleDegrees(vec2(fx2f(pEnvelope->m_lPoints[numPoints-2].m_aValues[0]), fx2f(pEnvelope->m_lPoints[numPoints-2].m_aValues[1])), currentPos);
 
-						// TODO: do all layers
-						int Grabs = 0;
-						for(int k = 0; k < NumEditLayers; k++)
-							Grabs += pEditLayers[k]->BrushGrab(&m_Brush, r);
-						if(Grabs == 0)
-							m_Brush.Clear();
-					}
-					else
-					{
-						//editor.map.groups[selected_group]->mapscreen();
-						for(int k = 0; k < NumEditLayers; k++)
-							pEditLayers[k]->BrushSelecting(r);
-						Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
-					}
-				}
-				else if(s_Operation == OP_BRUSH_PAINT)
-				{
-					if(!UI()->MouseButton(0))
-					{
-						for(int k = 0; k < NumEditLayers; k++)
-							pEditLayers[k]->FillSelection(m_Brush.IsEmpty(), m_Brush.m_lLayers[0], r);
-					}
-					else
-					{
-						//editor.map.groups[selected_group]->mapscreen();
-						for(int k = 0; k < NumEditLayers; k++)
-							pEditLayers[k]->BrushSelecting(r);
-						Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
-					}
-				}
-			}
-			else
-			{
-				if(UI()->MouseButton(1))
-					m_Brush.Clear();
+                            if (currentPos != lastPos && absolute(angleAC-angleAB) > g_Config.m_hcEditorDrawRouteAccuracy)
+                            {
+                                pEnvelope->AddPoint((time_get()-startDrawingTime)/1000.0f, f2fx(currentPos.x), f2fx(currentPos.y), 0);
+                                lastPos = currentPos;
+                            }
+                        }
+                        else if (currentPos != lastPos) // FIX: We need add some points to start calculate route... :/
+                            pEnvelope->AddPoint((time_get()-startDrawingTime)/1000.0f, f2fx(currentPos.x), f2fx(currentPos.y), 0);
+                    }
 
-				if(UI()->MouseButton(0) && s_Operation == OP_NONE)
-				{
-					UI()->SetActiveItem(s_pEditorID);
 
-					if(m_Brush.IsEmpty())
-						s_Operation = OP_BRUSH_GRAB;
-					else
-					{
-						s_Operation = OP_BRUSH_DRAW;
-						for(int k = 0; k < NumEditLayers; k++)
-						{
-							if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[0]->m_Type)
-								pEditLayers[k]->BrushPlace(m_Brush.m_lLayers[0], wx, wy);
-						}
+                    // Render Visible Line
+                    if (pEnvelope->m_lPoints.size() > 0)
+                    {
+                        int numLines = pEnvelope->m_lPoints.size();
+                        IGraphics::CLineItem ArrayLine[numLines];
+                        for (int k=0, j=0; j<pEnvelope->m_lPoints.size()-1; k++,j++)
+                            ArrayLine[k] = IGraphics::CLineItem(startPosition.x+fx2f(pEnvelope->m_lPoints[j].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[j].m_aValues[1]), startPosition.x+fx2f(pEnvelope->m_lPoints[j+1].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[j+1].m_aValues[1]));
 
-					}
+                        ArrayLine[numLines-1] = IGraphics::CLineItem(startPosition.x+fx2f(pEnvelope->m_lPoints[pEnvelope->m_lPoints.size()-1].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[pEnvelope->m_lPoints.size()-1].m_aValues[1]), UI()->MouseWorldX(), UI()->MouseWorldY());
 
-					CLayerTiles *pLayer = (CLayerTiles*)GetSelectedLayerType(0, LAYERTYPE_TILES);
-					if((Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT)) && pLayer)
-						s_Operation = OP_BRUSH_PAINT;
-				}
+                        Graphics()->TextureSet(-1);
+                        Graphics()->LinesBegin();
+                        Graphics()->SetColor(.0f, .0f, .0f, 1.0f);
+                        Graphics()->LinesDraw(ArrayLine, numLines);
+                        Graphics()->LinesEnd();
+                    }
 
-				if(!m_Brush.IsEmpty())
-				{
-					m_Brush.m_OffsetX = -(int)wx;
-					m_Brush.m_OffsetY = -(int)wy;
-					for(int i = 0; i < m_Brush.m_lLayers.size(); i++)
-					{
-						if(m_Brush.m_lLayers[i]->m_Type == LAYERTYPE_TILES)
-						{
-							m_Brush.m_OffsetX = -(int)(wx/32.0f)*32;
-							m_Brush.m_OffsetY = -(int)(wy/32.0f)*32;
-							break;
-						}
-					}
 
-					CLayerGroup *g = GetSelectedGroup();
-					if(g)
-					{
-						m_Brush.m_OffsetX += g->m_OffsetX;
-						m_Brush.m_OffsetY += g->m_OffsetY;
-						m_Brush.m_ParallaxX = g->m_ParallaxX;
-						m_Brush.m_ParallaxY = g->m_ParallaxY;
-						m_Brush.Render();
-						float w, h;
-						m_Brush.GetSize(&w, &h);
-
-						IGraphics::CLineItem Array[4] = {
-							IGraphics::CLineItem(0, 0, w, 0),
-							IGraphics::CLineItem(w, 0, w, h),
-							IGraphics::CLineItem(w, h, 0, h),
-							IGraphics::CLineItem(0, h, 0, 0)};
-						Graphics()->TextureSet(-1);
-						Graphics()->LinesBegin();
-						Graphics()->LinesDraw(Array, 4);
-						Graphics()->LinesEnd();
-					}
-				}
-			}
+                    drawing = true;
+                }
+                else if (drawing)
+                {
+                    drawing = false;
+                    m_ModeDrawRoute = false;
+                    vec2 currentPos = vec2(UI()->MouseWorldX()-startPosition.x, UI()->MouseWorldY()-startPosition.y);
+                    if (currentPos != lastPos)
+                        pEnvelope->AddPoint((time_get()-startDrawingTime)/1000.0f, f2fx(currentPos.x), f2fx(currentPos.y), 0);
+                }
+            }
 		}
+        else
+        {
+            // brush editing
+            if(UI()->HotItem() == s_pEditorID)
+            {
+                if(m_Brush.IsEmpty())
+                    m_pTooltip = "Use left mouse button to drag and create a brush.";
+                else
+                    m_pTooltip = "Use left mouse button to paint with the brush. Right button clears the brush.";
 
-		// quad editing
-		{
-			if(!m_ShowPicker && m_Brush.IsEmpty())
-			{
-				// fetch layers
-				CLayerGroup *g = GetSelectedGroup();
-				if(g)
-					g->MapScreen();
+                if(UI()->ActiveItem() == s_pEditorID)
+                {
+                    CUIRect r;
+                    r.x = s_StartWx;
+                    r.y = s_StartWy;
+                    r.w = wx-s_StartWx;
+                    r.h = wy-s_StartWy;
+                    if(r.w < 0)
+                    {
+                        r.x += r.w;
+                        r.w = -r.w;
+                    }
 
-				for(int k = 0; k < NumEditLayers; k++)
-				{
-					if(pEditLayers[k]->m_Type == LAYERTYPE_QUADS)
-					{
-						CLayerQuads *pLayer = (CLayerQuads *)pEditLayers[k];
+                    if(r.h < 0)
+                    {
+                        r.y += r.h;
+                        r.h = -r.h;
+                    }
 
-						if(!m_ShowEnvelopePreview)
-							m_ShowEnvelopePreview = 2;
+                    if(s_Operation == OP_BRUSH_DRAW)
+                    {
+                        if(!m_Brush.IsEmpty())
+                        {
+                            // draw with brush
+                            for(int k = 0; k < NumEditLayers; k++)
+                            {
+                                if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[0]->m_Type)
+                                    pEditLayers[k]->BrushDraw(m_Brush.m_lLayers[0], wx, wy);
+                            }
+                        }
+                    }
+                    else if(s_Operation == OP_BRUSH_GRAB)
+                    {
+                        if(!UI()->MouseButton(0))
+                        {
+                            // grab brush
+                            char aBuf[256];
+                            str_format(aBuf, sizeof(aBuf),"grabbing %f %f %f %f", r.x, r.y, r.w, r.h);
+                            Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
 
-						Graphics()->TextureSet(-1);
-						Graphics()->QuadsBegin();
-						for(int i = 0; i < pLayer->m_lQuads.size(); i++)
-						{
-							for(int v = 0; v < 4; v++)
-								DoQuadPoint(&pLayer->m_lQuads[i], i, v);
+                            // TODO: do all layers
+                            int Grabs = 0;
+                            for(int k = 0; k < NumEditLayers; k++)
+                                Grabs += pEditLayers[k]->BrushGrab(&m_Brush, r);
+                            if(Grabs == 0)
+                                m_Brush.Clear();
+                        }
+                        else
+                        {
+                            //editor.map.groups[selected_group]->mapscreen();
+                            for(int k = 0; k < NumEditLayers; k++)
+                                pEditLayers[k]->BrushSelecting(r);
+                            Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
+                        }
+                    }
+                    else if(s_Operation == OP_BRUSH_PAINT)
+                    {
+                        if(!UI()->MouseButton(0))
+                        {
+                            for(int k = 0; k < NumEditLayers; k++)
+                                pEditLayers[k]->FillSelection(m_Brush.IsEmpty(), m_Brush.m_lLayers[0], r);
+                        }
+                        else
+                        {
+                            //editor.map.groups[selected_group]->mapscreen();
+                            for(int k = 0; k < NumEditLayers; k++)
+                                pEditLayers[k]->BrushSelecting(r);
+                            Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
+                        }
+                    }
+                }
+                else
+                {
+                    if(UI()->MouseButton(1))
+                        m_Brush.Clear();
 
-							DoQuad(&pLayer->m_lQuads[i], i);
-						}
-						Graphics()->QuadsEnd();
-					}
-				}
+                    if(UI()->MouseButton(0) && s_Operation == OP_NONE)
+                    {
+                        UI()->SetActiveItem(s_pEditorID);
 
-				Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
-			}
+                        if(m_Brush.IsEmpty())
+                            s_Operation = OP_BRUSH_GRAB;
+                        else
+                        {
+                            s_Operation = OP_BRUSH_DRAW;
+                            for(int k = 0; k < NumEditLayers; k++)
+                            {
+                                if(pEditLayers[k]->m_Type == m_Brush.m_lLayers[0]->m_Type)
+                                    pEditLayers[k]->BrushPlace(m_Brush.m_lLayers[0], wx, wy);
+                            }
 
-			// do panning
-			if(UI()->ActiveItem() == s_pEditorID)
-			{
-				if(s_Operation == OP_PAN_WORLD)
-				{
-					m_WorldOffsetX -= m_MouseDeltaX*m_WorldZoom;
-					m_WorldOffsetY -= m_MouseDeltaY*m_WorldZoom;
-				}
-				else if(s_Operation == OP_PAN_EDITOR)
-				{
-					m_EditorOffsetX -= m_MouseDeltaX*m_WorldZoom;
-					m_EditorOffsetY -= m_MouseDeltaY*m_WorldZoom;
-				}
+                        }
 
-				// release mouse
-				if(!UI()->MouseButton(0))
-				{
-					s_Operation = OP_NONE;
-					UI()->SetActiveItem(0);
-				}
-			}
-		}
+                        CLayerTiles *pLayer = (CLayerTiles*)GetSelectedLayerType(0, LAYERTYPE_TILES);
+                        if((Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT)) && pLayer)
+                            s_Operation = OP_BRUSH_PAINT;
+                    }
+
+                    if(!m_Brush.IsEmpty())
+                    {
+                        m_Brush.m_OffsetX = -(int)wx;
+                        m_Brush.m_OffsetY = -(int)wy;
+                        for(int i = 0; i < m_Brush.m_lLayers.size(); i++)
+                        {
+                            if(m_Brush.m_lLayers[i]->m_Type == LAYERTYPE_TILES)
+                            {
+                                m_Brush.m_OffsetX = -(int)(wx/32.0f)*32;
+                                m_Brush.m_OffsetY = -(int)(wy/32.0f)*32;
+                                break;
+                            }
+                        }
+
+                        CLayerGroup *g = GetSelectedGroup();
+                        if(g)
+                        {
+                            m_Brush.m_OffsetX += g->m_OffsetX;
+                            m_Brush.m_OffsetY += g->m_OffsetY;
+                            m_Brush.m_ParallaxX = g->m_ParallaxX;
+                            m_Brush.m_ParallaxY = g->m_ParallaxY;
+                            m_Brush.Render();
+                            float w, h;
+                            m_Brush.GetSize(&w, &h);
+
+                            IGraphics::CLineItem Array[4] = {
+                                IGraphics::CLineItem(0, 0, w, 0),
+                                IGraphics::CLineItem(w, 0, w, h),
+                                IGraphics::CLineItem(w, h, 0, h),
+                                IGraphics::CLineItem(0, h, 0, 0)};
+                            Graphics()->TextureSet(-1);
+                            Graphics()->LinesBegin();
+                            Graphics()->LinesDraw(Array, 4);
+                            Graphics()->LinesEnd();
+                        }
+                    }
+                }
+            }
+
+            // quad editing
+            {
+                if(!m_ShowPicker && m_Brush.IsEmpty())
+                {
+                    // fetch layers
+                    CLayerGroup *g = GetSelectedGroup();
+                    if(g)
+                        g->MapScreen();
+
+                    for(int k = 0; k < NumEditLayers; k++)
+                    {
+                        if(pEditLayers[k]->m_Type == LAYERTYPE_QUADS)
+                        {
+                            CLayerQuads *pLayer = (CLayerQuads *)pEditLayers[k];
+
+                            if(!m_ShowEnvelopePreview)
+                                m_ShowEnvelopePreview = 2;
+
+                            Graphics()->TextureSet(-1);
+                            Graphics()->QuadsBegin();
+                            for(int i = 0; i < pLayer->m_lQuads.size(); i++)
+                            {
+                                for(int v = 0; v < 4; v++)
+                                    DoQuadPoint(&pLayer->m_lQuads[i], i, v);
+
+                                DoQuad(&pLayer->m_lQuads[i], i);
+                            }
+                            Graphics()->QuadsEnd();
+                        }
+                    }
+
+                    Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
+                }
+
+                // do panning
+                if(UI()->ActiveItem() == s_pEditorID)
+                {
+                    if(s_Operation == OP_PAN_WORLD)
+                    {
+                        m_WorldOffsetX -= m_MouseDeltaX*m_WorldZoom;
+                        m_WorldOffsetY -= m_MouseDeltaY*m_WorldZoom;
+                    }
+                    else if(s_Operation == OP_PAN_EDITOR)
+                    {
+                        m_EditorOffsetX -= m_MouseDeltaX*m_WorldZoom;
+                        m_EditorOffsetY -= m_MouseDeltaY*m_WorldZoom;
+                    }
+
+                    // release mouse
+                    if(!UI()->MouseButton(0))
+                    {
+                        s_Operation = OP_NONE;
+                        UI()->SetActiveItem(0);
+                    }
+                }
+            }
+        }
 	}
 	else if(UI()->ActiveItem() == s_pEditorID)
 	{
@@ -2127,6 +2257,10 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 		{
 			s_Operation = OP_NONE;
 			UI()->SetActiveItem(0);
+
+            // H-Client
+            drawing = false;
+            m_ModeDrawRoute = false;
 		}
 	}
 
@@ -3054,6 +3188,79 @@ void CEditor::AddFileDialogEntry(int Index, CUIRect *pView)
 	}
 }
 
+// H-Client
+void CEditor::RenderChangeDurationDialog()
+{
+    // Get Target
+    static char aBuf[25];
+    static bool inLoad = true; // FIXME: Very Ugly!
+    CEnvelope *pEnvelope = 0;
+	if(m_SelectedEnvelope >= 0 && m_SelectedEnvelope < m_Map.m_lEnvelopes.size())
+		pEnvelope = m_Map.m_lEnvelopes[m_SelectedEnvelope];
+
+    if (!pEnvelope)
+    {
+        m_Dialog = DIALOG_NONE;
+        return;
+    } else if (inLoad)
+    {
+        str_format(aBuf, sizeof(aBuf), "%.3f", pEnvelope->EndTime());
+        inLoad = false;
+    }
+
+    // GUI coordsys
+	Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
+	CUIRect View = *UI()->Screen();
+
+    RenderTools()->DrawUIRect(&View, vec4(0,0,0,0.25f), 0, 0);
+	View.VMargin(350.0f, &View);
+	View.HMargin(250.0f, &View);
+	RenderTools()->DrawUIRect(&View, vec4(0,0,0,0.75f), CUI::CORNER_ALL, 5.0f);
+	View.Margin(10.0f, &View);
+
+	// Label
+	CUIRect label;
+	View.HSplitTop(15.0f, &label, &View);
+	UI()->DoLabel(&label, "Envelope Duration:", 10.0f, -1, -1);
+
+	// Edit Box
+	CUIRect editBox;
+	View.HSplitTop(15.0f, &editBox, &View);
+	static float s_EditValue = 0;
+    if(DoEditBox(&s_EditValue, &editBox, aBuf, sizeof(aBuf), 10.0f, &s_EditValue))
+    {
+        for(int i = 0; aBuf[i]; ++i)
+            if(aBuf[i] < '.' || aBuf[i] > '9' || aBuf[i] == '/')
+                str_copy(&aBuf[i], &aBuf[i+1], (int)(sizeof(aBuf))-i);
+    }
+
+    // Buttons
+	CUIRect ButtonCancel, ButtonOk;
+	View.HSplitBottom(20.0f, &View, &ButtonCancel);
+	ButtonCancel.VSplitMid(&ButtonCancel, &ButtonOk);
+	ButtonCancel.Margin(3.0f, &ButtonCancel);
+	ButtonOk.Margin(3.0f, &ButtonOk);
+
+	static int s_ButtonCancel = 0;
+    if(DoButton_Editor(&s_ButtonCancel, "Cancel", 0, &ButtonCancel, 0, 0) || Input()->KeyPressed(KEY_ESCAPE))
+    {
+        m_Dialog = DIALOG_NONE;
+        inLoad = true;
+    }
+
+    static int s_ButtonOk = 0;
+    if(DoButton_Editor(&s_ButtonOk, "Change", 0, &ButtonOk, 0, 0) || Input()->KeyPressed(KEY_RETURN))
+    {
+        float nTime = atof(aBuf);
+
+        for(int i = 1; i < pEnvelope->m_lPoints.size(); i++)
+            pEnvelope->m_lPoints[i].m_Time = ((nTime * pEnvelope->m_lPoints[i].m_Time) / pEnvelope->EndTime());
+
+         m_Dialog = DIALOG_NONE;
+         inLoad = true;
+    }
+}
+
 void CEditor::RenderFileImageDialog()
 {
 	// GUI coordsys
@@ -3265,6 +3472,7 @@ void CEditor::RenderFileImageDialog()
 	if(DoButton_Editor(&s_CancelButton, "Cancel", 0, &Button, 0, 0) || Input()->KeyPressed(KEY_ESCAPE))
 		m_Dialog = DIALOG_NONE;
 }
+//
 
 void CEditor::RenderFileDialog()
 {
@@ -3601,11 +3809,13 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
     }
     //
 
-	CUIRect ToolBar, CurveBar, ColorBar;
-	View.HSplitTop(15.0f, &ToolBar, &View);
+	CUIRect ToolBar, CurveBar, ColorBar, SubToolBar; // H-Client
+	View.HSplitTop(30.0f, &ToolBar, &View); // H-Client
+	ToolBar.HSplitMid(&ToolBar, &SubToolBar); // H-Client
 	View.HSplitTop(15.0f, &CurveBar, &View);
 	ToolBar.Margin(2.0f, &ToolBar);
 	CurveBar.Margin(2.0f, &CurveBar);
+	SubToolBar.Margin(2.0f, &SubToolBar); // H-Client
 
 	// do the toolbar
 	{
@@ -3812,6 +4022,28 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 			}
 		}
 
+		// H-Client: Render SubToolBar
+		{
+            CUIRect Button;
+
+            if (pEnvelope->m_Channels == 3)
+            {
+                SubToolBar.VSplitLeft(80.0f, &Button, &SubToolBar);
+                static int s_DrawRouteButton = 0;
+                if(DoButton_Editor(&s_DrawRouteButton, "Draw Route", 0, &Button, 0, "Define the envelope drawing the route", m_ModeDrawRoute?vec4(0.3f, 0.23f, 0.7f, 1.0f):GetButtonColor(&s_DrawRouteButton, false)))
+                {
+                    m_ModeDrawRoute = !m_ModeDrawRoute;
+                }
+                SubToolBar.VSplitLeft(3.0f, 0x0, &SubToolBar);
+            }
+
+            SubToolBar.VSplitLeft(110.0f, &Button, &SubToolBar);
+            static int s_ChangeDurationButton = 0;
+            if(DoButton_Editor(&s_ChangeDurationButton, "Change Duration", 0, &Button, 0, "Change the global duration of the envelope"))
+                m_Dialog = DIALOG_CHANGE_DURATION;
+        }
+		//
+
 		vec3 aColors[] = {vec3(1,0.2f,0.2f), vec3(0.2f,1,0.2f), vec3(0.2f,0.2f,1), vec3(1,1,0.2f)};
 
 		// render lines
@@ -3913,6 +4145,8 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 		}
 
 		// H-Client: render time line
+		static bool scrollTimeLine = false;
+		CUIRect LogicLine = View;
 		if (m_Animate)
 		{
             float cTime = fmod((m_AnimateTime*m_AnimateSpeed), EndTime);
@@ -3923,6 +4157,36 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
             IGraphics::CLineItem LineItem(View.x + offset, View.y, View.x + offset, View.y+View.h);
             Graphics()->LinesDraw(&LineItem, 1);
             Graphics()->LinesEnd();
+
+            if (m_AnimatePaused && !Input()->KeyPressed(KEY_LSHIFT) && !Input()->KeyPressed(KEY_RSHIFT))
+            {
+                LogicLine.x = (View.x + offset) - 4.0f;
+                LogicLine.w = 8.0f;
+                if (UI()->MouseInside(&LogicLine) && UI()->MouseButton(0))
+                    scrollTimeLine = true;
+                if (!UI()->MouseButton(0))
+                    scrollTimeLine = false;
+
+                if (scrollTimeLine || UI()->MouseInside(&LogicLine))
+                {
+                    CUIRect IndicatorLine = LogicLine;
+                    IndicatorLine.x -= 32.0f;
+                    IndicatorLine.y += 7.0f;
+                    IndicatorLine.w = 50.0f;
+                    IndicatorLine.h = 25.0f;
+
+                    char aBuf[25];
+                    str_format(aBuf, sizeof(aBuf), "%.3f", fmod(m_AnimateTime, EndTime));
+                    UI()->DoLabel(&IndicatorLine, aBuf, 10.0f, -1, -1);
+                }
+
+                if (scrollTimeLine)
+                {
+                    m_AnimatePausedTime += f2fx(m_MouseDeltaX*TimeScale*1000.0f);
+                    if (m_AnimatePausedTime < m_AnimateStart)
+                        m_AnimatePausedTime = m_AnimateStart;
+                }
+            }
 		}
 		//
 
@@ -3964,7 +4228,7 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 
 					float ColorMod = 1.0f;
 
-					if(UI()->ActiveItem() == pID)
+					if(UI()->ActiveItem() == pID && !scrollTimeLine)
 					{
 						if(!UI()->MouseButton(0))
 						{
@@ -4082,7 +4346,7 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
             CUIRect rCurrentTime, rCurrentValue;
 			char aBuf[25];
 
-            ToolBar.VSplitLeft(80.0f, 0x0, &ToolBar);
+            ToolBar.VSplitLeft(60.0f, 0x0, &ToolBar);
             ToolBar.VSplitLeft(70.0f, &rCurrentTime, &ToolBar);
             ToolBar.VSplitLeft(5.0f, 0x0, &ToolBar);
             ToolBar.VSplitLeft(70.0f, &rCurrentValue, &ToolBar);
@@ -4336,7 +4600,7 @@ void CEditor::Render()
 	RenderBackground(View, m_CheckerTexture, 32.0f, 1.0f);
 
 	CUIRect MenuBar, CModeBar, ToolBar, StatusBar, EnvelopeEditor, ToolBox;
-	m_ShowPicker = Input()->KeyPressed(KEY_SPACE) != 0 && m_Dialog == DIALOG_NONE;
+	m_ShowPicker = Input()->KeyPressed(KEY_SPACE) && m_Dialog == DIALOG_NONE && !GetSelectedLayerType(0, LAYERTYPE_QUADS); // H-CLient
 
 	if(m_GuiActive)
 	{
@@ -4429,15 +4693,21 @@ void CEditor::Render()
 
 	if(m_Dialog == DIALOG_FILE)
 	{
-		static int s_NullUiTarget = 0;
-		UI()->SetHotItem(&s_NullUiTarget);
+		static int s_DialogFile = 0;
+		UI()->SetHotItem(&s_DialogFile);
 		RenderFileDialog();
 	}
 	else if(m_Dialog == DIALOG_FILE_IMAGE)
 	{
-		static int s_NullUiTarget = 0;
-		UI()->SetHotItem(&s_NullUiTarget);
+		static int s_DialogFileImage = 0;
+		UI()->SetHotItem(&s_DialogFileImage);
 		RenderFileImageDialog();
+	}
+	else if(m_Dialog == DIALOG_CHANGE_DURATION)
+	{
+		static int s_DialogChangeDuration = 0;
+		UI()->SetHotItem(&s_DialogChangeDuration);
+		RenderChangeDurationDialog();
 	}
 
 	if(m_PopupEventActivated)
@@ -4528,6 +4798,9 @@ void CEditor::Reset(bool CreateDefault)
 	// H-Client
 	m_SelectedEditorEnvelopeChannel = -1;
 	m_SelectedEditorEnvelopePoint = -1;
+	m_AnimatePaused = false;
+	m_AnimatePausedTime = 0;
+	m_ModeDrawRoute = false;
 	//
 }
 
@@ -4698,7 +4971,7 @@ void CEditor::UpdateAndRender()
 	static float s_MouseY = 0.0f;
 
 	if(m_Animate)
-		m_AnimateTime = (time_get()-m_AnimateStart)/(float)time_freq();
+		m_AnimateTime = ((m_AnimatePaused?m_AnimatePausedTime:time_get())-m_AnimateStart)/(float)time_freq(); // H-Client
 	else
 		m_AnimateTime = 0;
 	ms_pUiGotContext = 0;

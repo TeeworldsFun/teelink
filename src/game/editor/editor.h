@@ -36,10 +36,11 @@ enum
 
 	DIALOG_NONE=0,
 	DIALOG_FILE,
-	DIALOG_FILE_IMAGE,
+	DIALOG_FILE_IMAGE,      // H-Client
+	DIALOG_CHANGE_DURATION, // H-Client
 
-	BRUSH_MODE_NORMAL=0,
-	BRUSH_MODE_ADDITION,
+	BRUSH_MODE_NORMAL=0, // H-Client
+	BRUSH_MODE_ADDITION, // H-Client
 };
 
 struct CEntity
@@ -573,8 +574,11 @@ public:
 		ms_pUiGotContext = 0;
 
 		// H-Client
+		m_AnimatePaused = false;
+		m_AnimatePausedTime = 0;
 		m_SelectedEditorEnvelopeChannel = -1;
 		m_SelectedEditorEnvelopePoint = -1;
+		m_ModeDrawRoute = false;
 		//
 	}
 
@@ -686,6 +690,8 @@ public:
 	int64 m_AnimateStart;
 	float m_AnimateTime;
 	float m_AnimateSpeed;
+	bool m_AnimatePaused; // H-Client
+	int64 m_AnimatePausedTime; // H-Client
 
 	int m_ShowEnvelopeEditor;
 	int m_ShowEnvelopePreview; //Values: 0-Off|1-Selected Envelope|2-All
@@ -701,6 +707,7 @@ public:
 	int m_SelectedImage;
 
 	// H-Client
+	bool m_ModeDrawRoute;
 	int m_SelectedEditorEnvelopeChannel;
 	int m_SelectedEditorEnvelopePoint;
 	//
@@ -723,6 +730,7 @@ public:
 	void DoMapBorder();
 	int DoButton_Editor_Common(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
 	int DoButton_Editor(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
+	int DoButton_Editor(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, vec4 color); // H-Client
 
 	int DoButton_Tab(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
 	int DoButton_Ex(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, int Corners, float FontSize=10.0f);
@@ -801,6 +809,7 @@ public:
 	void RenderMenubar(CUIRect Menubar);
 	void RenderFileDialog();
 	void RenderFileImageDialog();
+	void RenderChangeDurationDialog(); // H-Client
 
 	void AddFileDialogEntry(int Index, CUIRect *pView);
 	void SortImages();
