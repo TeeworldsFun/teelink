@@ -346,9 +346,6 @@ void CGameClient::OnConnected()
 		m_All.m_paComponents[i]->OnReset();
 	}
 
-	CServerInfo CurrentServerInfo;
-	Client()->GetServerInfo(&CurrentServerInfo);
-
 	m_ServerMode = SERVERMODE_PURE;
 	m_LastSendInfo = 0;
 
@@ -388,7 +385,7 @@ void CGameClient::UpdatePositions()
 	// local character position
 	if(g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
-		if(!m_Snap.m_pLocalCharacter || (m_Snap.m_pGameInfoObj && m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
+		if(!m_Snap.m_pLocalCharacter || (m_Snap.m_pGameInfoObj && (m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
 		{
 			// don't use predicted
 		}
@@ -603,6 +600,12 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 		else
 			g_GameClient.m_pSounds->Play(CSounds::CHN_GLOBAL, pMsg->m_SoundID, 1.0f);
 	}
+	else if(MsgId == NETMSGTYPE_SVAN_TILEMODIF) // Android Mapper NETMSGTYPE_SVAN_TILEMODIF
+    {
+        CNetMsg_SvAn_TileModif *pMsg = (CNetMsg_SvAn_TileModif *)pRawMsg;
+
+        Collision()->CreateTile(vec2(pMsg->m_X, pMsg->m_Y), pMsg->m_Group, pMsg->m_Layer, pMsg->m_Index, pMsg->m_Flags);
+    }
 	// H-Client: DDNet
 	else if(MsgId == NETMSGTYPE_SV_TEAMSSTATE)
 	{
@@ -880,7 +883,7 @@ void CGameClient::OnNewSnapshot()
 			{
 				static bool s_GameOver = 0;
 				m_Snap.m_pGameInfoObj = (const CNetObj_GameInfo *)pData;
-				if(!s_GameOver && m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)
+				if(!s_GameOver && (m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
 					OnGameOver();
 				else if(s_GameOver && !(m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
 					OnStartGame();
@@ -1053,7 +1056,7 @@ void CGameClient::OnPredict()
 		return;
 
 	// don't predict anything if we are paused
-	if(m_Snap.m_pGameInfoObj && m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED)
+	if(m_Snap.m_pGameInfoObj && (m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
 	{
 		if(m_Snap.m_pLocalCharacter)
 			m_PredictedChar.Read(m_Snap.m_pLocalCharacter);
@@ -1178,7 +1181,7 @@ void CGameClient::CClientData::UpdateRenderInfo()
 	m_RenderInfo = m_SkinInfo;
 
 	// force team colors
-	if(g_GameClient.m_Snap.m_pGameInfoObj && g_GameClient.m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS)
+	if(g_GameClient.m_Snap.m_pGameInfoObj && (g_GameClient.m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS))
 	{
 		m_RenderInfo.m_Texture = g_GameClient.m_pSkins->Get(m_SkinID)->m_ColorTexture;
 		const int TeamColors[2] = {65387, 10223467};

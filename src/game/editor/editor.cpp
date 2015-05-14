@@ -922,11 +922,11 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 	bool dotask = false;
 	if(m_AnimatePaused && m_Animate)
 	{
-        if (DoButton_Editor(&s_AnimateButton, "Anim", m_Animate, &Button, 0, "[ctrl+m] Toggle animation", vec4(0.3f, 0.23f, 0.7f, 1.0f)) || (Input()->KeyDown('m') && (Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL))))
+        if (DoButton_Editor(&s_AnimateButton, "Anim", m_Animate, &Button, 0, "[ctrl+m] Toggle animation. [space] pause animation.", vec4(0.3f, 0.23f, 0.7f, 1.0f)) || (Input()->KeyDown('m') && (Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL))))
             dotask = true;
     } else
     {
-        if (DoButton_Editor(&s_AnimateButton, "Anim", m_Animate, &Button, 0, "[ctrl+m] Toggle animation") || (Input()->KeyDown('m') && (Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL))))
+        if (DoButton_Editor(&s_AnimateButton, "Anim", m_Animate, &Button, 0, "[ctrl+m] Toggle animation. [space] pause animation.") || (Input()->KeyDown('m') && (Input()->KeyPressed(KEY_LCTRL) || Input()->KeyPressed(KEY_RCTRL))))
             dotask = true;
     }
 
@@ -1117,6 +1117,18 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 				}
 			}
 		}
+	}
+
+	// H-Client: Particle Generator
+	{
+		TB_Top.VSplitLeft(10.0f, &Button, &TB_Top);
+		TB_Top.VSplitLeft(60.0f, &Button, &TB_Top);
+		static int s_ParticleGenerator = 0;
+		CLayerQuads *pQLayer = (CLayerQuads *)GetSelectedLayerType(0, LAYERTYPE_QUADS);
+
+		if(DoButton_Editor(&s_ParticleGenerator, "Particle Generator", pQLayer?0:-1, &Button, 0, "", m_Mode!=MODE_PARTICLE_GENERATOR?vec4(0.5f, 0.5f, 0.5f, 1.0f):vec4(0.3f, 0.23f, 0.7f, 1.0f)))
+			m_Mode = (m_Mode == MODE_PARTICLE_GENERATOR)?MODE_LAYERS:MODE_PARTICLE_GENERATOR;
+		//
 	}
 
 	// tile manipulation
@@ -1403,7 +1415,7 @@ void CEditor::DoQuadPoint(CQuad *pQuad, int QuadIndex, int V)
 		UI()->SetHotItem(pID);
 
 	// draw selection background
-	if(m_SelectedQuad == QuadIndex && m_SelectedPoints&(1<<V))
+	if(m_SelectedQuad == QuadIndex && (m_SelectedPoints&(1<<V)))
 	{
 		Graphics()->SetColor(0,0,0,1);
 		IGraphics::CQuadItem QuadItem(px, py, 7.0f*m_WorldZoom, 7.0f*m_WorldZoom);
@@ -1991,27 +2003,39 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
                         pEnvelope->m_lPoints.clear();
                         startPosition = mousePos;
                         pEnvelope->AddPoint(0, 0);
-                        lastPos = vec2(0, 0);
+                        lastPos = vec2(0.0f, 0.0f);
                     }
                     else
                     {
                         vec2 currentPos = vec2(mousePos.x-startPosition.x, mousePos.y-startPosition.y);
-                        float angleAB = 0.0f, angleAC = 0.0f;
 
                         int numPoints = pEnvelope->m_lPoints.size();
                         if (numPoints > 1)
                         {
-                            angleAB = GetAngleDegrees(vec2(fx2f(pEnvelope->m_lPoints[numPoints-2].m_aValues[0]), fx2f(pEnvelope->m_lPoints[numPoints-2].m_aValues[1])), vec2(fx2f(pEnvelope->m_lPoints[numPoints-1].m_aValues[0]), fx2f(pEnvelope->m_lPoints[numPoints-1].m_aValues[1])));
-                            angleAC = GetAngleDegrees(vec2(fx2f(pEnvelope->m_lPoints[numPoints-2].m_aValues[0]), fx2f(pEnvelope->m_lPoints[numPoints-2].m_aValues[1])), currentPos);
+                            float divisorA = pEnvelope->m_lPoints[numPoints-2].m_aValues[0] - pEnvelope->m_lPoints[numPoints-1].m_aValues[0];
+                            float divisorB = pEnvelope->m_lPoints[numPoints-1].m_aValues[0] - currentPos.x;
+                            if (divisorA == 0.0f) divisorA = 0.01f; // FIXME
+                            if (divisorB == 0.0f) divisorB = 0.01f; // FIXME
+                            float slopeA = (pEnvelope->m_lPoints[numPoints-2].m_aValues[1] - pEnvelope->m_lPoints[numPoints-1].m_aValues[1]) / divisorA;
+                            float slopeB = (pEnvelope->m_lPoints[numPoints-1].m_aValues[1] - currentPos.y) / divisorB;
+                            float slopeDiff = absolute(slopeA-slopeB) * 100.0f;
 
-                            if (currentPos != lastPos && absolute(angleAC-angleAB) > g_Config.m_hcEditorDrawRouteAccuracy)
+                            dbg_msg("DATOS A", "SLOPEA: %.2f --- SLOPEB: %.2f -- DIFF: %.2f", slopeA, slopeB, slopeDiff);
+
+                            if (currentPos != lastPos && (slopeDiff < 0.1f || slopeDiff > 1.9f))
                             {
                                 pEnvelope->AddPoint((time_get()-startDrawingTime)/1000.0f, f2fx(currentPos.x), f2fx(currentPos.y), 0);
                                 lastPos = currentPos;
                             }
                         }
                         else if (currentPos != lastPos) // FIX: We need add some points to start calculate route... :/
+                        {
+                            if (currentPos.x == lastPos.x && currentPos.y == lastPos.y)
+                                dbg_msg("PASA", "%.2f -- %.2f || %.2f -- %.2f", currentPos.x, lastPos.x, currentPos.y, lastPos.y);
+                            else
+                                dbg_msg("SS", "no pasa!");
                             pEnvelope->AddPoint((time_get()-startDrawingTime)/1000.0f, f2fx(currentPos.x), f2fx(currentPos.y), 0);
+                        }
                     }
 
 
@@ -4679,6 +4703,8 @@ void CEditor::Render()
 		RenderLayers(ToolBox, ToolBar, View);
 	else if(m_Mode == MODE_IMAGES)
 		RenderImages(ToolBox, ToolBar, View);
+	else if (m_Mode == MODE_PARTICLE_GENERATOR)
+		m_ParticleGenerator.Tick(ToolBox, ToolBar, View);
 
 	Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
 

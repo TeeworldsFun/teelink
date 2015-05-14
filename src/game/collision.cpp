@@ -431,3 +431,38 @@ bool CCollision::IsTileFreeze(int x, int y)
 {
 	return GetTile(x, y)&COLFLAG_FREEZE;
 }
+
+// Android Mapper
+void CCollision::CreateTile(vec2 pos, int group, int layer, int index, int flags)
+{
+    CMapItemLayer *pLayer = m_pLayers->GetLayer(layer);
+    CMapItemLayerTilemap *pTilemap = reinterpret_cast<CMapItemLayerTilemap *>(pLayer);
+    int tpos = (int)pos.y*pTilemap->m_Width+(int)pos.x;
+    if (pTilemap != m_pLayers->GameLayer())
+    {
+        CTile *pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(pTilemap->m_Data));
+        pTiles[tpos].m_Flags = flags;
+        pTiles[tpos].m_Index = index;
+    }
+    else
+    {
+        m_pTiles[tpos].m_Index = index;
+        m_pTiles[tpos].m_Flags = flags;
+
+        switch(index)
+        {
+        case TILE_DEATH:
+            m_pTiles[tpos].m_Index = COLFLAG_DEATH;
+            break;
+        case TILE_SOLID:
+            m_pTiles[tpos].m_Index = COLFLAG_SOLID;
+            break;
+        case TILE_NOHOOK:
+            m_pTiles[tpos].m_Index = COLFLAG_SOLID|COLFLAG_NOHOOK;
+            break;
+        default:
+            if(index <= 128)
+                m_pTiles[tpos].m_Index = 0;
+        }
+    }
+}

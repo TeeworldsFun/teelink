@@ -183,7 +183,7 @@ public:
 
 	struct SCommand_Init : public CCommandBuffer::SCommand
 	{
-		SCommand_Init() : SCommand(CMD_INIT) {}
+		SCommand_Init() : SCommand(CMD_INIT) { m_pTextureMemoryUsage = 0; }
 		volatile int *m_pTextureMemoryUsage;
 	};
 

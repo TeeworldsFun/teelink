@@ -253,6 +253,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_pGameClient = 0;
 	m_pMap = 0;
 	m_pConsole = 0;
+	m_pAutoUpdate = 0; // H-Client
 
 	m_RenderFrameTime = 0.0001f;
 	m_RenderFrameTimeLow = 1.0f;
@@ -266,6 +267,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_SnapCrcErrors = 0;
 	m_AutoScreenshotRecycle = false;
 	m_EditorActive = false;
+	m_SoundInitFailed = false;
 
 	m_AckGameTick = -1;
 	m_CurrentRecvTick = 0;
@@ -284,6 +286,8 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 
 	//
 	m_aCmdConnect[0] = 0;
+	m_UseTempRconCommands = 0;
+	m_DebugFont = 0;
 
 	// map download
 	m_aMapdownloadFilename[0] = 0;
@@ -302,7 +306,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_aServerAddressStr[0] = 0;
 
 	mem_zero(m_aSnapshots, sizeof(m_aSnapshots));
-	m_SnapshotStorage.Init();
+	m_SnapshotStorage.init();
 	m_RecivedSnapshots = 0;
 
 	m_VersionInfo.m_State = CVersionInfo::STATE_INIT;
@@ -356,6 +360,7 @@ void CClient::SendInfo()
 	CMsgPacker Msg(NETMSG_INFO);
 	Msg.AddString(GameClient()->NetVersion(), 128);
 	Msg.AddString(g_Config.m_Password, 128);
+	Msg.AddString("H-Client", 32); // H-Client: Mapper
 	SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH);
 }
 
@@ -494,7 +499,7 @@ void CClient::OnEnterGame()
 	// reset snapshots
 	m_aSnapshots[SNAP_CURRENT] = 0;
 	m_aSnapshots[SNAP_PREV] = 0;
-	m_SnapshotStorage.PurgeAll();
+	m_SnapshotStorage.purgeAll();
 	m_RecivedSnapshots = 0;
 	m_SnapshotParts = 0;
 	m_PredTick = 0;
@@ -615,8 +620,8 @@ void *CClient::SnapGetItem(int SnapID, int Index, CSnapItem *pItem)
 {
 	CSnapshotItem *i;
 	dbg_assert(SnapID >= 0 && SnapID < NUM_SNAPSHOT_TYPES, "invalid SnapID");
-	i = m_aSnapshots[SnapID]->m_pAltSnap->GetItem(Index);
-	pItem->m_DataSize = m_aSnapshots[SnapID]->m_pAltSnap->GetItemSize(Index);
+	i = m_aSnapshots[SnapID]->m_pAltSnap->getItem(Index);
+	pItem->m_DataSize = m_aSnapshots[SnapID]->m_pAltSnap->getItemSize(Index);
 	pItem->m_Type = i->Type();
 	pItem->m_ID = i->ID();
 	return (void *)i->Data();
@@ -626,7 +631,7 @@ void CClient::SnapInvalidateItem(int SnapID, int Index)
 {
 	CSnapshotItem *i;
 	dbg_assert(SnapID >= 0 && SnapID < NUM_SNAPSHOT_TYPES, "invalid SnapID");
-	i = m_aSnapshots[SnapID]->m_pAltSnap->GetItem(Index);
+	i = m_aSnapshots[SnapID]->m_pAltSnap->getItem(Index);
 	if(i)
 	{
 		if((char *)i < (char *)m_aSnapshots[SnapID]->m_pAltSnap || (char *)i > (char *)m_aSnapshots[SnapID]->m_pAltSnap + m_aSnapshots[SnapID]->m_SnapSize)
@@ -645,9 +650,9 @@ void *CClient::SnapFindItem(int SnapID, int Type, int ID)
 	if(!m_aSnapshots[SnapID])
 		return 0x0;
 
-	for(i = 0; i < m_aSnapshots[SnapID]->m_pSnap->NumItems(); i++)
+	for(i = 0; i < m_aSnapshots[SnapID]->m_pSnap->numItems(); i++)
 	{
-		CSnapshotItem *pItem = m_aSnapshots[SnapID]->m_pAltSnap->GetItem(i);
+		CSnapshotItem *pItem = m_aSnapshots[SnapID]->m_pAltSnap->getItem(i);
 		if(pItem->Type() == Type && pItem->ID() == ID)
 			return (void *)pItem->Data();
 	}
@@ -659,12 +664,12 @@ int CClient::SnapNumItems(int SnapID)
 	dbg_assert(SnapID >= 0 && SnapID < NUM_SNAPSHOT_TYPES, "invalid SnapID");
 	if(!m_aSnapshots[SnapID])
 		return 0;
-	return m_aSnapshots[SnapID]->m_pSnap->NumItems();
+	return m_aSnapshots[SnapID]->m_pSnap->numItems();
 }
 
 void CClient::SnapSetStaticsize(int ItemType, int Size)
 {
-	m_SnapshotDelta.SetStaticsize(ItemType, Size);
+	m_SnapshotDelta.setStaticsize(ItemType, Size);
 }
 
 
@@ -729,10 +734,10 @@ void CClient::DebugRender()
 		int i;
 		for(i = 0; i < 256; i++)
 		{
-			if(m_SnapshotDelta.GetDataRate(i))
+			if(m_SnapshotDelta.getDataRate(i))
 			{
-				str_format(aBuffer, sizeof(aBuffer), "%4d %20s: %8d %8d %8d", i, GameClient()->GetItemName(i), m_SnapshotDelta.GetDataRate(i)/8, m_SnapshotDelta.GetDataUpdates(i),
-					(m_SnapshotDelta.GetDataRate(i)/m_SnapshotDelta.GetDataUpdates(i))/8);
+				str_format(aBuffer, sizeof(aBuffer), "%4d %20s: %8d %8d %8d", i, GameClient()->GetItemName(i), m_SnapshotDelta.getDataRate(i)/8, m_SnapshotDelta.getDataUpdates(i),
+					(m_SnapshotDelta.getDataRate(i)/m_SnapshotDelta.getDataUpdates(i))/8);
 				Graphics()->QuadsText(2, 100+y*12, 16, aBuffer);
 				y++;
 			}
@@ -1355,12 +1360,12 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 					m_SnapshotParts = 0;
 
 					// find snapshot that we should use as delta
-					Emptysnap.Clear();
+					Emptysnap.clear();
 
 					// find delta
 					if(DeltaTick >= 0)
 					{
-						int DeltashotSize = m_SnapshotStorage.Get(DeltaTick, 0, &pDeltaShot, 0);
+						int DeltashotSize = m_SnapshotStorage.get(DeltaTick, 0, &pDeltaShot, 0);
 
 						if(DeltashotSize < 0)
 						{
@@ -1381,7 +1386,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 					}
 
 					// decompress snapshot
-					pDeltaData = m_SnapshotDelta.EmptyDelta();
+					pDeltaData = m_SnapshotDelta.emptyDelta();
 					DeltaSize = sizeof(int)*3;
 
 					if(CompleteSize)
@@ -1396,20 +1401,20 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 					}
 
 					// unpack delta
-					SnapSize = m_SnapshotDelta.UnpackDelta(pDeltaShot, pTmpBuffer3, pDeltaData, DeltaSize);
+					SnapSize = m_SnapshotDelta.unpackDelta(pDeltaShot, pTmpBuffer3, pDeltaData, DeltaSize);
 					if(SnapSize < 0)
 					{
 						m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client", "delta unpack failed!");
 						return;
 					}
 
-					if(Msg != NETMSG_SNAPEMPTY && pTmpBuffer3->Crc() != Crc)
+					if(Msg != NETMSG_SNAPEMPTY && pTmpBuffer3->crc() != Crc)
 					{
 						if(g_Config.m_Debug)
 						{
 							char aBuf[256];
 							str_format(aBuf, sizeof(aBuf), "snapshot crc error #%d - tick=%d wantedcrc=%d gotcrc=%d compressed_size=%d delta_tick=%d",
-								m_SnapCrcErrors, GameTick, Crc, pTmpBuffer3->Crc(), CompleteSize, DeltaTick);
+								m_SnapCrcErrors, GameTick, Crc, pTmpBuffer3->crc(), CompleteSize, DeltaTick);
 							m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client", aBuf);
 						}
 
@@ -1435,10 +1440,10 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 						PurgeTick = m_aSnapshots[SNAP_PREV]->m_Tick;
 					if(m_aSnapshots[SNAP_CURRENT] && m_aSnapshots[SNAP_CURRENT]->m_Tick < PurgeTick)
 						PurgeTick = m_aSnapshots[SNAP_CURRENT]->m_Tick;
-					m_SnapshotStorage.PurgeUntil(PurgeTick);
+					m_SnapshotStorage.purgeUntil(PurgeTick);
 
 					// add new
-					m_SnapshotStorage.Add(GameTick, time_get(), SnapSize, pTmpBuffer3, 1);
+					m_SnapshotStorage.add(GameTick, time_get(), SnapSize, pTmpBuffer3, 1);
 
 					// add snapshot to demo
 					if(m_DemoRecorder.IsRecording())

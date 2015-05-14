@@ -241,7 +241,7 @@ void CDemoRecorder::RecordSnapshot(int Tick, const void *pData, int Size)
 		// write tickmarker
 		WriteTickMarker(Tick, 0);
 
-		DeltaSize = m_pSnapshotDelta->CreateDelta((CSnapshot*)m_aLastSnapshotData, (CSnapshot*)pData, &aDeltaData);
+		DeltaSize = m_pSnapshotDelta->createDelta((CSnapshot*)m_aLastSnapshotData, (CSnapshot*)pData, &aDeltaData);
 		if(DeltaSize)
 		{
 			// record delta
@@ -512,7 +512,7 @@ void CDemoPlayer::DoTick()
 
 			GotSnapshot = 1;
 
-			DataSize = m_pSnapshotDelta->UnpackDelta((CSnapshot*)m_aLastSnapshotData, (CSnapshot*)aNewsnap, aData, DataSize);
+			DataSize = m_pSnapshotDelta->unpackDelta((CSnapshot*)m_aLastSnapshotData, (CSnapshot*)aNewsnap, aData, DataSize);
 
 			if(DataSize >= 0)
 			{

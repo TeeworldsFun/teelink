@@ -363,4 +363,14 @@ Messages = [
 
 	NetMessage("Sv_TeamsState", []),
 	#
+
+	# ANDROID MAPPER
+	NetMessage("SvAn_TileModif", [
+		NetIntAny("m_X"),
+		NetIntAny("m_Y"),
+		NetIntAny("m_Group"),
+		NetIntAny("m_Layer"),
+		NetIntAny("m_Index"),
+		NetIntAny("m_Flags"),
+	]),
 ]

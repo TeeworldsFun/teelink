@@ -349,7 +349,6 @@ void CRenderTools::MapscreenToWorld(float CenterX, float CenterY, float Parallax
 
 void CRenderTools::RenderTilemapGenerateSkip(class CLayers *pLayers)
 {
-
 	for(int g = 0; g < pLayers->NumGroups(); g++)
 	{
 		CMapItemGroup *pGroup = pLayers->GetGroup(g);
@@ -373,7 +372,8 @@ void CRenderTools::RenderTilemapGenerateSkip(class CLayers *pLayers)
 								break;
 						}
 
-						pTiles[y*pTmap->m_Width+x].m_Skip = sx-1;
+						//pTiles[y*pTmap->m_Width+x].m_Skip = sx-1;
+						pTiles[y*pTmap->m_Width+x].m_Skip = 0; // FIXME: Forced NO-Skip for mapper gametype (Low Performance)
 						x += sx;
 					}
 				}

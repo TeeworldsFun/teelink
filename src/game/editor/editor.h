@@ -23,6 +23,7 @@
 #include <engine/graphics.h>
 
 #include "auto_map.h"
+#include "particle_generator.h" // H-Client
 
 typedef void (*INDEX_MODIFY_FUNC)(int *pIndex);
 
@@ -33,6 +34,7 @@ enum
 {
 	MODE_LAYERS=0,
 	MODE_IMAGES,
+	MODE_PARTICLE_GENERATOR, // H-Client
 
 	DIALOG_NONE=0,
 	DIALOG_FILE,
@@ -250,6 +252,7 @@ public:
 		m_pData = 0;
 		m_Format = 0;
 		m_pAutoMapper = 0;
+		m_Texture = -1; // H-Client
 	}
 
 	~CEditorImage();
@@ -494,6 +497,7 @@ class CEditor : public IEditor
 	class IStorage *m_pStorage;
 	CRenderTools m_RenderTools;
 	CUI m_UI;
+	CParticleGenerator m_ParticleGenerator; // H-Client
 public:
 	class IInput *Input() { return m_pInput; };
 	class IClient *Client() { return m_pClient; };
@@ -504,7 +508,7 @@ public:
 	CUI *UI() { return &m_UI; }
 	CRenderTools *RenderTools() { return &m_RenderTools; }
 
-	CEditor() : m_TilesetPicker(16, 16)
+	CEditor() : m_ParticleGenerator(this), m_TilesetPicker(16, 16)
 	{
 		m_pInput = 0;
 		m_pClient = 0;

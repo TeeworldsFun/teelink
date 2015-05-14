@@ -261,7 +261,7 @@ void CServer::CClient::Reset()
 	m_CurrentInput = 0;
 	mem_zero(&m_LatestInput, sizeof(m_LatestInput));
 
-	m_Snapshots.PurgeAll();
+	m_Snapshots.purgeAll();
 	m_LastAckedSnapshot = -1;
 	m_LastInputTick = -1;
 	m_SnapRate = CClient::SNAPRATE_INIT;
@@ -423,7 +423,7 @@ int CServer::Init()
 		m_aClients[i].m_aName[0] = 0;
 		m_aClients[i].m_aClan[0] = 0;
 		m_aClients[i].m_Country = -1;
-		m_aClients[i].m_Snapshots.Init();
+		m_aClients[i].m_Snapshots.init();
 	}
 
 	m_CurrentGameTick = 0;
@@ -564,9 +564,9 @@ void CServer::DoSnapshot()
 		int SnapshotSize;
 
 		// build snap and possibly add some messages
-		m_SnapshotBuilder.Init();
+		m_SnapshotBuilder.init();
 		GameServer()->OnSnap(-1);
-		SnapshotSize = m_SnapshotBuilder.Finish(aData);
+		SnapshotSize = m_SnapshotBuilder.finish(aData);
 
 		// write snapshot
 		m_DemoRecorder.RecordSnapshot(Tick(), aData, SnapshotSize);
@@ -600,26 +600,26 @@ void CServer::DoSnapshot()
 			int DeltaTick = -1;
 			int DeltaSize;
 
-			m_SnapshotBuilder.Init();
+			m_SnapshotBuilder.init();
 
 			GameServer()->OnSnap(i);
 
 			// finish snapshot
-			SnapshotSize = m_SnapshotBuilder.Finish(pData);
-			Crc = pData->Crc();
+			SnapshotSize = m_SnapshotBuilder.finish(pData);
+			Crc = pData->crc();
 
 			// remove old snapshos
 			// keep 3 seconds worth of snapshots
-			m_aClients[i].m_Snapshots.PurgeUntil(m_CurrentGameTick-SERVER_TICK_SPEED*3);
+			m_aClients[i].m_Snapshots.purgeUntil(m_CurrentGameTick-SERVER_TICK_SPEED*3);
 
 			// save it the snapshot
-			m_aClients[i].m_Snapshots.Add(m_CurrentGameTick, time_get(), SnapshotSize, pData, 0);
+			m_aClients[i].m_Snapshots.add(m_CurrentGameTick, time_get(), SnapshotSize, pData, 0);
 
 			// find snapshot that we can preform delta against
-			EmptySnap.Clear();
+			EmptySnap.clear();
 
 			{
-				DeltashotSize = m_aClients[i].m_Snapshots.Get(m_aClients[i].m_LastAckedSnapshot, 0, &pDeltashot, 0);
+				DeltashotSize = m_aClients[i].m_Snapshots.get(m_aClients[i].m_LastAckedSnapshot, 0, &pDeltashot, 0);
 				if(DeltashotSize >= 0)
 					DeltaTick = m_aClients[i].m_LastAckedSnapshot;
 				else
@@ -631,7 +631,7 @@ void CServer::DoSnapshot()
 			}
 
 			// create delta
-			DeltaSize = m_SnapshotDelta.CreateDelta(pDeltashot, pData, aDeltaData);
+			DeltaSize = m_SnapshotDelta.createDelta(pDeltashot, pData, aDeltaData);
 
 			if(DeltaSize)
 			{
@@ -721,7 +721,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
+	pThis->m_aClients[ClientID].m_Snapshots.purgeAll();
 	return 0;
 }
 
@@ -921,7 +921,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			if(m_aClients[ClientID].m_LastAckedSnapshot > 0)
 				m_aClients[ClientID].m_SnapRate = CClient::SNAPRATE_FULL;
 
-			if(m_aClients[ClientID].m_Snapshots.Get(m_aClients[ClientID].m_LastAckedSnapshot, &TagTime, 0, 0) >= 0)
+			if(m_aClients[ClientID].m_Snapshots.get(m_aClients[ClientID].m_LastAckedSnapshot, &TagTime, 0, 0) >= 0)
 				m_aClients[ClientID].m_Latency = (int)(((time_get()-TagTime)*1000)/time_freq());
 
 			// add message to report the input timing
@@ -1641,12 +1641,12 @@ void *CServer::SnapNewItem(int Type, int ID, int Size)
 {
 	dbg_assert(Type >= 0 && Type <=0xffff, "incorrect type");
 	dbg_assert(ID >= 0 && ID <=0xffff, "incorrect id");
-	return ID < 0 ? 0 : m_SnapshotBuilder.NewItem(Type, ID, Size);
+	return ID < 0 ? 0 : m_SnapshotBuilder.newItem(Type, ID, Size);
 }
 
 void CServer::SnapSetStaticsize(int ItemType, int Size)
 {
-	m_SnapshotDelta.SetStaticsize(ItemType, Size);
+	m_SnapshotDelta.setStaticsize(ItemType, Size);
 }
 
 static CServer *CreateServer() { return new CServer(); }

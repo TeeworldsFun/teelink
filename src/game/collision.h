@@ -61,6 +61,8 @@ public:
     int IsTeleport(int Index);
     int IntersectLineTeleHook(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, int *pTeleNr, bool AllowThrough);
     std::map<int, std::vector<vec2> > *GetTeleOuts() { return &m_TeleOuts; }
+
+    void CreateTile(vec2 pos, int group, int layer, int index, int flags); // Android
 };
 
 void ThroughOffset(vec2 Pos0, vec2 Pos1, int *Ox, int *Oy); //H-Client: DDRace
