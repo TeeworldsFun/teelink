@@ -372,8 +372,7 @@ void CRenderTools::RenderTilemapGenerateSkip(class CLayers *pLayers)
 								break;
 						}
 
-						//pTiles[y*pTmap->m_Width+x].m_Skip = sx-1;
-						pTiles[y*pTmap->m_Width+x].m_Skip = 0; // FIXME: Forced NO-Skip for mapper gametype (Low Performance)
+						pTiles[y*pTmap->m_Width+x].m_Skip = sx-1;
 						x += sx;
 					}
 				}

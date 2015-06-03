@@ -435,9 +435,16 @@ bool CCollision::IsTileFreeze(int x, int y)
 // Android Mapper
 void CCollision::CreateTile(vec2 pos, int group, int layer, int index, int flags)
 {
-    CMapItemLayer *pLayer = m_pLayers->GetLayer(layer);
+    CMapItemGroup *pGroup = m_pLayers->GetGroup(group);
+    CMapItemLayer *pLayer = m_pLayers->GetLayer(pGroup->m_StartLayer+layer);
+    if (pLayer->m_Type != LAYERTYPE_TILES) // protect against the dark side people
+        return;
+
     CMapItemLayerTilemap *pTilemap = reinterpret_cast<CMapItemLayerTilemap *>(pLayer);
     int tpos = (int)pos.y*pTilemap->m_Width+(int)pos.x;
+    if (tpos < 0 || tpos >= pTilemap->m_Width*pTilemap->m_Height) // protect against the dark side people
+        return;
+
     if (pTilemap != m_pLayers->GameLayer())
     {
         CTile *pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(pTilemap->m_Data));
@@ -466,3 +473,4 @@ void CCollision::CreateTile(vec2 pos, int group, int layer, int index, int flags
         }
     }
 }
+
