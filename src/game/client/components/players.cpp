@@ -26,8 +26,6 @@
 
 #include "players.h"
 
-#define LASER_AIM_MAX_BOUNCES   50
-
 
 void CPlayers::RenderHand(CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset)
 {
@@ -357,54 +355,34 @@ void CPlayers::RenderPlayer(
 
         static const float PhysSize = 28.0f;
         static const float RealPhysSize = PhysSize * 1.5f;
-        vec2 orgPos, curPos, ExDirection = Direction, ExPosition = Position;
-        bool teleHook;
-        int Hit = 0, bounces = 0;
+        vec2 orgPos, toPos, ExDirection = Direction;
+        int Hit = 0;
 
         if (pPlayerInfo->m_Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
             ExDirection = normalize(vec2(m_pClient->m_pControls->m_InputData.m_TargetX, m_pClient->m_pControls->m_InputData.m_TargetY));
 
         Graphics()->LinesBegin();
 
-        do
-        {
-            orgPos = ExPosition+ExDirection*RealPhysSize;
-            curPos = orgPos + ExDirection*(m_pClient->m_Tuning.m_HookLength - PhysSize*2 - 1.5f);
-            teleHook = false;
+            orgPos = Position+ExDirection*RealPhysSize;
+            toPos = orgPos + ExDirection*(m_pClient->m_Tuning.m_HookLength - PhysSize*2 - 1.5f);
 
             Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 
-            // Collide with walls or special tiles?
-            int teleNr = 0;
-            Hit = Collision()->IntersectLineTeleHook(orgPos, curPos, &curPos, 0, &teleNr, true);
-            if (Hit)
-            {
-                if (!(Hit&CCollision::COLFLAG_NOHOOK)) // Hookable Tile
-                    Graphics()->SetColor(0.5f, 0.9f, 0.62f, 1.0f);
-
-                if (Hit&CCollision::COLFLAG_TELE && (*Collision()->GetTeleOuts())[teleNr-1].size()) // Tele Hook Tile
-                {
-                    int Num = (*Collision()->GetTeleOuts())[teleNr-1].size();
-                    ExPosition = (*Collision()->GetTeleOuts())[teleNr-1][(Num == 1)?0:rand() % Num];
-                    teleHook = true;
-                    bounces++;
-                }
-            }
+            // Collide with walls?
+            Hit = Collision()->IntersectLine(orgPos, toPos, &toPos, 0, true);
+            if (Hit && !(Hit&CCollision::COLFLAG_NOHOOK)) // Hookable Tile
+            	Graphics()->SetColor(0.5f, 0.9f, 0.62f, 1.0f);
 
             // Collide with characters?
-            if (m_pClient->IntersectCharacter(orgPos, curPos, &curPos, pPlayerInfo->m_ClientID) != -1)
-            {
+            if (m_pClient->IntersectCharacter(orgPos, toPos, &toPos, pPlayerInfo->m_ClientID) != -1)
                 Graphics()->SetColor(1.0f, 1.0f, 0.0f, 1.0f);
-                teleHook = false;
-            }
 
             // Don't draw 0 length lines
-            if (distance(orgPos, curPos) > 0.0f)
+            if (distance(orgPos, toPos) > 0.0f)
             {
-                IGraphics::CLineItem LineItem(ExPosition.x, ExPosition.y, curPos.x, curPos.y);
+                IGraphics::CLineItem LineItem(Position.x, Position.y, toPos.x, toPos.y);
                 Graphics()->LinesDraw(&LineItem, 1);
             }
-        } while (teleHook && bounces < LASER_AIM_MAX_BOUNCES);
 
         Graphics()->LinesEnd();
     }
