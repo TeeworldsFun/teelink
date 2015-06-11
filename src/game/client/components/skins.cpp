@@ -196,8 +196,12 @@ vec4 CSkins::GetColorV4(int v)
 }
 
 // H-Client
+static const int DOWNLOAD_SPEED = 64;
 void CSkins::DownloadSkin(const char *pName)
 {
+	int64 downloadTime = time_get();
+	long chunkBytes = 0;
+
     // Check if skins are in processing state
     std::string sName(pName);
     if (m_DownloadedSkinsSet.find(sName) != m_DownloadedSkinsSet.end())
@@ -241,8 +245,20 @@ void CSkins::DownloadSkin(const char *pName)
 	int TotalBytes = 0;
 	int CurrentRecv = 0;
 	int nlCount = 0;
-	while ((CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, sizeof(aNetBuff))) > 0)
+	do
 	{
+		// Limit to ~64Kbps
+		if (time_get() - downloadTime <= time_freq())
+		{
+			if (chunkBytes >= DOWNLOAD_SPEED)
+				thread_sleep((time_freq() - (time_get() - downloadTime)) / 1000);
+		}
+		else
+			downloadTime = time_get();
+		//
+
+		CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, DOWNLOAD_SPEED);
+		chunkBytes += CurrentRecv;
 		for (int i=0; i<CurrentRecv ; i++)
 		{
 			if (nlCount < 2)
@@ -305,10 +321,13 @@ void CSkins::DownloadSkin(const char *pName)
 
 				TotalRecv++;
 				if (TotalRecv == TotalBytes)
+				{
+					dbg_msg("skins", "Sucessfully downloaded!");
 					break;
+				}
 			}
 		}
-	}
+	} while (CurrentRecv > 0);
 
 	net_tcp_close(sockDDNet);
 

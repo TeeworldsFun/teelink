@@ -361,10 +361,10 @@ void CPlayers::RenderPlayer(
         if (pPlayerInfo->m_Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
             ExDirection = normalize(vec2(m_pClient->m_pControls->m_InputData.m_TargetX, m_pClient->m_pControls->m_InputData.m_TargetY));
 
-        Graphics()->LinesBegin();
+        orgPos = Position+ExDirection*RealPhysSize;
+        toPos = orgPos + ExDirection*(m_pClient->m_Tuning.m_HookLength - PhysSize*2 - 1.5f);
 
-            orgPos = Position+ExDirection*RealPhysSize;
-            toPos = orgPos + ExDirection*(m_pClient->m_Tuning.m_HookLength - PhysSize*2 - 1.5f);
+        Graphics()->LinesBegin();
 
             Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 
