@@ -133,9 +133,18 @@ void dbg_logger_stdout() { dbg_logger(logger_stdout); }
 void dbg_logger_debugger() { dbg_logger(logger_debugger); }
 void dbg_logger_file(const char *filename)
 {
-	logfile = io_open(filename, IOFLAG_WRITE);
+	logfile = io_open(filename, IOFLAG_APPEND);
 	if(logfile)
+	{
+		// H-Client
+		char aDate[20];
+		str_timestamp(aDate, sizeof(aDate));
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "\n\n========================================\n START DATE: %s\n========================================\n", aDate);
+		io_write(logfile, aBuf, str_length(aBuf));
+		//
 		dbg_logger(logger_file);
+	}
 	else
 		dbg_msg("dbg/logger", "failed to open '%s' for logging", filename);
 
@@ -292,8 +301,10 @@ IOHANDLE io_open(const char *filename, int flags)
 	#endif
 		return (IOHANDLE)fopen(filename, "rb");
 	}
-	if(flags == IOFLAG_WRITE)
+	else if(flags == IOFLAG_WRITE)
 		return (IOHANDLE)fopen(filename, "wb");
+	else if (flags == IOFLAG_APPEND) // H-Client
+		return (IOHANDLE)fopen(filename, "a+b");
 	return 0x0;
 }
 

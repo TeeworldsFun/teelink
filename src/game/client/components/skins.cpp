@@ -196,7 +196,6 @@ vec4 CSkins::GetColorV4(int v)
 }
 
 // H-Client
-static const int DOWNLOAD_SPEED = 64;
 void CSkins::DownloadSkin(const char *pName)
 {
 	int64 downloadTime = time_get();
@@ -236,28 +235,30 @@ void CSkins::DownloadSkin(const char *pName)
     char fullName[255] = {0};
     str_format(fullName, sizeof(fullName), "skins/%s.png", pName);
 
-    char aNetBuff[255] = {0};
-    str_format(aNetBuff, sizeof(aNetBuff), "GET /skins/skin/%s.png HTTP/1.0\r\nHost: ddnet.tw\r\n\r\n", pName);
-	net_tcp_send(sockDDNet, aNetBuff, str_length(aNetBuff));
+    char aBuff[512] = {0};
+    str_format(aBuff, sizeof(aBuff), "GET /skins/skin/%s.png HTTP/1.0\r\nHost: ddnet.tw\r\n\r\n", pName);
+	net_tcp_send(sockDDNet, aBuff, str_length(aBuff));
 
 	std::string NetData;
 	int TotalRecv = 0;
 	int TotalBytes = 0;
 	int CurrentRecv = 0;
 	int nlCount = 0;
+	int downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048);
+	char aNetBuff[downloadSpeed] = {0};
 	do
 	{
-		// Limit to ~64Kbps
+		// Limit Speed
 		if (time_get() - downloadTime <= time_freq())
 		{
-			if (chunkBytes >= DOWNLOAD_SPEED)
+			if (chunkBytes >= downloadSpeed)
 				thread_sleep((time_freq() - (time_get() - downloadTime)) / 1000);
 		}
 		else
 			downloadTime = time_get();
 		//
 
-		CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, DOWNLOAD_SPEED);
+		CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, sizeof(aNetBuff));
 		chunkBytes += CurrentRecv;
 		for (int i=0; i<CurrentRecv ; i++)
 		{
@@ -295,7 +296,7 @@ void CSkins::DownloadSkin(const char *pName)
 			}
 			else
 			{
-			    if (nlCount == 2) // FIXE: Ugly check :/
+			    if (nlCount == 2)
                 {
                     if (TotalBytes <= 0)
                     {

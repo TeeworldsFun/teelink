@@ -1060,6 +1060,8 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	float splitTop = 260.0f;
     if (g_Config.m_hcLaserCustomColor)
         splitTop += 105.0f;
+    if (g_Config.m_hcAutoDownloadSkins)
+    	splitTop += 20.0f;
 
     PanelL.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
 
@@ -1114,6 +1116,22 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcAutoDownloadSkins, Localize("Auto download skins (Thanks to DDNet Database)"), g_Config.m_hcAutoDownloadSkins, &HUDItem))
             g_Config.m_hcAutoDownloadSkins ^= 1;
+
+        if (g_Config.m_hcAutoDownloadSkins)
+        {
+            CUIRect Edit;
+            static float Offset = 0.0f;
+            StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+            HUDItem.VSplitLeft(140.0f, &HUDItem, &Edit);
+            TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+            Edit.VSplitRight(150.0f, &Edit, 0x0);
+            UI()->DoLabelScaled(&HUDItem, Localize("Speed Limit (Kbps): "), HUDItem.h*ms_FontmodHeight*0.8f, 1);
+            if (DoEditBox(&g_Config.m_hcAutoDownloadSkinsSpeed, &Edit, g_Config.m_hcAutoDownloadSkinsSpeed, sizeof(g_Config.m_hcAutoDownloadSkinsSpeed), 12.0f, &Offset, false, CUI::CORNER_ALL))
+            {
+            	int downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048);
+            	str_format(g_Config.m_hcAutoDownloadSkinsSpeed, sizeof(g_Config.m_hcAutoDownloadSkinsSpeed), "%d", downloadSpeed);
+            }
+        }
 
         //Dinamyc Camera Effect
         /*StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
@@ -1259,13 +1277,31 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         if(DoButton_CheckBox(&g_Config.m_ddrPreventPrediction, Localize("Prevent prediction when you are 'frozen' (experimental)"), g_Config.m_ddrPreventPrediction, &HUDItem))
             g_Config.m_ddrPreventPrediction ^= 1;
 
+
         CUIRect Edit;
         static float Offset = 0.0f;
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
         HUDItem.VSplitLeft(135.0f, &HUDItem, &Edit);
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-        UI()->DoLabelScaled(&HUDItem, Localize("Eyes time (Secs.):"), 14.0f, -1);
+        UI()->DoLabelScaled(&HUDItem, Localize("Eyes time (Secs.):"), HUDItem.h*ms_FontmodHeight*0.8f, -1);
         DoEditBox(&g_Config.m_hcEyesSelectorTime, &Edit, g_Config.m_hcEyesSelectorTime, sizeof(g_Config.m_hcEyesSelectorTime), 12.0f, &Offset, false, CUI::CORNER_ALL);
+
+        CUIRect Button;
+        static float OffsetTimeoutCode = 0.0f;
+        DDRaceGame.HSplitTop(25.0f, &HUDItem, &DDRaceGame);
+        HUDItem.HSplitTop(5.0f, 0x0, &HUDItem);
+        HUDItem.VSplitLeft(135.0f, &HUDItem, &Edit);
+        TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+        UI()->DoLabelScaled(&HUDItem, Localize("Client Hash:"), HUDItem.h*ms_FontmodHeight*0.8f, -1);
+        Edit.w = 150.0f;
+        DoEditBox(&g_Config.m_ddrTimeoutHash, &Edit, g_Config.m_ddrTimeoutHash, sizeof(g_Config.m_ddrTimeoutHash), 12.0f, &OffsetTimeoutCode, false, CUI::CORNER_ALL);
+        Button.x = Edit.x + Edit.w + 10.0f;
+        Button.y = Edit.y;
+        Button.w = 100.0f;
+        Button.h = 20.0f;
+        static int s_ButtonGenerateClientHash = 0;
+        if (DoButton_Menu((void*)&s_ButtonGenerateClientHash, Localize("Generate"), 0, &Button))
+        	for (size_t i = 0; i < sizeof(g_Config.m_ddrTimeoutHash)-1; g_Config.m_ddrTimeoutHash[i++] = (rand() % 26) + 97);
 	}
 
 	//Feet

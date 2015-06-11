@@ -85,6 +85,8 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	class CTexturePack m_TexturePack; //H-Client
 	class CAutoUpdate m_AutoUpdate; //H-Client
 
+	bool m_TimeoutCodeSent; // H-Client
+
 	char m_aServerAddressStr[256];
 
 	unsigned m_SnapshotParts;

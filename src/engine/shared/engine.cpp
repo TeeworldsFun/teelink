@@ -8,6 +8,7 @@
 #include <engine/storage.h>
 #include <engine/shared/config.h>
 #include <engine/shared/network.h>
+#include <time.h> // H-Client
 
 
 static int HostLookupThread(void *pUser)

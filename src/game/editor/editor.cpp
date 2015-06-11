@@ -2012,17 +2012,18 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
                         int numPoints = pEnvelope->m_lPoints.size();
                         if (numPoints > 1)
                         {
-                            float divisorA = pEnvelope->m_lPoints[numPoints-2].m_aValues[0] - pEnvelope->m_lPoints[numPoints-1].m_aValues[0];
-                            float divisorB = pEnvelope->m_lPoints[numPoints-1].m_aValues[0] - currentPos.x;
-                            if (divisorA == 0.0f) divisorA = 0.01f; // FIXME
-                            if (divisorB == 0.0f) divisorB = 0.01f; // FIXME
-                            float slopeA = (pEnvelope->m_lPoints[numPoints-2].m_aValues[1] - pEnvelope->m_lPoints[numPoints-1].m_aValues[1]) / divisorA;
-                            float slopeB = (pEnvelope->m_lPoints[numPoints-1].m_aValues[1] - currentPos.y) / divisorB;
-                            float slopeDiff = absolute(slopeA-slopeB) * 100.0f;
+                        	vec2 curposFix(f2fx(currentPos.x), f2fx(currentPos.y));
+                        	vec2 pA(pEnvelope->m_lPoints[numPoints-2].m_aValues[0], pEnvelope->m_lPoints[numPoints-2].m_aValues[1]);
+                        	vec2 pB(pEnvelope->m_lPoints[numPoints-1].m_aValues[0], pEnvelope->m_lPoints[numPoints-1].m_aValues[1]);
+                        	vec2 dpA = pA-pB; normalize(dpA);
+                        	vec2 dpB = pA-curposFix; normalize(dpB);
+                        	float angleA = GetAngle(dpA);
+                        	float angleB = GetAngle(dpB);
+                        	float angleDiff = absolute(angleB - angleA);
 
-                            dbg_msg("DATOS A", "SLOPEA: %.2f --- SLOPEB: %.2f -- DIFF: %.2f", slopeA, slopeB, slopeDiff);
+                            dbg_msg("DATOS A", "SLOPEA: %.2f --- SLOPEB: %.2f -- DIFF: %.2f", angleA, angleB, angleDiff);
 
-                            if (currentPos != lastPos && (slopeDiff < 0.1f || slopeDiff > 1.9f))
+                            if (currentPos != lastPos && angleDiff > 0.08f)
                             {
                                 pEnvelope->AddPoint((time_get()-startDrawingTime)/1000.0f, f2fx(currentPos.x), f2fx(currentPos.y), 0);
                                 lastPos = currentPos;

@@ -253,7 +253,8 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_pGameClient = 0;
 	m_pMap = 0;
 	m_pConsole = 0;
-	m_pAutoUpdate = 0; // H-Client
+	m_pAutoUpdate = 0x0; // H-Client
+	m_TimeoutCodeSent = false; // H-Client
 
 	m_RenderFrameTime = 0.0001f;
 	m_RenderFrameTimeLow = 1.0f;
@@ -517,6 +518,8 @@ void CClient::EnterGame()
 	// to finish the connection
 	SendEnterGame();
 	OnEnterGame();
+
+	m_TimeoutCodeSent = false; // H-Client
 }
 
 void CClient::Connect(const char *pAddress)
@@ -814,6 +817,7 @@ const char *CClient::LoadMap(const char *pName, const char *pFilename, unsigned 
 	str_format(aBuf, sizeof(aBuf), "loaded map '%s'", pFilename);
 	m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client", aBuf);
 	m_RecivedSnapshots = 0;
+	m_TimeoutCodeSent = false; // H-Client
 
 	str_copy(m_aCurrentMap, pName, sizeof(m_aCurrentMap));
 	m_CurrentMapCrc = m_pMap->Crc();
@@ -1478,6 +1482,22 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 						int64 TickStart = GameTick*time_freq()/50;
 						int64 TimeLeft = (TickStart-Now)*1000 / time_freq();
 						m_GameTime.Update(&m_GametimeMarginGraph, (GameTick-1)*time_freq()/50, TimeLeft, 0);
+					}
+
+					// H-Client: DDRace: Send Timeout Hash (50 is a magic number :/)
+					if(!m_TimeoutCodeSent && m_RecivedSnapshots == 50 && str_find_nocase(m_CurrentServerInfo.m_aGameType, "ddrace"))
+					{
+						m_TimeoutCodeSent = true;
+						CNetMsg_Cl_Say Msg;
+						Msg.m_Team = 0;
+						char aBuf[256];
+						str_format(aBuf, sizeof(aBuf), "/timeout %s", g_Config.m_ddrTimeoutHash);
+						Msg.m_pMessage = aBuf;
+						CMsgPacker Packer(Msg.MsgID());
+						Msg.Pack(&Packer);
+						SendMsgEx(&Packer, MSGFLAG_VITAL, false);
+
+						dbg_msg("ss", "enviado timeout code!");
 					}
 
 					// ack snapshot

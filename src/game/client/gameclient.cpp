@@ -281,9 +281,12 @@ void CGameClient::OnInit()
 
     m_TakeInitScreenShot = false;
     m_DDRaceMsgSent = false;
+
+	if(g_Config.m_ddrTimeoutHash[0] == 0)
+		for (size_t i = 0; i < sizeof(g_Config.m_ddrTimeoutHash); g_Config.m_ddrTimeoutHash[i++] = (rand() % 26) + 97);
 	//
 
-	for(int i = 0; i < m_All.m_Num; i++)
+	for(int i = 0; i < m_All.m_Num; i++) // H-Client
 		m_All.m_paComponents[i]->OnReset();
 
 	int64 End = time_get();
