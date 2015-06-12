@@ -60,6 +60,7 @@ void CCollision::Init(class CLayers *pLayers)
                     break;
                 case TILE_FREEZE:
                     m_pFront[i].m_Index = COLFLAG_FREEZE;
+                    break;
                 default:
                     m_pFront[i].m_Index = 0;
             }

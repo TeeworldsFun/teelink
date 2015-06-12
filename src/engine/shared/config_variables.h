@@ -118,8 +118,9 @@ MACRO_CONFIG_INT(DbgResizable, dbg_resizable, 0, 0, 0, CFGFLAG_CLIENT, "Enables 
 3 - 3.5.2
 4 - 3.5.3
 5 - 3.6
+6 - 3.6.1
 */
-MACRO_CONFIG_INT(hcVersionCode, hc_version_code, 5, 1, 99, CFGFLAG_SAVE|CFGFLAG_CLIENT, "H-Client Version Code")
+MACRO_CONFIG_INT(hcVersionCode, hc_version_code, 6, 1, 99, CFGFLAG_SAVE|CFGFLAG_CLIENT, "H-Client Version Code")
 MACRO_CONFIG_INT(hcAutoUpdate, hc_auto_update, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update")
 MACRO_CONFIG_INT(hcAutoDownloadSkins, hc_auto_download_skins, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins from DDNet Database")
 MACRO_CONFIG_STR(hcAutoDownloadSkinsSpeed, hc_auto_download_skins_speed, 5, "1", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins Speed (KiBps)")

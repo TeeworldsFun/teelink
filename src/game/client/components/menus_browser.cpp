@@ -428,8 +428,8 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
                 {
                     if (m_pGeoIPThread)
                     {
-                        //thread_wait(m_pGeoIPThread);
                         thread_destroy(m_pGeoIPThread);
+                        thread_wait(m_pGeoIPThread);
                         m_pGeoIPThread = 0x0;
                     }
 
