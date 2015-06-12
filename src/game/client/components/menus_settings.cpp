@@ -1125,7 +1125,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             HUDItem.VSplitLeft(140.0f, &HUDItem, &Edit);
             TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
             Edit.VSplitRight(150.0f, &Edit, 0x0);
-            UI()->DoLabelScaled(&HUDItem, Localize("Speed Limit (Kbps): "), HUDItem.h*ms_FontmodHeight*0.8f, 1);
+            UI()->DoLabelScaled(&HUDItem, Localize("Speed Limit (Bps): "), HUDItem.h*ms_FontmodHeight*0.8f, 1);
             if (DoEditBox(&g_Config.m_hcAutoDownloadSkinsSpeed, &Edit, g_Config.m_hcAutoDownloadSkinsSpeed, sizeof(g_Config.m_hcAutoDownloadSkinsSpeed), 12.0f, &Offset, false, CUI::CORNER_ALL))
             {
             	int downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048);

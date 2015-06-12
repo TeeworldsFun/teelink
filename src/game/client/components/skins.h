@@ -40,11 +40,15 @@ public:
 	static int SkinScan(const char *pName, int IsDir, int DirType, void *pUser);
 	int LoadSkinFromFile(const char *pPath, const char *pName, int DirType);
 	void DownloadSkin(const char *pName);
+	bool IsDownloding(std::string name)
+	{
+		std::map<std::string, bool>::iterator it = m_DownloadedSkinsSet.find(name);
+		return (it != m_DownloadedSkinsSet.end() && !it->second);
+	}
 	//
 
 private:
 	sorted_array<CSkin> m_aSkins;
-
 	std::map<std::string, bool> m_DownloadedSkinsSet;
 };
 void ThreadDownloadSkin(void *params);

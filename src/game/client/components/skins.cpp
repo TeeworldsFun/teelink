@@ -21,6 +21,12 @@ int CSkins::SkinScan(const char *pName, int IsDir, int DirType, void *pUser)
 	if(l < 4 || IsDir || str_comp(pName+l-4, ".png") != 0)
 		return 0;
 
+	// Check image status
+	char aSinName[128]={0};
+	str_copy(aSinName, pName, l-4);
+	if (pSelf->IsDownloding(aSinName))
+		return 0;
+
     pSelf->LoadSkinFromFile("skins", pName, DirType);
 
 	return 0;
@@ -157,7 +163,7 @@ int CSkins::Find(const char *pName, bool tryDownload)
     {
         if (!it->second)
         {
-            it++;
+            ++it;
             continue;
         }
 
@@ -175,10 +181,20 @@ int CSkins::Find(const char *pName, bool tryDownload)
 
     if (g_Config.m_hcAutoDownloadSkins && tryDownload) // H-Client
     {
-        InfoDownloadSkinThread *pInfoDownloadSkinThread = new InfoDownloadSkinThread;
-        pInfoDownloadSkinThread->m_pSkins = this;
-        str_copy(pInfoDownloadSkinThread->m_SkinName, pName, sizeof(pInfoDownloadSkinThread->m_SkinName));
-		thread_create(ThreadDownloadSkin, pInfoDownloadSkinThread);
+    	unsigned currentDownloads = 0;
+    	for (std::map<std::string, bool>::iterator it = m_DownloadedSkinsSet.begin(); it != m_DownloadedSkinsSet.end(); it++)
+    	{
+    		if (!it->second)
+    			currentDownloads++;
+    	}
+
+    	if (currentDownloads < 3) // Limit to 3 simultaneously downloads
+    	{
+			InfoDownloadSkinThread *pInfoDownloadSkinThread = new InfoDownloadSkinThread;
+			pInfoDownloadSkinThread->m_pSkins = this;
+			str_copy(pInfoDownloadSkinThread->m_SkinName, pName, sizeof(pInfoDownloadSkinThread->m_SkinName));
+			thread_create(ThreadDownloadSkin, pInfoDownloadSkinThread);
+    	}
     }
 
     return -1;
@@ -199,7 +215,7 @@ vec4 CSkins::GetColorV4(int v)
 void CSkins::DownloadSkin(const char *pName)
 {
 	int64 downloadTime = time_get();
-	long chunkBytes = 0;
+	unsigned chunkBytes = 0;
 
     // Check if skins are in processing state
     std::string sName(pName);
@@ -244,21 +260,28 @@ void CSkins::DownloadSkin(const char *pName)
 	int TotalBytes = 0;
 	int CurrentRecv = 0;
 	int nlCount = 0;
-	int downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048);
-	char aNetBuff[downloadSpeed] = {0};
+	const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048);
+	char aNetBuff[2048] = {0};
 	do
 	{
 		// Limit Speed
-		if (time_get() - downloadTime <= time_freq())
+		int64 ctime = time_get();
+		if (ctime - downloadTime <= time_freq())
 		{
 			if (chunkBytes >= downloadSpeed)
-				thread_sleep((time_freq() - (time_get() - downloadTime)) / 1000);
+			{
+				int tdff = (time_freq() - (ctime - downloadTime)) / 1000;
+				thread_sleep(tdff);
+			}
 		}
 		else
+		{
+			chunkBytes = 0;
 			downloadTime = time_get();
+		}
 		//
 
-		CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, sizeof(aNetBuff));
+		CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, downloadSpeed);
 		chunkBytes += CurrentRecv;
 		for (int i=0; i<CurrentRecv ; i++)
 		{
@@ -322,10 +345,7 @@ void CSkins::DownloadSkin(const char *pName)
 
 				TotalRecv++;
 				if (TotalRecv == TotalBytes)
-				{
-					dbg_msg("skins", "Sucessfully downloaded!");
 					break;
-				}
 			}
 		}
 	} while (CurrentRecv > 0);

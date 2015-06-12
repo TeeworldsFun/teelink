@@ -1490,14 +1490,12 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 						m_TimeoutCodeSent = true;
 						CNetMsg_Cl_Say Msg;
 						Msg.m_Team = 0;
-						char aBuf[256];
+						char aBuf[42];
 						str_format(aBuf, sizeof(aBuf), "/timeout %s", g_Config.m_ddrTimeoutHash);
 						Msg.m_pMessage = aBuf;
 						CMsgPacker Packer(Msg.MsgID());
 						Msg.Pack(&Packer);
 						SendMsgEx(&Packer, MSGFLAG_VITAL, false);
-
-						dbg_msg("ss", "enviado timeout code!");
 					}
 
 					// ack snapshot
