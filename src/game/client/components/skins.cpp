@@ -260,8 +260,8 @@ void CSkins::DownloadSkin(const char *pName)
 	int TotalBytes = 0;
 	int CurrentRecv = 0;
 	int nlCount = 0;
-	const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048);
-	char aNetBuff[2048] = {0};
+	const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048) * 1024;
+	char aNetBuff[1024] = {0};
 	do
 	{
 		// Limit Speed
@@ -272,6 +272,7 @@ void CSkins::DownloadSkin(const char *pName)
 			{
 				int tdff = (time_freq() - (ctime - downloadTime)) / 1000;
 				thread_sleep(tdff);
+				continue;
 			}
 		}
 		else
@@ -281,7 +282,7 @@ void CSkins::DownloadSkin(const char *pName)
 		}
 		//
 
-		CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, downloadSpeed);
+		CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, sizeof(aNetBuff));
 		chunkBytes += CurrentRecv;
 		for (int i=0; i<CurrentRecv ; i++)
 		{
