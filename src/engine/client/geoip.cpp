@@ -11,46 +11,65 @@
 static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
 
 static LOCK m_GeoIPLock = 0;
+NETADDR CGeoIP::m_HostAddress;
+NETSOCKET CGeoIP::m_Socket = invalid_socket;
 
 CGeoIP::CGeoIP()
 {
     m_GeoIPLock = lock_create();
+    m_pGeoIPThread = 0x0;
+    m_Active = true;
+}
+
+void CGeoIP::Init()
+{
+    mem_zero(&m_HostAddress, sizeof(m_HostAddress));
+
+    //Lookup
+    if(net_host_lookup("www.telize.com", &m_HostAddress, NETTYPE_IPV4) != 0)
+    {
+        dbg_msg("GeoIP","ERROR: Can't run host lookup.");
+        m_Active = false;
+        return;
+    }
+    m_HostAddress.port = 80;
+}
+
+void CGeoIP::Search(InfoGeoIPThread *pGeoInfo)
+{
+    if (m_pGeoIPThread)
+    {
+    	net_tcp_close(m_Socket);
+        thread_destroy(m_pGeoIPThread);
+        m_pGeoIPThread = 0x0;
+    }
+
+    m_pGeoIPThread = thread_create(ThreadGeoIP, pGeoInfo);
 }
 
 void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
 {
     dbg_msg("GeoIP", "Searching geolocation of '%s'...", ip.c_str());
 
-    NETSOCKET Socket = invalid_socket;
-    NETADDR HostAddress, bindAddr;
-    mem_zero(&HostAddress, sizeof(HostAddress));
+    NETADDR bindAddr;
     mem_zero(&bindAddr, sizeof(bindAddr));
     char aNetBuff[1024];
     std::string jsonData;
 
-    //Lookup
-    if(net_host_lookup("www.telize.com", &HostAddress, NETTYPE_IPV4) != 0)
-    {
-        dbg_msg("GeoIP","ERROR: Can't run host lookup.");
-        geoInfo->m_CountryCode = "NULL";
-        return;
-    }
-    HostAddress.port = 80;
-
     //Connect
     bindAddr.type = NETTYPE_IPV4;
-    Socket = net_tcp_create(bindAddr);
-    if(net_tcp_connect(Socket, &HostAddress) != 0)
+    m_Socket = net_tcp_create(bindAddr);
+    if(net_tcp_connect(m_Socket, &m_HostAddress) != 0)
     {
         dbg_msg("GeoIP","ERROR: Can't connect.");
-        net_tcp_close(Socket);
+        net_tcp_close(m_Socket);
         geoInfo->m_CountryCode = "NULL";
         return;
     }
 
     //Send request
     str_format(aNetBuff, sizeof(aNetBuff), "GET /geoip/%s HTTP/1.0\r\nHost: www.telize.com\r\n\r\n", ip.c_str());
-    net_tcp_send(Socket, aNetBuff, strlen(aNetBuff));
+    net_tcp_send(m_Socket, aNetBuff, strlen(aNetBuff));
 
     //read data
     std::string NetData;
@@ -59,7 +78,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     int CurrentRecv = 0;
     bool isHead = true;
     int enterCtrl = 0;
-    while ((CurrentRecv = net_tcp_recv(Socket, aNetBuff, sizeof(aNetBuff))) > 0)
+    while ((CurrentRecv = net_tcp_recv(m_Socket, aNetBuff, sizeof(aNetBuff))) > 0)
     {
         for (int i=0; i<CurrentRecv ; i++)
         {
@@ -95,7 +114,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
             {
                 if (TotalBytes == 0)
                 {
-                    net_tcp_close(Socket);
+                    net_tcp_close(m_Socket);
                     dbg_msg("GeoIP","ERROR: Error with size received data.");
                     geoInfo->m_CountryCode = "NULL";
                     return;
@@ -111,7 +130,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     }
 
     //Finish
-    net_tcp_close(Socket);
+    net_tcp_close(m_Socket);
 
     // parse json data
 	json_settings JsonSettings;
@@ -133,12 +152,12 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
 	if (isp.type == json_string) geoInfo->m_Isp = (const char *)isp;
 }
 
-void ThreadGeoIP(void *params)
+void CGeoIP::ThreadGeoIP(void *params)
 {
     InfoGeoIPThread *pInfoThread = static_cast<InfoGeoIPThread*>(params);
 
     lock_wait(m_GeoIPLock);
-    pInfoThread->m_pGeoIP->GetInfo(pInfoThread->ip, pInfoThread->m_pGeoInfo);
+    GetInfo(pInfoThread->ip, pInfoThread->m_pGeoInfo);
     lock_release(m_GeoIPLock);
 }
 

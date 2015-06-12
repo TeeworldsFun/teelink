@@ -24,15 +24,15 @@ public:
         std::string m_Isp;
     };
 
-    virtual void GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo) = 0;
-};
+    struct InfoGeoIPThread
+    {
+        IGeoIP *m_pGeoIP;
+        IGeoIP::GeoInfo *m_pGeoInfo;
+        char ip[64];
+    };
 
-struct InfoGeoIPThread
-{
-    IGeoIP *m_pGeoIP;
-    IGeoIP::GeoInfo *m_pGeoInfo;
-    char ip[64];
+    virtual void Search(InfoGeoIPThread *pGeoInfo) = 0;
+    virtual bool IsActive() const = 0;
+    virtual void Init() = 0;
 };
-
-void ThreadGeoIP(void *);
 #endif

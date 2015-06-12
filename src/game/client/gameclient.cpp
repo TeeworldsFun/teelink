@@ -272,6 +272,7 @@ void CGameClient::OnInit()
 //	}
 
     // H-Client
+	m_pGeoIP->Init();
     // Load TexturePack
 	m_pTexturePack->Init();
 	m_pTexturePack->Load(g_Config.m_hcTheme);

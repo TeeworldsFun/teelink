@@ -73,7 +73,6 @@ CMenus::CMenus()
 	m_FriendlistSelectedIndex = -1;
 
 	m_NeedUpdateThemesList = true; // H-Client
-	m_pGeoIPThread = 0x0; // H-Client
 }
 
 vec4 CMenus::ButtonColorMul(const void *pID)

@@ -27,7 +27,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 {
     static char selectedServIP[64]={0};
     static IGeoIP::GeoInfo geoInfo;
-    static InfoGeoIPThread infoGeoThread;
+    static IGeoIP::InfoGeoIPThread infoGeoThread;
 	CUIRect Headers;
 	CUIRect Status;
 
@@ -426,20 +426,12 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 				LabelB.Margin(2.0f, &LabelB);
                 if (str_comp(pItem->m_aAddress, selectedServIP) != 0)
                 {
-                    if (m_pGeoIPThread)
-                    {
-                        thread_destroy(m_pGeoIPThread);
-                        thread_wait(m_pGeoIPThread);
-                        m_pGeoIPThread = 0x0;
-                    }
-
                     std::string host = std::string(pItem->m_aAddress);
-
 				    str_copy(infoGeoThread.ip, host.substr(0, host.find_first_of(":")).c_str(), sizeof(infoGeoThread.ip));
 				    geoInfo.m_CountryCode = "_P_";
 				    infoGeoThread.m_pGeoInfo = &geoInfo;
 				    infoGeoThread.m_pGeoIP = GeoIP();
-				    m_pGeoIPThread = thread_create(ThreadGeoIP, &infoGeoThread);
+				    m_pClient->GeoIP()->Search(&infoGeoThread);
 
 				    str_copy(selectedServIP, pItem->m_aAddress, sizeof(selectedServIP));
                 }
