@@ -342,7 +342,10 @@ void CGameClient::OnConnected()
 	m_Collision.Init(Layers());
 
 	// FIXME: H-Client: Android Mapper
-	//RenderTools()->RenderTilemapGenerateSkip(Layers());
+	CServerInfo SInfo;
+	m_pClient->GetServerInfo(&SInfo);
+	if (str_comp_nocase(SInfo.m_aGameType, "mapper") != 0)
+		RenderTools()->RenderTilemapGenerateSkip(Layers());
 
 	for(int i = 0; i < m_All.m_Num; i++)
 	{
