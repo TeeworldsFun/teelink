@@ -194,8 +194,8 @@ int CControls::SnapInput(int *pData)
 		// H-Client: DDNet
 	    CServerInfo SInfo;
 	    Client()->GetServerInfo(&SInfo);
-		if(str_find_nocase(SInfo.m_aGameType, "ddrace") && m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == WEAPON_NINJA && (m_InputData.m_Direction || m_InputData.m_Jump || m_InputData.m_Hook))
-			Send = true;
+	    if(str_find_nocase(SInfo.m_aGameType, "ddrace") && m_pClient->m_Snap.m_pLocalCharacter && Collision()->CheckPointFreeze(m_pClient->m_Snap.m_pLocalCharacter->m_X, m_pClient->m_Snap.m_pLocalCharacter->m_Y) && (m_InputData.m_Direction || m_InputData.m_Jump || m_InputData.m_Hook))
+	    	Send = true;
 	}
 
 	// copy and return size
