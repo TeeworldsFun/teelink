@@ -3,6 +3,7 @@
 #include <base/math.h>
 
 #include <engine/shared/config.h>
+#include <engine/serverbrowser.h> // H-Client
 
 #include <game/collision.h>
 #include <game/client/gameclient.h>
@@ -188,6 +189,12 @@ int CControls::SnapInput(int *pData)
 
 		// send at at least 10hz
 		if(time_get() > LastSendTime + time_freq()/25)
+			Send = true;
+
+		// H-Client: DDNet
+	    CServerInfo SInfo;
+	    Client()->GetServerInfo(&SInfo);
+		if(str_find_nocase(SInfo.m_aGameType, "ddrace") && m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == WEAPON_NINJA && (m_InputData.m_Direction || m_InputData.m_Jump || m_InputData.m_Hook))
 			Send = true;
 	}
 
