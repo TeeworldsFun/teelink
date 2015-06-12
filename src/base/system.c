@@ -133,13 +133,12 @@ void dbg_logger_stdout() { dbg_logger(logger_stdout); }
 void dbg_logger_debugger() { dbg_logger(logger_debugger); }
 void dbg_logger_file(const char *filename)
 {
+	char aBuf[128], aDate[20];
 	logfile = io_open(filename, IOFLAG_APPEND);
 	if(logfile)
 	{
 		// H-Client
-		char aDate[20];
 		str_timestamp(aDate, sizeof(aDate));
-		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "\n\n========================================\n START DATE: %s\n========================================\n", aDate);
 		io_write(logfile, aBuf, str_length(aBuf));
 		//
