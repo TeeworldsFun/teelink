@@ -14,6 +14,10 @@ static LOCK m_GeoIPLock = 0;
 NETADDR CGeoIP::m_HostAddress;
 NETSOCKET CGeoIP::m_Socket = invalid_socket;
 
+#ifndef EINPROGRESS
+	#define EINPROGRESS     115
+#endif
+
 CGeoIP::CGeoIP()
 {
     m_GeoIPLock = lock_create();
@@ -59,13 +63,20 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     //Connect
     bindAddr.type = NETTYPE_IPV4;
     m_Socket = net_tcp_create(bindAddr);
-    if(net_tcp_connect(m_Socket, &m_HostAddress) != 0)
+    net_set_non_blocking(m_Socket);
+    if(net_tcp_connect(m_Socket, &m_HostAddress) < 0)
     {
-        dbg_msg("GeoIP","ERROR: Can't connect.");
-        net_tcp_close(m_Socket);
-        geoInfo->m_CountryCode = "NULL";
-        return;
+    	if (net_errno() != EINPROGRESS)
+    	{
+			dbg_msg("GeoIP","ERROR: Can't connect.");
+			net_tcp_close(m_Socket);
+			geoInfo->m_CountryCode = "NULL";
+			return;
+    	}
     }
+
+    net_socket_read_wait(m_Socket, 1);
+    net_set_blocking(m_Socket);
 
     //Send request
     str_format(aNetBuff, sizeof(aNetBuff), "GET /geoip/%s HTTP/1.0\r\nHost: www.telize.com\r\n\r\n", ip.c_str());
