@@ -954,7 +954,7 @@ void CHud::RenderRecord()
 	}
 	else
 	{
-        str_format(aBuf, sizeof(aBuf), "Undefined", (int)m_PlayerRecord/60, m_PlayerRecord-((int)m_PlayerRecord/60*60));
+        str_format(aBuf, sizeof(aBuf), Localize("Unfinished"), (int)m_PlayerRecord/60, m_PlayerRecord-((int)m_PlayerRecord/60*60));
 		TextRender()->Text(0, 53, h+7+3, 6, aBuf, -1);
 	}
 
@@ -1008,15 +1008,15 @@ void CHud::RenderPlayerInfo()
     const float top = 30.0f;
 
     if (m_pClient->m_LocalInfo.m_Jetpack)
-        infomsg.push_back(CPlayerInfoLine("Have jetpack",1));
+        infomsg.push_back(CPlayerInfoLine("Have jetpack", CPlayerInfoLine::TYPE_GOOD));
     if (m_pClient->m_LocalInfo.m_EndlessHook)
-        infomsg.push_back(CPlayerInfoLine("Have endless hook",1));
+        infomsg.push_back(CPlayerInfoLine("Have endless hook", CPlayerInfoLine::TYPE_GOOD));
     if (m_pClient->m_LocalInfo.m_SoloPart)
-        infomsg.push_back(CPlayerInfoLine("In solo part",2));
+        infomsg.push_back(CPlayerInfoLine("In solo part", CPlayerInfoLine::TYPE_NORMAL));
     if (m_pClient->m_LocalInfo.m_Jumps != 2 || m_pClient->m_LocalInfo.m_InfiniteJumps)
     {
         if (m_pClient->m_LocalInfo.m_Jumps == 0)
-            infomsg.push_back(CPlayerInfoLine("Can't Jump",3));
+            infomsg.push_back(CPlayerInfoLine("Can't Jump", CPlayerInfoLine::TYPE_BAD));
 
         else
         {
@@ -1024,44 +1024,56 @@ void CHud::RenderPlayerInfo()
             {
                 char aBuf[128];
                 str_format(aBuf, sizeof(aBuf), "Jumps: %d", m_pClient->m_LocalInfo.m_Jumps);
-                infomsg.push_back(CPlayerInfoLine(aBuf,2));
+                infomsg.push_back(CPlayerInfoLine(aBuf, CPlayerInfoLine::TYPE_NORMAL));
             }
             else
-                infomsg.push_back(CPlayerInfoLine("Jumps: Infinite",2));
+                infomsg.push_back(CPlayerInfoLine("Jumps: Unlimited", CPlayerInfoLine::TYPE_GOOD));
         }
     }
     if (!m_pClient->m_LocalInfo.m_CanHook)
-        infomsg.push_back(CPlayerInfoLine("Can't hook other players",3));
+        infomsg.push_back(CPlayerInfoLine("Can't hook other players", CPlayerInfoLine::TYPE_BAD));
     if (!m_pClient->m_LocalInfo.m_CollidePlayers)
-        infomsg.push_back(CPlayerInfoLine("Can't collide with other players",3));
+        infomsg.push_back(CPlayerInfoLine("Can't collide with other players", CPlayerInfoLine::TYPE_BAD));
     if (!m_pClient->m_LocalInfo.m_CanHit)
-        infomsg.push_back(CPlayerInfoLine("Can't hit other players",3));
+        infomsg.push_back(CPlayerInfoLine("Can't hit other players", CPlayerInfoLine::TYPE_BAD));
     if (!m_pClient->m_LocalInfo.m_CanHammerHit)
-        infomsg.push_back(CPlayerInfoLine("Can't hammer hit other players",3));
+        infomsg.push_back(CPlayerInfoLine("Can't hammer hit other players", CPlayerInfoLine::TYPE_BAD));
     if (!m_pClient->m_LocalInfo.m_CanShootShotgun)
-        infomsg.push_back(CPlayerInfoLine("Can't shoot with shotgun",3));
+        infomsg.push_back(CPlayerInfoLine("Can't shoot with shotgun", CPlayerInfoLine::TYPE_BAD));
     if (!m_pClient->m_LocalInfo.m_CanShootGrenade)
-        infomsg.push_back(CPlayerInfoLine("Can't shoot with grenade launcher",3));
+        infomsg.push_back(CPlayerInfoLine("Can't shoot with grenade launcher", CPlayerInfoLine::TYPE_BAD));
     if (!m_pClient->m_LocalInfo.m_CanShootRifle)
-        infomsg.push_back(CPlayerInfoLine("Can't shoot with rifle",3));
+        infomsg.push_back(CPlayerInfoLine("Can't shoot with rifle", CPlayerInfoLine::TYPE_BAD));
 
     if (!infomsg.empty())
     {
-        std::vector<CPlayerInfoLine>::iterator it = infomsg.begin();
-        int i=0;
-        for (it=infomsg.begin(); it!=infomsg.end(); ++it,i++)
+        unsigned i=0;
+        for (unsigned e=0; e<CPlayerInfoLine::NUM_TYPES; e++) // Three pass (show messages in groups good to bad)
         {
-            char aBuf[128];
-            str_format(aBuf, sizeof(aBuf), "- %s", it->m_Text.c_str());
+			for (std::vector<CPlayerInfoLine>::iterator it = infomsg.begin(); it!=infomsg.end(); ++it)
+			{
+				if (it->m_Type != e)
+					continue;
 
-            if (it->m_Type == 1)
-                TextRender()->TextColor(0.4f, 1.0f, 0.4f, 0.8f);
-            else if (it->m_Type == 2)
-                TextRender()->TextColor(1.0f, 1.0f, 0.4f, 0.8f);
-            else if (it->m_Type == 3)
-                TextRender()->TextColor(1.0f, 0.4f, 0.4f, 0.8f);
+				char aBuf[128];
+				str_format(aBuf, sizeof(aBuf), "- %s", it->m_Text);
 
-            TextRender()->Text(0, 5.0f, top+9.0f*i, 6.0f, aBuf, -1);
+				switch (it->m_Type)
+				{
+					case CPlayerInfoLine::TYPE_GOOD:
+						TextRender()->TextColor(0.4f, 1.0f, 0.4f, 0.8f);
+						break;
+					case CPlayerInfoLine::TYPE_NORMAL:
+						TextRender()->TextColor(1.0f, 1.0f, 0.4f, 0.8f);
+						break;
+					case CPlayerInfoLine::TYPE_BAD:
+						TextRender()->TextColor(1.0f, 0.4f, 0.4f, 0.8f);
+						break;
+				}
+
+				TextRender()->Text(0, 5.0f, top+9.0f*i, 6.0f, aBuf, -1);
+				++i;
+			}
         }
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
     }

@@ -8,15 +8,24 @@
 class CHud : public CComponent
 {
     // H-Client
-    struct CPlayerInfoLine
+    class CPlayerInfoLine
     {
-        CPlayerInfoLine(std::string text, int type)
+    public:
+    	enum
+		{
+    		TYPE_GOOD=0,
+    		TYPE_NORMAL,
+			TYPE_BAD,
+			NUM_TYPES
+		};
+
+        CPlayerInfoLine(const char *pText, int type)
         {
-            m_Text = text;
+            str_copy(m_Text, pText, sizeof(m_Text));
             m_Type = type;
         }
 
-        std::string m_Text;
+        char m_Text[64];
         unsigned int m_Type;
     };
     //
