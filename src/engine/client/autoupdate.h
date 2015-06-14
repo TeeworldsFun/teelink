@@ -38,7 +38,6 @@ private:
 	bool m_Updated;
 	bool m_NeedUpdateClient;
 	bool m_NeedUpdateServer;
-	int m_CurrentVersionCode;
 	char m_NewVersion[6];
 
     char m_CurrentDownloadFileName[128];

@@ -1036,7 +1036,7 @@ void CGameClient::OnNewSnapshot()
 	if(!m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
 	{
 		CMsgPacker Msg(NETMSGTYPE_CL_ISDDNET); // <-- NO, THIS IS H-CLIENT BITCH!
-		Msg.AddInt(CLIENT_VERSIONNR);
+		Msg.AddInt(DDRACE_VERSIONNR);
 		Client()->SendMsg(&Msg, MSGFLAG_VITAL);
 		m_DDRaceMsgSent = true;
 	}

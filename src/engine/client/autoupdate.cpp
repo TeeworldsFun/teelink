@@ -10,7 +10,6 @@
     #include <windows.h>
 #endif
 #include <engine/external/json-parser/json.h>
-#include <engine/shared/config.h>
 #include <game/client/components/menus.h>
 #include "autoupdate.h"
 
@@ -31,7 +30,6 @@ void CAutoUpdate::Reset()
 {
 	m_NeedUpdateClient = false;
 	m_NeedUpdateServer = false;
-	m_CurrentVersionCode = g_Config.m_hcVersionCode;
 	m_Updated = false;
 	mem_zero(m_NewVersion, sizeof(m_NewVersion));
 	mem_zero(m_CurrentDownloadFileName, sizeof(m_CurrentDownloadFileName));
@@ -117,7 +115,6 @@ void CAutoUpdate::CheckUpdates(CMenus *pMenus)
     std::vector<char> buffer(size);
     if (io_read(fileAutoUpdate, buffer.data(), size))
     {
-        int curVerCode = g_Config.m_hcVersionCode;
         bool needUpdate = false;
 
         json_settings JsonSettings;
@@ -131,27 +128,26 @@ void CAutoUpdate::CheckUpdates(CMenus *pMenus)
         }
 
         int verCode = -1;
-        for(int j=pJsonNodeMain->u.object.length-1; j>=0; j--)
+        for(int j=pJsonNodeMain->u.object.length-1; j>=0; j--) // Ascendent Order
         {
             sscanf((const char *)pJsonNodeMain->u.object.values[j].name, "%d", &verCode);
             json_value *pNodeCode = pJsonNodeMain->u.object.values[j].value;
 
-            if (verCode <= curVerCode)
+            if (verCode <= HCLIENT_VERSION_CODE)
                 continue;
 
             needUpdate = true;
-            m_CurrentVersionCode = verCode;
 
             const json_value &rVersion = (*pNodeCode)["version"];
             str_copy(m_NewVersion, (const char *)rVersion, sizeof(m_NewVersion));
 
             // Need update client?
             const json_value &rClient = (*pNodeCode)["client"];
-            if (rClient.u.boolean) m_NeedUpdateClient = true;
+            m_NeedUpdateClient = (rClient.u.boolean);
 
             // Need update server?
             const json_value &rServer = (*pNodeCode)["server"];
-            if (rServer.u.boolean) m_NeedUpdateServer = true;
+            m_NeedUpdateServer = (rServer.u.boolean);
 
             // Get files to download
             const json_value &rDownload = (*pNodeCode)["download"];
@@ -230,10 +226,7 @@ void CAutoUpdate::DoUpdates(CMenus *pMenus)
     }
 
     if (noErrors)
-    {
         m_Updated = true;
-        g_Config.m_hcVersionCode = m_CurrentVersionCode;
-    }
 
     pMenus->SetPopup(CMenus::POPUP_AUTOUPDATE_RESULT);
 }

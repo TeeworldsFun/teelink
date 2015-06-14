@@ -5,7 +5,17 @@
 #include "generated/nethash.cpp"
 #define GAME_VERSION "0.6.2"
 #define GAME_NETVERSION "0.6 " GAME_NETVERSION_HASH
-#define HCLIENT_VERSION "3.6.1"
-#define CLIENT_VERSIONNR 308
 static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
+
+#define DDRACE_VERSIONNR 308
+/*
+1 - 3.5
+2 - 3.5.1
+3 - 3.5.2
+4 - 3.5.3
+5 - 3.6
+6 - 3.6.1
+*/
+#define HCLIENT_VERSION_CODE 7
+#define HCLIENT_VERSION "3.6.2"
 #endif

@@ -68,10 +68,10 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     {
     	if (net_errno() != EINPROGRESS)
     	{
-			dbg_msg("GeoIP","ERROR: Can't connect.");
-			net_tcp_close(m_Socket);
-			geoInfo->m_CountryCode = "NULL";
-			return;
+    		dbg_msg("GeoIP","ERROR: Can't connect.");
+    		net_tcp_close(m_Socket);
+    		geoInfo->m_CountryCode = "NULL";
+    		return;
     	}
     }
 
