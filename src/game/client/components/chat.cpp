@@ -676,10 +676,10 @@ void CChat::ParseServerMessage(const char *msg)
         else if (srvmsg.find("You can hook others") != std::string::npos)
             m_pClient->m_LocalInfo.m_CanHook = true;
         else if (srvmsg.find("You can jump") != std::string::npos && srvmsg.find("times") != std::string::npos)
-            sscanf(msg, "You can jump %d times", &m_pClient->m_LocalInfo.m_Jumps);
-        else if (srvmsg.find("You have infinite air jumps") != std::string::npos)
+            sscanf(msg, "You can jump %d time", &m_pClient->m_LocalInfo.m_Jumps);
+        else if (srvmsg.find("You have unlimited air jumps") != std::string::npos)
             m_pClient->m_LocalInfo.m_InfiniteJumps = true;
-        else if (srvmsg.find("You don't have infinite air jumps") != std::string::npos)
+        else if (srvmsg.find("You don't have unlimited air jumps") != std::string::npos)
             m_pClient->m_LocalInfo.m_InfiniteJumps = false;
         else if (srvmsg.find("You have a jetpack gun") != std::string::npos)
             m_pClient->m_LocalInfo.m_Jetpack = true;
@@ -702,6 +702,22 @@ void CChat::ParseServerMessage(const char *msg)
         else if (srvmsg.find("You can't hit others") != std::string::npos)
             m_pClient->m_LocalInfo.m_CanHit = false;
 
+        else if (srvmsg.find("You can hammer hit others") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanHammerHit = true;
+        else if (srvmsg.find("You can't hammer hit others") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanHammerHit = false;
+        else if (srvmsg.find("You can shoot others with shotgun") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanShootShotgun = true;
+        else if (srvmsg.find("You can't shoot others with shotgun") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanShootShotgun = false;
+        else if (srvmsg.find("You can shoot others with grenade") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanShootGrenade = true;
+        else if (srvmsg.find("You can't shoot others with grenade") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanShootGrenade = false;
+        else if (srvmsg.find("You can shoot others with rifle") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanShootRifle = true;
+        else if (srvmsg.find("You can't shoot others with rifle") != std::string::npos)
+            m_pClient->m_LocalInfo.m_CanShootRifle = false;
     } catch (...)
     {
         // Ignore

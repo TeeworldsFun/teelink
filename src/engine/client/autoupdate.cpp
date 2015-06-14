@@ -128,7 +128,7 @@ void CAutoUpdate::CheckUpdates(CMenus *pMenus)
         }
 
         int verCode = -1;
-        for(int j=pJsonNodeMain->u.object.length-1; j>=0; j--) // Ascendent Order
+        for(int j=pJsonNodeMain->u.object.length-1; j>=0; j--) // Ascendent Search: Manifest has descendant order
         {
             sscanf((const char *)pJsonNodeMain->u.object.values[j].name, "%d", &verCode);
             json_value *pNodeCode = pJsonNodeMain->u.object.values[j].value;

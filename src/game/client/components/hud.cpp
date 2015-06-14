@@ -1036,6 +1036,14 @@ void CHud::RenderPlayerInfo()
         infomsg.push_back(CPlayerInfoLine("Can't collide with other players",3));
     if (!m_pClient->m_LocalInfo.m_CanHit)
         infomsg.push_back(CPlayerInfoLine("Can't hit other players",3));
+    if (!m_pClient->m_LocalInfo.m_CanHammerHit)
+        infomsg.push_back(CPlayerInfoLine("Can't hammer hit other players",3));
+    if (!m_pClient->m_LocalInfo.m_CanShootShotgun)
+        infomsg.push_back(CPlayerInfoLine("Can't shoot with shotgun",3));
+    if (!m_pClient->m_LocalInfo.m_CanShootGrenade)
+        infomsg.push_back(CPlayerInfoLine("Can't shoot with grenade launcher",3));
+    if (!m_pClient->m_LocalInfo.m_CanShootRifle)
+        infomsg.push_back(CPlayerInfoLine("Can't shoot with rifle",3));
 
     if (!infomsg.empty())
     {

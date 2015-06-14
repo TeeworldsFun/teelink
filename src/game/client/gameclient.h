@@ -282,6 +282,12 @@ public:
             m_SoloPart = false;
             m_EndlessHook = false;
             m_CanHit = true;
+
+            m_CanHammerHit = true;
+            m_CanShootShotgun = true;
+            m_CanShootGrenade = true;
+            m_CanShootRifle = true;
+
             m_WantedWeapon = WEAPON_GUN;
 	    }
 
@@ -293,6 +299,12 @@ public:
         bool m_SoloPart;
         bool m_EndlessHook;
         bool m_CanHit;
+
+        bool m_CanHammerHit;
+        bool m_CanShootShotgun;
+        bool m_CanShootGrenade;
+        bool m_CanShootRifle;
+
         int m_WantedWeapon;
 	} m_LocalInfo;
 
