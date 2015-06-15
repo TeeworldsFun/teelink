@@ -78,12 +78,11 @@ void CCharacterCore::Reset()
 	// H-Client: DDNet
 	m_NewHook = false;
 	m_Freezes = false;
-	m_InTileFreeze = false;
 	m_ActiveWeapon = -1;
 	//
 }
 
-void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
+void CCharacterCore::Tick(bool UseInput)
 {
 	float PhysSize = 28.0f;
 	m_TriggeredEvents = 0;
@@ -96,8 +95,8 @@ void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
 		Grounded = true;
 
     // H-Client: DDNet
-	m_InTileFreeze = m_pCollision->CheckPointFreeze(m_Pos);
-	bool InSpeedTile = m_pCollision->CheckPointSpeedUp(m_Pos);
+	bool InTileFreeze = m_pCollision->CheckPointFreeze(m_Pos);
+	bool InTileSpeed = m_pCollision->CheckPointSpeedUp(m_Pos);
     //
 
 
@@ -127,7 +126,7 @@ void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
 		m_Angle = (int)(a*256.0f);
 
 		// handle jump
-		if((g_Config.m_ddrPreventPrediction && m_Input.m_Jump && !m_Freezes && !m_InTileFreeze) || (!g_Config.m_ddrPreventPrediction && m_Input.m_Jump)) // H-Client: DDNet
+		if((g_Config.m_ddrPreventPrediction && m_Input.m_Jump && !m_Freezes && !InTileFreeze) || (!g_Config.m_ddrPreventPrediction && m_Input.m_Jump)) // H-Client: DDNet
 		{
 			if(!(m_Jumped&1))
 			{
@@ -149,7 +148,7 @@ void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
 			m_Jumped &= ~1;
 
 		// handle hook
-		if((g_Config.m_ddrPreventPrediction && m_Input.m_Hook && !m_Freezes && !m_InTileFreeze) || (!g_Config.m_ddrPreventPrediction && m_Input.m_Hook)) // H-Client: DDNet
+		if((g_Config.m_ddrPreventPrediction && m_Input.m_Hook && !m_Freezes && !InTileFreeze) || (!g_Config.m_ddrPreventPrediction && m_Input.m_Hook)) // H-Client: DDNet
 		{
 			if(m_HookState == HOOK_IDLE)
 			{
@@ -171,7 +170,7 @@ void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
 
 	// add the speed modification according to players wanted direction
 	// H-Client: DDNet
-	if (g_Config.m_ddrPreventPrediction && (m_Freezes || m_InTileFreeze))
+	if (g_Config.m_ddrPreventPrediction && (m_Freezes || InTileFreeze))
         m_Vel.x *= Friction;
     else
     {
@@ -372,12 +371,12 @@ void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
 			}
 		}
 
-		// H-Clent: DDNet
+		// H-Client: DDNet
 		if (m_HookState != HOOK_FLYING)
 			m_NewHook = false;
 
 		// SpeedUps Prediction
-		if(InSpeedTile)
+		if(InTileSpeed)
 		{
 			int CurrentIndex = m_pCollision->GetPureMapIndex(m_Pos);
 			vec2 Direction, MaxVel, TempVel = m_Vel;
@@ -421,7 +420,7 @@ void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
 
 					DiffAngle = SpeederAngle - TeeAngle;
 					SpeedLeft = MaxSpeed / 5.0f - cos(DiffAngle) * TeeSpeed;
-					//dbg_msg("speedup tile debug","MaxSpeed %i, TeeSpeed %f, SpeedLeft %f, SpeederAngle %f, TeeAngle %f", MaxSpeed, TeeSpeed, SpeedLeft, SpeederAngle, TeeAngle);
+
 					if(abs(SpeedLeft) > Force && SpeedLeft > 0.0000001f)
 						TempVel += Direction * Force;
 					else if(abs(SpeedLeft) > Force)
@@ -442,7 +441,8 @@ void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
 			}
 		}
 
-		if (pServerInfo && str_find_nocase(pServerInfo->m_aGameType, "ddrace"))
+		// Only in DDRace (Special Weapons) // FIXME: Use vanilla weapons causes mistakes!
+		if (str_find_nocase(m_pWorld->m_aGameType, "ddrace"))
 		{
 			// jetpack and ninjajetpack prediction
 			if(UseInput && (m_Input.m_Fire&1) && (m_ActiveWeapon == WEAPON_GUN || m_ActiveWeapon == WEAPON_NINJA))

@@ -182,10 +182,13 @@ public:
 	CWorldCore()
 	{
 		mem_zero(m_apCharacters, sizeof(m_apCharacters));
+		mem_zero(m_aGameType, sizeof(m_aGameType)); // H-Client
 	}
 
 	CTuningParams m_Tuning;
 	class CCharacterCore *m_apCharacters[MAX_CLIENTS];
+
+	char m_aGameType[16]; // H-Client: FIXME: Because some mods uses vanilla ids need know the gametype!
 };
 
 class CCharacterCore
@@ -206,7 +209,6 @@ public:
 	vec2 m_HookTeleBase;
 	bool m_NewHook;
 	bool m_Freezes;
-	bool m_InTileFreeze;
 	int m_ActiveWeapon;
 	//
 
@@ -220,7 +222,7 @@ public:
 
 	void Init(CWorldCore *pWorld, CCollision *pCollision);
 	void Reset();
-	void Tick(bool UseInput, CServerInfo *pServerInfo);
+	void Tick(bool UseInput);
 	void Move();
 
 	void Read(const CNetObj_CharacterCore *pObjCore);

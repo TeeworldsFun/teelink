@@ -411,6 +411,7 @@ void CGameContext::OnTick()
 
 	// copy tuning
 	m_World.m_Core.m_Tuning = m_Tuning;
+	str_copy(m_World.m_Core.m_aGameType, m_pController->m_pGameType, sizeof(m_World.m_Core.m_aGameType)); // H-Client
 	m_World.Tick();
 
 	//if(world.paused) // make sure that the game object always updates

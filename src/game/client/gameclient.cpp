@@ -432,7 +432,7 @@ void CGameClient::UpdatePositions()
 }
 
 
-static void Evolve(CNetObj_Character *pCharacter, int Tick, CServerInfo *pServerInfo)
+static void Evolve(CNetObj_Character *pCharacter, int Tick)
 {
 	CWorldCore TempWorld;
 	CCharacterCore TempCore;
@@ -444,7 +444,7 @@ static void Evolve(CNetObj_Character *pCharacter, int Tick, CServerInfo *pServer
 	while(pCharacter->m_Tick < Tick)
 	{
 		pCharacter->m_Tick++;
-		TempCore.Tick(false, pServerInfo);
+		TempCore.Tick(false);
 		TempCore.Move();
 		TempCore.Quantize();
 	}
@@ -872,16 +872,13 @@ void CGameClient::OnNewSnapshot()
 				m_Snap.m_aCharacters[Item.m_ID].m_Cur = *((const CNetObj_Character *)pData);
 				if(pOld)
 				{
-					CServerInfo SInfo;
-					m_pClient->GetServerInfo(&SInfo);
-
 					m_Snap.m_aCharacters[Item.m_ID].m_Active = true;
 					m_Snap.m_aCharacters[Item.m_ID].m_Prev = *((const CNetObj_Character *)pOld);
 
 					if(m_Snap.m_aCharacters[Item.m_ID].m_Prev.m_Tick)
-						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Prev, Client()->PrevGameTick(), &SInfo);
+						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Prev, Client()->PrevGameTick());
 					if(m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Tick)
-						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Cur, Client()->GameTick(), &SInfo);
+						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Cur, Client()->GameTick());
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_SPECTATORINFO)
@@ -968,7 +965,7 @@ void CGameClient::OnNewSnapshot()
 			m_aClients[i].m_Friend = true;
 
         // H-Client: update freeze state
-        if (str_find_nocase(SInfo.m_aGameType, "ddrace") && (m_aClients[i].m_Predicted.m_InTileFreeze || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
+        if (str_find_nocase(SInfo.m_aGameType, "ddrace") && (Collision()->CheckPointFreeze(m_aClients[i].m_Predicted.m_Pos) || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
         {
             if (!m_aClients[i].m_FreezedState.m_Freezed)
                 m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();
@@ -1089,6 +1086,7 @@ void CGameClient::OnPredict()
 	// repredict character
 	CWorldCore World;
 	World.m_Tuning = m_Tuning;
+	str_copy(World.m_aGameType, ServerInfo.m_aGameType, sizeof(World.m_aGameType)); // H-Client
 
 	// search for players
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -1122,10 +1120,10 @@ void CGameClient::OnPredict()
 				int *pInput = Client()->GetInput(Tick);
 				if(pInput)
 					World.m_apCharacters[c]->m_Input = *((CNetObj_PlayerInput*)pInput);
-				World.m_apCharacters[c]->Tick(true, &ServerInfo);
+				World.m_apCharacters[c]->Tick(true);
 			}
 			else
-				World.m_apCharacters[c]->Tick(false, &ServerInfo);
+				World.m_apCharacters[c]->Tick(false);
 
 		}
 
