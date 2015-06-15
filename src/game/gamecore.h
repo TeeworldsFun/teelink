@@ -12,6 +12,7 @@
 #include <game/teamscore.h>
 #include <game/generated/protocol.h>
 // H-Client: DDNet
+#include <engine/serverbrowser.h>
 #include <map>
 #include <vector>
 //
@@ -206,6 +207,7 @@ public:
 	bool m_NewHook;
 	bool m_Freezes;
 	bool m_InTileFreeze;
+	int m_ActiveWeapon;
 	//
 
 	int m_Jumped;
@@ -218,7 +220,7 @@ public:
 
 	void Init(CWorldCore *pWorld, CCollision *pCollision);
 	void Reset();
-	void Tick(bool UseInput);
+	void Tick(bool UseInput, CServerInfo *pServerInfo);
 	void Move();
 
 	void Read(const CNetObj_CharacterCore *pObjCore);

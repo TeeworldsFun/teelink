@@ -359,6 +359,8 @@ public:
 	int State();
 	int GotProblems();
 	const char *ErrorString();
+
+	NETSOCKET& GetSocket() { return m_Socket; } // H-Client
 };
 
 

@@ -22,8 +22,10 @@ class CCollision
 	// H-Client: DDNet
     class CTile *m_pFront;
 	class CTeleTile *m_pTele;
+	class CSpeedUpTile *m_pSpeedUp;
 	std::map<int, std::vector<vec2> > m_TeleOuts;
 	bool IsTileFreeze(int x, int y);
+	int IsSpeedUp(int Index);
 	void InitTeleports();
 	//
 
@@ -50,13 +52,15 @@ public:
 	void MoveBox(vec2 *pInoutPos, vec2 *pInoutVel, vec2 Size, float Elasticity);
 	bool TestBox(vec2 Pos, vec2 Size);
 
-	//H-Client: Ghost Stuff & DDRace Stuff
-	bool CheckPointFreeze(float x, float y, bool nocoll=true) { return IsTileFreeze(round(x), round(y)); }
-	bool CheckPointFreeze(vec2 Pos, bool nocoll=true) { return CheckPointFreeze(Pos.x, Pos.y); }
+	//H-Client: DDRace
+	bool CheckPointFreeze(float x, float y) { return IsTileFreeze(round(x), round(y)); }
+	bool CheckPointFreeze(vec2 Pos) { return CheckPointFreeze(Pos.x, Pos.y); }
+	bool CheckPointSpeedUp(vec2 Pos) { return IsSpeedUp(GetPureMapIndex(Pos)); }
 
 	int IsThrough(int x, int y);
 	int GetTileIndex(int Index);
     int GetPureMapIndex(vec2 Pos);
+    void GetSpeedUp(int Index, vec2 *Dir, int *Force, int *MaxSpeed);
     int IsTeleportHook(int Index);
     int IsTeleport(int Index);
     int IntersectLineTeleHook(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, int *pTeleNr, bool AllowThrough);

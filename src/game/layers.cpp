@@ -14,12 +14,14 @@ CLayers::CLayers()
 
 	m_pFrontLayer = 0; // H-Client
 	m_pTeleLayer = 0; // H-Client
+	m_pSpeedUpLayer = 0; // H-Client
 }
 
 void CLayers::Init(class IKernel *pKernel)
 {
     m_pFrontLayer = 0; // H-Client
     m_pTeleLayer = 0; // H-Client
+    m_pSpeedUpLayer = 0; // H-Client
 
 	m_pMap = pKernel->RequestInterface<IMap>();
 	m_pMap->GetType(MAPITEMTYPE_GROUP, &m_GroupsStart, &m_GroupsNum);
@@ -71,6 +73,13 @@ void CLayers::Init(class IKernel *pKernel)
                         pTilemap->m_Tele = *((int*)(pTilemap) + 15);
 
                     m_pTeleLayer = pTilemap;
+                }
+                if(pTilemap->m_Flags&TILESLAYERFLAG_SPEEDUP)
+                {
+                    if(pTilemap->m_Version <= 2)
+                        pTilemap->m_SpeedUp = *((int*)(pTilemap) + 16);
+
+                    m_pSpeedUpLayer = pTilemap;
                 }
                 //
 			}

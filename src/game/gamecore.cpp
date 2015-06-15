@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "gamecore.h"
+#include "mapitems.h" // H-Client
 #include <engine/shared/config.h> // H-Client
 
 const char *CTuningParams::m_apNames[] =
@@ -74,12 +75,15 @@ void CCharacterCore::Reset()
 	m_Jumped = 0;
 	m_TriggeredEvents = 0;
 
-	m_NewHook = false; // H-Client: DDNet
-	m_Freezes = false; // H-Client: DDNet
-	m_InTileFreeze = false; // H-Client: DDNet
+	// H-Client: DDNet
+	m_NewHook = false;
+	m_Freezes = false;
+	m_InTileFreeze = false;
+	m_ActiveWeapon = -1;
+	//
 }
 
-void CCharacterCore::Tick(bool UseInput)
+void CCharacterCore::Tick(bool UseInput, CServerInfo *pServerInfo)
 {
 	float PhysSize = 28.0f;
 	m_TriggeredEvents = 0;
@@ -92,9 +96,8 @@ void CCharacterCore::Tick(bool UseInput)
 		Grounded = true;
 
     // H-Client: DDNet
-    m_InTileFreeze = false;
-	if(m_pCollision->CheckPointFreeze(m_Pos.x, m_Pos.y))
-		m_InTileFreeze = true;
+	m_InTileFreeze = m_pCollision->CheckPointFreeze(m_Pos);
+	bool InSpeedTile = m_pCollision->CheckPointSpeedUp(m_Pos);
     //
 
 
@@ -368,12 +371,85 @@ void CCharacterCore::Tick(bool UseInput)
 				}
 			}
 		}
-	}
 
-	// H-Clent: DDNet
-    if (m_HookState != HOOK_FLYING)
-        m_NewHook = false;
-    //
+		// H-Clent: DDNet
+		if (m_HookState != HOOK_FLYING)
+			m_NewHook = false;
+
+		// SpeedUps Prediction
+		if(InSpeedTile)
+		{
+			int CurrentIndex = m_pCollision->GetPureMapIndex(m_Pos);
+			vec2 Direction, MaxVel, TempVel = m_Vel;
+			int Force, MaxSpeed = 0;
+			float TeeAngle, SpeederAngle, DiffAngle, SpeedLeft, TeeSpeed;
+			m_pCollision->GetSpeedUp(CurrentIndex, &Direction, &Force, &MaxSpeed);
+			if(Force == 255 && MaxSpeed)
+			{
+				m_Vel = Direction * (MaxSpeed/5);
+			}
+			else
+			{
+				if(MaxSpeed > 0 && MaxSpeed < 5) MaxSpeed = 5;
+				if(MaxSpeed > 0)
+				{
+					if(Direction.x > 0.0000001f)
+						SpeederAngle = -atan(Direction.y / Direction.x);
+					else if(Direction.x < 0.0000001f)
+						SpeederAngle = atan(Direction.y / Direction.x) + 2.0f * asin(1.0f);
+					else if(Direction.y > 0.0000001f)
+						SpeederAngle = asin(1.0f);
+					else
+						SpeederAngle = asin(-1.0f);
+
+					if(SpeederAngle < 0)
+						SpeederAngle = 4.0f * asin(1.0f) + SpeederAngle;
+
+					if(TempVel.x > 0.0000001f)
+						TeeAngle = -atan(TempVel.y / TempVel.x);
+					else if(TempVel.x < 0.0000001f)
+						TeeAngle = atan(TempVel.y / TempVel.x) + 2.0f * asin(1.0f);
+					else if(TempVel.y > 0.0000001f)
+						TeeAngle = asin(1.0f);
+					else
+						TeeAngle = asin(-1.0f);
+
+					if(TeeAngle < 0)
+						TeeAngle = 4.0f * asin(1.0f) + TeeAngle;
+
+					TeeSpeed = sqrt(pow(TempVel.x, 2) + pow(TempVel.y, 2));
+
+					DiffAngle = SpeederAngle - TeeAngle;
+					SpeedLeft = MaxSpeed / 5.0f - cos(DiffAngle) * TeeSpeed;
+					//dbg_msg("speedup tile debug","MaxSpeed %i, TeeSpeed %f, SpeedLeft %f, SpeederAngle %f, TeeAngle %f", MaxSpeed, TeeSpeed, SpeedLeft, SpeederAngle, TeeAngle);
+					if(abs(SpeedLeft) > Force && SpeedLeft > 0.0000001f)
+						TempVel += Direction * Force;
+					else if(abs(SpeedLeft) > Force)
+						TempVel += Direction * -Force;
+					else
+						TempVel += Direction * SpeedLeft;
+				}
+				else
+					TempVel += Direction * Force;
+
+				int TileIndex = m_pCollision->GetTileIndex(CurrentIndex);
+				if(TempVel.x != 0 && TileIndex == TILE_STOP)
+					TempVel.x = 0;
+				if(TempVel.y != 0 && TileIndex == TILE_STOP)
+					TempVel.y = 0;
+
+				m_Vel = TempVel;
+			}
+		}
+
+		if (pServerInfo && str_find_nocase(pServerInfo->m_aGameType, "ddrace"))
+		{
+			// jetpack and ninjajetpack prediction
+			if(UseInput && (m_Input.m_Fire&1) && (m_ActiveWeapon == WEAPON_GUN || m_ActiveWeapon == WEAPON_NINJA))
+				m_Vel += TargetDirection * -1.0f * (m_pWorld->m_Tuning.m_JetpackStrength / 100.0f / 6.11f);
+		}
+		//
+	}
 
 	// clamp the velocity to something sane
 	if(length(m_Vel) > 6000)

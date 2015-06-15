@@ -45,4 +45,7 @@ MACRO_TUNING_PARAM(LaserDamage, laser_damage, 5)
 
 MACRO_TUNING_PARAM(PlayerCollision, player_collision, 1)
 MACRO_TUNING_PARAM(PlayerHooking, player_hooking, 1)
+
+// H-Client: DDNet
+MACRO_TUNING_PARAM(JetpackStrength, jetpack_strength, 400.0f)
 #endif

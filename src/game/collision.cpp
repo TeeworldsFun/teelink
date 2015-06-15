@@ -21,12 +21,14 @@ CCollision::CCollision()
 
 	m_pFront = 0x0; // H-Client
 	m_pTele = 0x0; // H-Client
+	m_pSpeedUp = 0x0; // H-Client
 }
 
 void CCollision::Init(class CLayers *pLayers)
 {
     m_pFront = 0x0; // H-Client
     m_pTele = 0x0; // H-Client
+    m_pSpeedUp = 0x0; // H-Client
 
 	m_pLayers = pLayers;
 	m_Width = m_pLayers->GameLayer()->m_Width;
@@ -41,6 +43,12 @@ void CCollision::Init(class CLayers *pLayers)
 		unsigned int Size = m_pLayers->Map()->GetUncompressedDataSize(m_pLayers->TeleLayer()->m_Tele);
 		if (Size >= m_Width*m_Height*sizeof(CTeleTile))
 			m_pTele = static_cast<CTeleTile *>(m_pLayers->Map()->GetData(m_pLayers->TeleLayer()->m_Tele));
+	}
+	if(m_pLayers->SpeedUpLayer())
+	{
+		unsigned int Size = m_pLayers->Map()->GetUncompressedDataSize(m_pLayers->SpeedUpLayer()->m_SpeedUp);
+		if (Size >= m_Width*m_Height*sizeof(CSpeedUpTile))
+			m_pSpeedUp = static_cast<CSpeedUpTile *>(m_pLayers->Map()->GetData(m_pLayers->SpeedUpLayer()->m_SpeedUp));
 	}
 
 	for(int i = 0; i < m_Width*m_Height; i++)
@@ -431,6 +439,25 @@ int CCollision::IsTeleport(int Index)
 bool CCollision::IsTileFreeze(int x, int y)
 {
 	return GetTile(x, y)&COLFLAG_FREEZE;
+}
+
+int CCollision::IsSpeedUp(int Index)
+{
+	if(!m_pSpeedUp || Index < 0 || 	Index >= m_pLayers->SpeedUpLayer()->m_Width*m_pLayers->SpeedUpLayer()->m_Height)
+		return 0;
+
+	return m_pSpeedUp[Index].m_Force;
+}
+
+void CCollision::GetSpeedUp(int Index, vec2 *Dir, int *Force, int *MaxSpeed)
+{
+	if(Index < 0 || !m_pSpeedUp)
+		return;
+	float Angle = m_pSpeedUp[Index].m_Angle * (pi / 180.0f);
+	*Force = m_pSpeedUp[Index].m_Force;
+	*Dir = vec2(cos(Angle), sin(Angle));
+	if(MaxSpeed)
+		*MaxSpeed = m_pSpeedUp[Index].m_MaxSpeed;
 }
 
 // Android Mapper

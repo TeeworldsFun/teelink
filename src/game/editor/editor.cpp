@@ -2021,7 +2021,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
                         	float angleB = GetAngle(dpB);
                         	float angleDiff = absolute(angleB - angleA);
 
-                            dbg_msg("DATOS A", "SLOPEA: %.2f --- SLOPEB: %.2f -- DIFF: %.2f", angleA, angleB, angleDiff);
+                            //dbg_msg("DATOS A", "SLOPEA: %.2f --- SLOPEB: %.2f -- DIFF: %.2f", angleA, angleB, angleDiff);
 
                             if (currentPos != lastPos && angleDiff > 0.08f)
                             {
@@ -2030,13 +2030,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
                             }
                         }
                         else if (currentPos != lastPos) // FIX: We need add some points to start calculate route... :/
-                        {
-                            if (currentPos.x == lastPos.x && currentPos.y == lastPos.y)
-                                dbg_msg("PASA", "%.2f -- %.2f || %.2f -- %.2f", currentPos.x, lastPos.x, currentPos.y, lastPos.y);
-                            else
-                                dbg_msg("SS", "no pasa!");
                             pEnvelope->AddPoint((time_get()-startDrawingTime)/1000.0f, f2fx(currentPos.x), f2fx(currentPos.y), 0);
-                        }
                     }
 
 
@@ -3278,8 +3272,10 @@ void CEditor::RenderChangeDurationDialog()
     {
         float nTime = atof(aBuf);
 
-        for(int i = 1; i < pEnvelope->m_lPoints.size(); i++)
+        for(int i = 1; i < pEnvelope->m_lPoints.size()-1; i++)
             pEnvelope->m_lPoints[i].m_Time = ((nTime * pEnvelope->m_lPoints[i].m_Time) / pEnvelope->EndTime());
+
+        pEnvelope->m_lPoints[pEnvelope->m_lPoints.size()-1].m_Time = nTime*1000.0f;
 
          m_Dialog = DIALOG_NONE;
          inLoad = true;

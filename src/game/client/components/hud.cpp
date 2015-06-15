@@ -1056,7 +1056,7 @@ void CHud::RenderPlayerInfo()
 					continue;
 
 				char aBuf[128];
-				str_format(aBuf, sizeof(aBuf), "- %s", it->m_Text);
+				str_format(aBuf, sizeof(aBuf), "- %s", it->m_aMessage);
 
 				switch (it->m_Type)
 				{

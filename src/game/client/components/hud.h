@@ -21,11 +21,11 @@ class CHud : public CComponent
 
         CPlayerInfoLine(const char *pText, int type)
         {
-            str_copy(m_Text, pText, sizeof(m_Text));
+            str_copy(m_aMessage, pText, sizeof(m_aMessage));
             m_Type = type;
         }
 
-        char m_Text[64];
+        char m_aMessage[64];
         unsigned int m_Type;
     };
     //

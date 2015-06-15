@@ -432,18 +432,19 @@ void CGameClient::UpdatePositions()
 }
 
 
-static void Evolve(CNetObj_Character *pCharacter, int Tick)
+static void Evolve(CNetObj_Character *pCharacter, int Tick, CServerInfo *pServerInfo)
 {
 	CWorldCore TempWorld;
 	CCharacterCore TempCore;
 	mem_zero(&TempCore, sizeof(TempCore));
 	TempCore.Init(&TempWorld, g_GameClient.Collision());
 	TempCore.Read(pCharacter);
+	TempCore.m_ActiveWeapon = pCharacter->m_Weapon; // H-Client: DDNet
 
 	while(pCharacter->m_Tick < Tick)
 	{
 		pCharacter->m_Tick++;
-		TempCore.Tick(false);
+		TempCore.Tick(false, pServerInfo);
 		TempCore.Move();
 		TempCore.Quantize();
 	}
@@ -871,13 +872,16 @@ void CGameClient::OnNewSnapshot()
 				m_Snap.m_aCharacters[Item.m_ID].m_Cur = *((const CNetObj_Character *)pData);
 				if(pOld)
 				{
+					CServerInfo SInfo;
+					m_pClient->GetServerInfo(&SInfo);
+
 					m_Snap.m_aCharacters[Item.m_ID].m_Active = true;
 					m_Snap.m_aCharacters[Item.m_ID].m_Prev = *((const CNetObj_Character *)pOld);
 
 					if(m_Snap.m_aCharacters[Item.m_ID].m_Prev.m_Tick)
-						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Prev, Client()->PrevGameTick());
+						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Prev, Client()->PrevGameTick(), &SInfo);
 					if(m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Tick)
-						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Cur, Client()->GameTick());
+						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Cur, Client()->GameTick(), &SInfo);
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_SPECTATORINFO)
@@ -1055,6 +1059,9 @@ void CGameClient::OnNewSnapshot()
 
 void CGameClient::OnPredict()
 {
+	CServerInfo ServerInfo;
+	m_pClient->GetServerInfo(&ServerInfo);
+
 	// store the previous values so we can detect prediction errors
 	CCharacterCore BeforePrevChar = m_PredictedPrevChar;
 	CCharacterCore BeforeChar = m_PredictedChar;
@@ -1067,9 +1074,15 @@ void CGameClient::OnPredict()
 	if(m_Snap.m_pGameInfoObj && (m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
 	{
 		if(m_Snap.m_pLocalCharacter)
+		{
 			m_PredictedChar.Read(m_Snap.m_pLocalCharacter);
+			m_PredictedChar.m_ActiveWeapon = m_Snap.m_pLocalCharacter->m_Weapon; // H-Client: DDNet
+		}
 		if(m_Snap.m_pLocalPrevCharacter)
+		{
 			m_PredictedPrevChar.Read(m_Snap.m_pLocalPrevCharacter);
+			m_PredictedPrevChar.m_ActiveWeapon = m_Snap.m_pLocalCharacter->m_Weapon; // H-Client: DDNet
+		}
 		return;
 	}
 
@@ -1086,6 +1099,7 @@ void CGameClient::OnPredict()
 		g_GameClient.m_aClients[i].m_Predicted.Init(&World, Collision());
 		World.m_apCharacters[i] = &g_GameClient.m_aClients[i].m_Predicted;
 		g_GameClient.m_aClients[i].m_Predicted.Read(&m_Snap.m_aCharacters[i].m_Cur);
+		g_GameClient.m_aClients[i].m_Predicted.m_ActiveWeapon = m_Snap.m_aCharacters[i].m_Cur.m_Weapon; // H-Client: DDNet
 	}
 
 	// predict
@@ -1108,10 +1122,10 @@ void CGameClient::OnPredict()
 				int *pInput = Client()->GetInput(Tick);
 				if(pInput)
 					World.m_apCharacters[c]->m_Input = *((CNetObj_PlayerInput*)pInput);
-				World.m_apCharacters[c]->Tick(true);
+				World.m_apCharacters[c]->Tick(true, &ServerInfo);
 			}
 			else
-				World.m_apCharacters[c]->Tick(false);
+				World.m_apCharacters[c]->Tick(false, &ServerInfo);
 
 		}
 

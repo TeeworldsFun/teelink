@@ -16,6 +16,7 @@ class CLayers
 	CMapItemLayerTilemap *m_pGameLayer;
 	CMapItemLayerTilemap *m_pFrontLayer; //H-Client: DDRace
 	CMapItemLayerTilemap *m_pTeleLayer; //H-Client: DDNet
+	CMapItemLayerTilemap *m_pSpeedUpLayer; //H-Client: DDNet
 	class IMap *m_pMap;
 
 public:
@@ -27,6 +28,7 @@ public:
 	CMapItemLayerTilemap *GameLayer() const { return m_pGameLayer; };
 	CMapItemLayerTilemap *FrontLayer() const { return m_pFrontLayer; }; // H-Client
 	CMapItemLayerTilemap *TeleLayer() const { return m_pTeleLayer; }; // H-Client
+	CMapItemLayerTilemap *SpeedUpLayer() const { return m_pSpeedUpLayer; }; // H-Client
 	CMapItemGroup *GetGroup(int Index) const;
 	CMapItemLayer *GetLayer(int Index) const;
 };
