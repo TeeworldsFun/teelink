@@ -228,11 +228,7 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
 	if(Team == TEAM_SPECTATORS)
 		return;
 
-	// H-Client
-    CServerInfo SInfo;
-    Client()->GetServerInfo(&SInfo);
-    bool isDDRace = (str_find_nocase(SInfo.m_aGameType, "ddrace") != 0x0);
-    //
+    bool isDDRace = Client()->IsServerType("ddrace");
 
     float h = 760.0f;
 	CUIRect area;
@@ -355,7 +351,6 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
 		}
 
 		// score
-		// H-Client: DDNet
 		if(isDDRace)
 		{
 			if (pInfo->m_Score == -9999)
@@ -368,7 +363,6 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
 		}
 		else
 			str_format(aBuf, sizeof(aBuf), "%d", clamp(pInfo->m_Score, -999, 999));
-		//
 
 		tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
 		TextRender()->SetCursor(&Cursor, ScoreOffset+ScoreLength-tw, y+Spacing+3.0f, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);

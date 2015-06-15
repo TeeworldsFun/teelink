@@ -318,6 +318,7 @@ public:
 	void ServerBrowserUpdate();
 
 	virtual const char* GetCurrentMap(); // H-Client
+	virtual bool IsServerType(const char *pServer); // H-Client
 };
 
 void init_openssl_library(); // H-Client

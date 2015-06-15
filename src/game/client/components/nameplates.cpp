@@ -21,11 +21,6 @@ void CNamePlates::RenderNameplate(
 
 	vec2 Position = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pPlayerChar->m_X, pPlayerChar->m_Y), IntraTick);
 
-    // H-Client
-    CServerInfo Info;
-    Client()->GetServerInfo(&Info);
-    //
-
 	float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplatesSize / 100.0f;
 	// render name plate
 	if(!pPlayerInfo->m_Local)
@@ -65,7 +60,7 @@ void CNamePlates::RenderNameplate(
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 	}
-	else if (g_Config.m_hcUseHUD && str_find_nocase(Info.m_aGameType, "ddrace") && m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_FreezedState.m_Freezed)
+	else if (g_Config.m_hcUseHUD && Client()->IsServerType("ddrace") && m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_FreezedState.m_Freezed)
     {
 		// H-Client
         CNetObj_Character Prev;

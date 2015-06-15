@@ -192,9 +192,7 @@ int CControls::SnapInput(int *pData)
 			Send = true;
 
 		// H-Client: DDNet
-	    CServerInfo SInfo;
-	    Client()->GetServerInfo(&SInfo);
-		if(str_find_nocase(SInfo.m_aGameType, "ddrace") && m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == WEAPON_NINJA && (m_InputData.m_Direction || m_InputData.m_Jump || m_InputData.m_Hook))
+		if(Client()->IsServerType("ddrace") && m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == WEAPON_NINJA && (m_InputData.m_Direction || m_InputData.m_Jump || m_InputData.m_Hook))
 			Send = true;
 	}
 

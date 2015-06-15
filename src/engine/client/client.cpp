@@ -1485,7 +1485,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 					}
 
 					// H-Client: DDRace: Send Timeout Hash (50 is a magic number :/)
-					if(!m_TimeoutCodeSent && m_RecivedSnapshots == 50 && str_find_nocase(m_CurrentServerInfo.m_aGameType, "ddrace"))
+					if(!m_TimeoutCodeSent && m_RecivedSnapshots == 50 && IsServerType("ddrace"))
 					{
 						m_TimeoutCodeSent = true;
 						CNetMsg_Cl_Say Msg;
@@ -2496,4 +2496,9 @@ int main(int argc, const char **argv) // ignore_convention
 const char* CClient::GetCurrentMap()
 {
 	return m_aCurrentMap;
+}
+
+bool CClient::IsServerType(const char *pServer)
+{
+	return str_find_nocase(m_CurrentServerInfo.m_aGameType, pServer);
 }

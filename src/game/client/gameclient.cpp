@@ -948,9 +948,6 @@ void CGameClient::OnNewSnapshot()
 			m_Snap.m_SpecInfo.m_SpectatorID = SPEC_FREEVIEW;
 	}
 
-    CServerInfo SInfo;
-    Client()->GetServerInfo(&SInfo);
-
 	// clear out unneeded client data
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
@@ -965,7 +962,7 @@ void CGameClient::OnNewSnapshot()
 			m_aClients[i].m_Friend = true;
 
         // H-Client: update freeze state
-        if (str_find_nocase(SInfo.m_aGameType, "ddrace") && (Collision()->CheckPointFreeze(m_aClients[i].m_Predicted.m_Pos) || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
+        if (Client()->IsServerType("ddrace") && (Collision()->CheckPointFreeze(m_aClients[i].m_Predicted.m_Pos) || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
         {
             if (!m_aClients[i].m_FreezedState.m_Freezed)
                 m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();

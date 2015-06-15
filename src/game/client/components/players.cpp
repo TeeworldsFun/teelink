@@ -213,14 +213,11 @@ void CPlayers::RenderPlayer(
 	CTeeRenderInfo RenderInfo = m_aRenderInfo[pInfo.m_ClientID];
 
     //H-Client
-    CServerInfo SInfo;
-    Client()->GetServerInfo(&SInfo);
-
 	if (pInfo.m_Local && Player.m_Health < 10 && Player.m_Health != 0)
 	{
 	    char skinName[25];
 	    int damage = 10-Player.m_Health;
-	    if (str_find_nocase(SInfo.m_aGameType, "infection") && str_find_nocase(m_pClient->m_aClients[pInfo.m_ClientID].m_aClan,"zombie"))
+	    if (Client()->IsServerType("infection") && str_find_nocase(m_pClient->m_aClients[pInfo.m_ClientID].m_aClan,"zombie"))
             damage = 8;
 
         str_format(skinName, sizeof(skinName), "x_damage%i", damage);
@@ -568,7 +565,7 @@ void CPlayers::RenderPlayer(
         RenderFreezeInfo.m_ColorBody = vec4(1,1,1,1);
         RenderFreezeInfo.m_ColorFeet = vec4(1,1,1,1);
     }
-	if (str_find_nocase(SInfo.m_aGameType, "ddrace"))
+	if (Client()->IsServerType("ddrace"))
 	{
         //Tee Direction Info
         if (g_Config.m_ddrShowTeeDirection && !pInfo.m_Local)
@@ -631,7 +628,7 @@ void CPlayers::RenderPlayer(
     }
 
 	//H-Client
-    if (g_Config.m_hcGoreStyle && !str_find_nocase(SInfo.m_aGameType, "ddrace") && Prev.m_Emote == EMOTE_NORMAL && Player.m_Emote == EMOTE_PAIN)
+    if (g_Config.m_hcGoreStyle && !Client()->IsServerType("ddrace") && Prev.m_Emote == EMOTE_NORMAL && Player.m_Emote == EMOTE_PAIN)
         m_pClient->m_pEffects->Blood(Position, Direction, 0);
 
 	if(Player.m_PlayerFlags&PLAYERFLAG_CHATTING)
