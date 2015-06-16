@@ -1042,7 +1042,7 @@ void CClient::ProcessConnlessPacket(CNetChunk *pPacket)
 		}
 		//
 	}
-	// server info 64
+	// H-Client: DDNet: server info 64
 	else if(pPacket->m_DataSize >= (int)sizeof(SERVERBROWSE_INFO64) && mem_comp(pPacket->m_pData, SERVERBROWSE_INFO64, sizeof(SERVERBROWSE_INFO64)) == 0)
 	{
 		// we got ze info
@@ -1104,6 +1104,9 @@ void CClient::ProcessConnlessPacket(CNetChunk *pPacket)
 
 void CClient::ProcessServerPacket(CNetChunk *pPacket)
 {
+	if (net_addr_comp(&m_ServerAddress, &pPacket->m_Address) != 0) // H-Client: Check valid remote address
+		return;
+
 	CUnpacker Unpacker;
 	Unpacker.Reset(pPacket->m_pData, pPacket->m_DataSize);
 

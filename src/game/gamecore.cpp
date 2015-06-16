@@ -439,7 +439,7 @@ void CCharacterCore::Tick(bool UseInput)
 		if (str_find_nocase(m_pWorld->m_aGameType, "ddrace"))
 		{
 			// jetpack and ninjajetpack prediction
-			if(UseInput && (m_Input.m_Fire&1) && (m_ActiveWeapon == WEAPON_GUN || m_ActiveWeapon == WEAPON_NINJA))
+			if(!InTileFreeze && UseInput && (m_Input.m_Fire&1) && (m_ActiveWeapon == WEAPON_GUN || m_ActiveWeapon == WEAPON_NINJA))
 				m_Vel += TargetDirection * -1.0f * (m_pWorld->m_Tuning.m_JetpackStrength / 100.0f / 6.11f);
 		}
 		//
