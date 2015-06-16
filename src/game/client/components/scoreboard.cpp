@@ -560,7 +560,7 @@ void CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const ch
 		TextRender()->TextEx(&Cursor, aBuf, -1);
 
 		// flag
-		if(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS &&
+		if ((m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS) &&
 			m_pClient->m_Snap.m_pGameDataObj && (m_pClient->m_Snap.m_pGameDataObj->m_FlagCarrierRed == pInfo->m_ClientID ||
 			m_pClient->m_Snap.m_pGameDataObj->m_FlagCarrierBlue == pInfo->m_ClientID))
 		{
@@ -702,6 +702,7 @@ void CScoreboard::OnRender()
                 RenderScoreboard64(10.0f, 270.0f, Width-20.0f, 0, 0);
             else
                 RenderScoreboard(Width/2-w/2, 270.0f, w, 0, 0);
+		    //
 
 		    if (Client()->State() != IClient::STATE_DEMOPLAYBACK && s_NeedUpdate)
 		    {
@@ -722,7 +723,7 @@ void CScoreboard::OnRender()
 			const char *pRedClanName = GetClanName(TEAM_RED);
 			const char *pBlueClanName = GetClanName(TEAM_BLUE);
 
-			if(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER && m_pClient->m_Snap.m_pGameDataObj)
+			if ((m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER) && m_pClient->m_Snap.m_pGameDataObj)
 			{
 				char aText[256];
 				str_copy(aText, Localize("Draw!"), sizeof(aText));
@@ -801,7 +802,7 @@ bool CScoreboard::Active()
 	}
 
 	// if the game is over
-	if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)
+	if(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
 		return true;
 
 	return false;

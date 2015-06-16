@@ -5,6 +5,7 @@
 
 #include <base/vmath.h>
 // H-Client: DDNet
+#include <engine/shared/protocol.h>
 #include <map>
 #include <vector>
 //
@@ -23,10 +24,20 @@ class CCollision
     class CTile *m_pFront;
 	class CTeleTile *m_pTele;
 	class CSpeedUpTile *m_pSpeedUp;
+	class CDoorTile *m_pDoor;
+	class CSwitchTile *m_pSwitch;
+	struct SSwitchers
+	{
+		bool m_Status[MAX_CLIENTS];
+		int m_EndTick[MAX_CLIENTS];
+		int m_Type[MAX_CLIENTS];
+	} *m_pSwitchers;
 	std::map<int, std::vector<vec2> > m_TeleOuts;
+	int m_NumSwitchers;
 	bool IsTileFreeze(int x, int y);
 	int IsSpeedUp(int Index);
 	void InitTeleports();
+	void InitSwitchers();
 	//
 
 public:
@@ -36,11 +47,18 @@ public:
 		COLFLAG_DEATH=2,
 		COLFLAG_NOHOOK=4,
 		COLFLAG_FREEZE=8, // H-Client: DDNet
-
 		COLFLAG_TELE=32, // H-Client: DDNet
+
+		TILEMAP_GAME=0,
+		TILEMAP_FRONT,
+		TILEMAP_TELE,
+		TILEMAP_SPEEDUP,
+		TILEMAP_SWITCH
 	};
 
 	CCollision();
+	~CCollision();	// H-Client
+
 	void Init(class CLayers *pLayers);
 	bool CheckPoint(float x, float y, bool nocoll=true) { return IsTileSolid(round(x), round(y)); }
 	bool CheckPoint(vec2 Pos, bool nocoll=true) { return CheckPoint(Pos.x, Pos.y); }
@@ -60,7 +78,9 @@ public:
 	int IsThrough(int x, int y);
 	int GetTileIndex(int Index);
     int GetPureMapIndex(vec2 Pos);
+    vec2 GetPos(int Index);
     void GetSpeedUp(int Index, vec2 *Dir, int *Force, int *MaxSpeed);
+    bool GetRadTiles(int tilemap, vec2 pos, int *index, int *flags, int team = 0);
     int IsTeleportHook(int Index);
     int IsTeleport(int Index);
     int IntersectLineTeleHook(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, int *pTeleNr, bool AllowThrough);

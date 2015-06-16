@@ -210,6 +210,7 @@ public:
 	bool m_NewHook;
 	bool m_Freezes;
 	int m_ActiveWeapon;
+	int m_Team;
 	//
 
 	int m_Jumped;

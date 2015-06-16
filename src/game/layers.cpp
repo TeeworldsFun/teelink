@@ -12,16 +12,21 @@ CLayers::CLayers()
 	m_pGameLayer = 0;
 	m_pMap = 0;
 
-	m_pFrontLayer = 0; // H-Client
-	m_pTeleLayer = 0; // H-Client
-	m_pSpeedUpLayer = 0; // H-Client
+	// H-Client: DDNet
+	m_pFrontLayer = 0;
+	m_pTeleLayer = 0;
+	m_pSpeedUpLayer = 0;
+	m_pSwitchLayer = 0;
+	//
 }
 
 void CLayers::Init(class IKernel *pKernel)
 {
-    m_pFrontLayer = 0; // H-Client
-    m_pTeleLayer = 0; // H-Client
-    m_pSpeedUpLayer = 0; // H-Client
+	// H-Client: DDNet
+    m_pFrontLayer = 0;
+    m_pTeleLayer = 0;
+    m_pSwitchLayer = 0;
+    //
 
 	m_pMap = pKernel->RequestInterface<IMap>();
 	m_pMap->GetType(MAPITEMTYPE_GROUP, &m_GroupsStart, &m_GroupsNum);
@@ -60,13 +65,6 @@ void CLayers::Init(class IKernel *pKernel)
 					//break;
 				}
 				// H-Client: DDNet
-                else if(pTilemap->m_Flags&TILESLAYERFLAG_FRONT)
-                {
-                    if(pTilemap->m_Version <= 2)
-                        pTilemap->m_Front = *((int*)(pTilemap) + 17);
-
-                    m_pFrontLayer = pTilemap;
-                }
                 if(pTilemap->m_Flags&TILESLAYERFLAG_TELE)
                 {
                     if(pTilemap->m_Version <= 2)
@@ -74,12 +72,26 @@ void CLayers::Init(class IKernel *pKernel)
 
                     m_pTeleLayer = pTilemap;
                 }
-                if(pTilemap->m_Flags&TILESLAYERFLAG_SPEEDUP)
+                else if(pTilemap->m_Flags&TILESLAYERFLAG_SPEEDUP)
                 {
                     if(pTilemap->m_Version <= 2)
                         pTilemap->m_SpeedUp = *((int*)(pTilemap) + 16);
 
                     m_pSpeedUpLayer = pTilemap;
+                }
+                else if(pTilemap->m_Flags&TILESLAYERFLAG_FRONT)
+                {
+                    if(pTilemap->m_Version <= 2)
+                        pTilemap->m_Front = *((int*)(pTilemap) + 17);
+
+                    m_pFrontLayer = pTilemap;
+                }
+                else if(pTilemap->m_Flags&TILESLAYERFLAG_SWITCH)
+                {
+                    if(pTilemap->m_Version <= 2)
+                        pTilemap->m_Switch = *((int*)(pTilemap) + 18);
+
+                    m_pSwitchLayer = pTilemap;
                 }
                 //
 			}

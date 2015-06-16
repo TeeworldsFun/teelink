@@ -48,6 +48,7 @@ enum
 	TILE_NOHOOK,
     TILE_TSOLID=5,
 	TILE_THROUGH = 6,
+	TILE_JUMP,
 	TILE_FREEZE = 9,
 	TILE_TELEINEVIL,
 	TILE_UNFREEZE,
@@ -69,16 +70,31 @@ enum
 	TILE_TELECHECK,
 	TILE_TELECHECKOUT,
 	TILE_TELECHECKIN,
-	TILE_BEGIN = 33,
+	TILE_REFILL_JUMPS = 32,
+	TILE_BEGIN,
 	TILE_END,
 	TILE_STOP = 60,
 	TILE_STOPS,
 	TILE_STOPA,
-
-	TILE_SUPER_JUMP_ON=106,
-	TILE_JET_PACK_ON,
-	TILE_SUPER_JUMP_OFF=123,
-	TILE_JET_PACJ_OFF,
+	TILE_TELECHECKINEVIL = 63,
+	TILE_CP = 64,
+	TILE_CP_F,
+	TILE_TUNE1 = 68,
+	TILE_OLDLASER = 71,
+	TILE_NPC,
+	TILE_EHOOK,
+	TILE_NOHIT,
+	TILE_NPH,
+	TILE_PENALTY = 79,
+	TILE_NPC_END = 88,
+	TILE_SUPER_END,
+	TILE_JETPACK_END,
+	TILE_NPH_END,
+	TILE_BONUS = 95,
+	TILE_NPC_START = 104,
+	TILE_SUPER_START,
+	TILE_JETPACK_START,
+	TILE_NPH_START,
 	//End of higher tiles
 	//Layers
 	LAYER_GAME=0,
@@ -92,6 +108,13 @@ enum
 	TILEFLAG_HFLIP=2,
 	TILEFLAG_OPAQUE=4,
 	TILEFLAG_ROTATE=8,
+
+	// H-Client: DDNet
+	ROTATION_0 = 0,
+	ROTATION_90 = TILEFLAG_ROTATE,
+	ROTATION_180 = (TILEFLAG_VFLIP|TILEFLAG_HFLIP),
+	ROTATION_270 = (TILEFLAG_VFLIP|TILEFLAG_HFLIP|TILEFLAG_ROTATE),
+	//
 
 	LAYERFLAG_DETAIL=1,
 	TILESLAYERFLAG_GAME=1,
@@ -276,6 +299,23 @@ public:
 	unsigned char m_MaxSpeed;
 	unsigned char m_Type;
 	short m_Angle;
+};
+
+class CDoorTile
+{
+public:
+	unsigned char m_Index;
+	unsigned char m_Flags;
+	int m_Number;
+};
+
+class CSwitchTile
+{
+public:
+	unsigned char m_Number;
+	unsigned char m_Type;
+	unsigned char m_Flags;
+	unsigned char m_Delay;
 };
 //
 

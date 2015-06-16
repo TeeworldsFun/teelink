@@ -431,12 +431,6 @@ void CCharacterCore::Tick(bool UseInput)
 				else
 					TempVel += Direction * Force;
 
-				int TileIndex = m_pCollision->GetTileIndex(CurrentIndex);
-				if(TempVel.x != 0 && TileIndex == TILE_STOP)
-					TempVel.x = 0;
-				if(TempVel.y != 0 && TileIndex == TILE_STOP)
-					TempVel.y = 0;
-
 				m_Vel = TempVel;
 			}
 		}
@@ -449,6 +443,75 @@ void CCharacterCore::Tick(bool UseInput)
 				m_Vel += TargetDirection * -1.0f * (m_pWorld->m_Tuning.m_JetpackStrength / 100.0f / 6.11f);
 		}
 		//
+
+		// Predict Stoppers!
+		int TilesIndexGame[5], TilesIndexFront[5], TilesIndexSwitch[5];
+		int TilesFlagsGame[5], TilesFlagsFront[5], TilesFlagsSwitch[5];
+		m_pCollision->GetRadTiles(CCollision::TILEMAP_GAME, m_Pos, TilesIndexGame, TilesFlagsGame);
+		m_pCollision->GetRadTiles(CCollision::TILEMAP_FRONT, m_Pos, TilesIndexFront, TilesFlagsFront);
+		m_pCollision->GetRadTiles(CCollision::TILEMAP_SWITCH, m_Pos, TilesIndexSwitch, TilesFlagsSwitch, m_Team);
+
+		if (m_Vel.x > 0.0f && ((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_270) ||
+		      (TilesIndexGame[1] == TILE_STOP && TilesFlagsGame[1] == ROTATION_270) ||
+			  (TilesIndexGame[1] == TILE_STOPS && (TilesFlagsGame[1] == ROTATION_90 || TilesFlagsGame[1] == ROTATION_270)) ||
+			  (TilesIndexGame[1] == TILE_STOPA) ||
+			  (TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_270) ||
+			  (TilesIndexFront[1] == TILE_STOP && TilesFlagsFront[1] == ROTATION_270) ||
+			  (TilesIndexFront[1] == TILE_STOPS && (TilesFlagsFront[1] == ROTATION_90 || TilesFlagsFront[1] == ROTATION_270)) ||
+			  (TilesIndexFront[1] == TILE_STOPA) ||
+			  (TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_270) ||
+			  (TilesIndexSwitch[1] == TILE_STOP && TilesFlagsSwitch[1] == ROTATION_270) ||
+			  (TilesIndexSwitch[1] == TILE_STOPS && (TilesFlagsSwitch[1] == ROTATION_90 || TilesFlagsSwitch[1] == ROTATION_270)) ||
+			  (TilesIndexSwitch[1] == TILE_STOPA)) && m_Vel.x > 0)
+		{
+			m_Vel.x = 0;
+		}
+		if (m_Vel.x < 0.0f && ((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_90) ||
+				(TilesIndexGame[2] == TILE_STOP && TilesFlagsGame[2] == ROTATION_90) ||
+				(TilesIndexGame[2] == TILE_STOPS && (TilesFlagsGame[2] == ROTATION_90 || TilesFlagsGame[2] == ROTATION_270)) ||
+				(TilesIndexGame[2] == TILE_STOPA) ||
+				(TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_90) ||
+				(TilesIndexFront[2] == TILE_STOP && TilesFlagsFront[2] == ROTATION_90) ||
+				(TilesIndexFront[2] == TILE_STOPS && (TilesFlagsFront[2] == ROTATION_90 || TilesFlagsFront[2] == ROTATION_270)) ||
+				(TilesIndexFront[2] == TILE_STOPA) ||
+				(TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_90) ||
+				(TilesIndexSwitch[2] == TILE_STOP && TilesFlagsSwitch[2] == ROTATION_90) ||
+				(TilesIndexSwitch[2] == TILE_STOPS && (TilesFlagsSwitch[2] == ROTATION_90 || TilesFlagsSwitch[2] == ROTATION_270)) ||
+				(TilesIndexSwitch[2] == TILE_STOPA)) && m_Vel.x < 0)
+		{
+			m_Vel.x = 0;
+		}
+		if (m_Vel.y < 0.0f && ((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_180) ||
+				(TilesIndexGame[3] == TILE_STOP && TilesFlagsGame[3] == ROTATION_180) ||
+				(TilesIndexGame[3] == TILE_STOPS && (TilesFlagsGame[3] == ROTATION_0 || TilesFlagsGame[3] == ROTATION_180)) ||
+				(TilesIndexGame[3] == TILE_STOPA) ||
+				(TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_180) ||
+				(TilesIndexFront[3] == TILE_STOP && TilesFlagsFront[3] == ROTATION_180) ||
+				(TilesIndexFront[3] == TILE_STOPS && (TilesFlagsFront[3] == ROTATION_0 || TilesFlagsFront[3] == ROTATION_180)) ||
+				(TilesIndexFront[3] == TILE_STOPA) ||
+				(TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_180) ||
+				(TilesIndexSwitch[3] == TILE_STOP && TilesFlagsSwitch[3] == ROTATION_180) ||
+				(TilesIndexSwitch[3] == TILE_STOPS && (TilesFlagsSwitch[3] == ROTATION_0 || TilesFlagsSwitch[3] == ROTATION_180)) ||
+				(TilesIndexSwitch[3] == TILE_STOPA)) && m_Vel.y < 0)
+		{
+			m_Vel.y = 0;
+		}
+		if(m_Vel.y > 0.0f && ((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_0) ||
+				(TilesIndexGame[4] == TILE_STOP && TilesFlagsGame[4] == ROTATION_0) ||
+				(TilesIndexGame[4] == TILE_STOPS && (TilesFlagsGame[4] == ROTATION_0 || TilesFlagsGame[4] == ROTATION_180)) ||
+				(TilesIndexGame[4] == TILE_STOPA) ||
+				(TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_0) ||
+				(TilesIndexFront[4] == TILE_STOP && TilesFlagsFront[4] == ROTATION_0) ||
+				(TilesIndexFront[4] == TILE_STOPS && (TilesFlagsFront[4] == ROTATION_0 || TilesFlagsFront[4] == ROTATION_180)) ||
+				(TilesIndexFront[4] == TILE_STOPA) ||
+				(TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_0) ||
+				(TilesIndexSwitch[4] == TILE_STOP && TilesFlagsSwitch[4] == ROTATION_0) ||
+				(TilesIndexSwitch[4] == TILE_STOPS && (TilesFlagsSwitch[4] == ROTATION_0 || TilesFlagsSwitch[4] == ROTATION_180)) ||
+				(TilesIndexSwitch[4] == TILE_STOPA)) && m_Vel.y > 0)
+		{
+			m_Vel.y = 0;
+			m_Jumped = 0;
+		}
 	}
 
 	// clamp the velocity to something sane

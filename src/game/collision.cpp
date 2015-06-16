@@ -19,23 +19,38 @@ CCollision::CCollision()
 	m_Height = 0;
 	m_pLayers = 0;
 
-	m_pFront = 0x0; // H-Client
-	m_pTele = 0x0; // H-Client
-	m_pSpeedUp = 0x0; // H-Client
+	// H-Client: DDNet
+	m_pFront = 0x0;
+	m_pTele = 0x0;
+	m_pSpeedUp = 0x0;
+	m_pDoor = 0x0;
+	m_pSwitchers = 0x0;
+	m_NumSwitchers = 0;
+	//
+}
+CCollision::~CCollision()
+{
+	if (m_pDoor)
+		delete m_pDoor; // H-Client
 }
 
 void CCollision::Init(class CLayers *pLayers)
 {
-    m_pFront = 0x0; // H-Client
-    m_pTele = 0x0; // H-Client
-    m_pSpeedUp = 0x0; // H-Client
+	// H-Client: DDNet
+    m_pFront = 0x0;
+    m_pTele = 0x0;
+    m_pSpeedUp = 0x0;
+    m_pDoor = 0x0;
+    m_pSwitchers = 0x0;
+    m_NumSwitchers = 0;
+    //
 
 	m_pLayers = pLayers;
 	m_Width = m_pLayers->GameLayer()->m_Width;
 	m_Height = m_pLayers->GameLayer()->m_Height;
 	m_pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
 
-	// H-Client
+	// H-Client: DDNet
 	if(m_pLayers->FrontLayer())
 		m_pFront = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->FrontLayer()->m_Front));
 	if(m_pLayers->TeleLayer())
@@ -50,11 +65,34 @@ void CCollision::Init(class CLayers *pLayers)
 		if (Size >= m_Width*m_Height*sizeof(CSpeedUpTile))
 			m_pSpeedUp = static_cast<CSpeedUpTile *>(m_pLayers->Map()->GetData(m_pLayers->SpeedUpLayer()->m_SpeedUp));
 	}
+	if(m_pLayers->SwitchLayer())
+	{
+		unsigned int Size = m_pLayers->Map()->GetUncompressedDataSize(m_pLayers->SwitchLayer()->m_Switch);
+		if (Size >= m_Width*m_Height*sizeof(CSwitchTile))
+			m_pSwitch = static_cast<CSwitchTile *>(m_pLayers->Map()->GetData(m_pLayers->SwitchLayer()->m_Switch));
+
+		if (m_pDoor)
+			delete m_pDoor;
+
+		m_pDoor = new CDoorTile[m_Width*m_Height];
+		mem_zero(m_pDoor, m_Width * m_Height * sizeof(CDoorTile));
+	}
 
 	for(int i = 0; i < m_Width*m_Height; i++)
 	{
 		int Index;
 
+		if(m_pSwitch)
+		{
+			if(m_pSwitch[i].m_Number > m_NumSwitchers)
+				m_NumSwitchers = m_pSwitch[i].m_Number;
+
+			m_pDoor[i].m_Number = m_pSwitch[i].m_Number;
+
+			Index = m_pSwitch[i].m_Type;
+			if(Index <= TILE_NPH_START)
+				m_pSwitch[i].m_Type = (Index >= TILE_JUMP && Index <= TILE_BONUS)?Index:0;
+		}
 		if (m_pFront)
 		{
 		    Index = m_pFront[i].m_Index;
@@ -105,6 +143,7 @@ void CCollision::Init(class CLayers *pLayers)
 	}
 
 	InitTeleports(); // H-Client: DDNet
+	InitSwitchers(); // H-Client: DDNet
 }
 
 // H-Client: DDNet
@@ -121,6 +160,23 @@ void CCollision::InitTeleports()
         if (m_pTele[i].m_Number > 0 && m_pTele[i].m_Type == TILE_TELEOUT)
             m_TeleOuts[m_pTele[i].m_Number - 1].push_back(vec2(i % Width * 32 + 16, i / Width * 32 + 16));
     }
+}
+void CCollision::InitSwitchers()
+{
+	if(m_NumSwitchers)
+	{
+		m_pSwitchers = new SSwitchers[m_NumSwitchers+1];
+
+		for (int i = 0; i < m_NumSwitchers+1; ++i)
+		{
+			for (int j = 0; j < MAX_CLIENTS; ++j)
+			{
+				m_pSwitchers[i].m_Status[j] = true;
+				m_pSwitchers[i].m_EndTick[j] = 0;
+				m_pSwitchers[i].m_Type[j] = 0;
+			}
+		}
+	}
 }
 //
 
@@ -458,6 +514,59 @@ void CCollision::GetSpeedUp(int Index, vec2 *Dir, int *Force, int *MaxSpeed)
 	*Dir = vec2(cos(Angle), sin(Angle));
 	if(MaxSpeed)
 		*MaxSpeed = m_pSpeedUp[Index].m_MaxSpeed;
+}
+
+bool CCollision::GetRadTiles(int tilemap, vec2 pos, int *index, int *flags, int team)
+{
+	static const float sProximityRadius = 14.0f; // FIXME: Perhaps best TILE_SIZE/2?
+	static const float sOffset = 4.0f;
+
+	int tmpIndex[] = {
+			GetPureMapIndex(pos), // Current
+			GetPureMapIndex(vec2(pos.x + sProximityRadius + sOffset, pos.y)), // Left
+			GetPureMapIndex(vec2(pos.x - sProximityRadius - sOffset, pos.y)), // Right
+			GetPureMapIndex(vec2(pos.x, pos.y + sProximityRadius + sOffset)), // Top
+			GetPureMapIndex(vec2(pos.x, pos.y - sProximityRadius - sOffset)) // Bottom
+	};
+
+	if (tilemap == TILEMAP_SWITCH && m_pSwitchers)
+	{
+		for (int i=0; i<5; i++)
+		{
+			index[i] = m_pSwitchers[m_pDoor[tmpIndex[i]].m_Number].m_Status[team]?m_pDoor[tmpIndex[i]].m_Index:0;
+			flags[i] = m_pSwitchers[m_pDoor[tmpIndex[i]].m_Number].m_Status[team]?m_pDoor[tmpIndex[i]].m_Flags:0;
+		}
+	}
+	else if (tilemap == TILEMAP_GAME && m_pTiles)
+	{
+		for (int i=0; i<5; i++)
+		{
+			index[i] = m_pTiles[tmpIndex[i]].m_Index;
+			flags[i] = m_pTiles[tmpIndex[i]].m_Flags;
+		}
+	}
+	else if (tilemap == TILEMAP_FRONT && m_pFront)
+	{
+		for (int i=0; i<5; i++)
+		{
+			index[i] = m_pFront[tmpIndex[i]].m_Index;
+			flags[i] = m_pFront[tmpIndex[i]].m_Flags;
+		}
+	}
+	else
+		return false;
+
+	return true;
+}
+
+vec2 CCollision::GetPos(int Index)
+{
+	if(Index < 0)
+		return vec2(0,0);
+
+	int x = Index%m_Width;
+	int y = Index/m_Width;
+	return vec2(x*32+16, y*32+16);
 }
 
 // Android Mapper

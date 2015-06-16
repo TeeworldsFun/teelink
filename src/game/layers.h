@@ -14,9 +14,12 @@ class CLayers
 	int m_LayersStart;
 	CMapItemGroup *m_pGameGroup;
 	CMapItemLayerTilemap *m_pGameLayer;
-	CMapItemLayerTilemap *m_pFrontLayer; //H-Client: DDRace
-	CMapItemLayerTilemap *m_pTeleLayer; //H-Client: DDNet
-	CMapItemLayerTilemap *m_pSpeedUpLayer; //H-Client: DDNet
+	//H-Client: DDRace
+	CMapItemLayerTilemap *m_pFrontLayer;
+	CMapItemLayerTilemap *m_pTeleLayer;
+	CMapItemLayerTilemap *m_pSpeedUpLayer;
+	CMapItemLayerTilemap *m_pSwitchLayer;
+	//
 	class IMap *m_pMap;
 
 public:
@@ -26,11 +29,15 @@ public:
 	class IMap *Map() const { return m_pMap; };
 	CMapItemGroup *GameGroup() const { return m_pGameGroup; };
 	CMapItemLayerTilemap *GameLayer() const { return m_pGameLayer; };
-	CMapItemLayerTilemap *FrontLayer() const { return m_pFrontLayer; }; // H-Client
-	CMapItemLayerTilemap *TeleLayer() const { return m_pTeleLayer; }; // H-Client
-	CMapItemLayerTilemap *SpeedUpLayer() const { return m_pSpeedUpLayer; }; // H-Client
 	CMapItemGroup *GetGroup(int Index) const;
 	CMapItemLayer *GetLayer(int Index) const;
+
+	// H-Client: DDNet
+	CMapItemLayerTilemap *FrontLayer() const { return m_pFrontLayer; };
+	CMapItemLayerTilemap *TeleLayer() const { return m_pTeleLayer; };
+	CMapItemLayerTilemap *SpeedUpLayer() const { return m_pSpeedUpLayer; };
+	CMapItemLayerTilemap *SwitchLayer() const { return m_pSwitchLayer; };
+	//
 };
 
 #endif

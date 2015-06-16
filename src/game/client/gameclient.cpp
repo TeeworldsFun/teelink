@@ -1071,11 +1071,13 @@ void CGameClient::OnPredict()
 		{
 			m_PredictedChar.Read(m_Snap.m_pLocalCharacter);
 			m_PredictedChar.m_ActiveWeapon = m_Snap.m_pLocalCharacter->m_Weapon; // H-Client: DDNet
+			m_PredictedChar.m_Team = m_Snap.m_pLocalInfo->m_Team; // H-Client: DDNet
 		}
 		if(m_Snap.m_pLocalPrevCharacter)
 		{
 			m_PredictedPrevChar.Read(m_Snap.m_pLocalPrevCharacter);
 			m_PredictedPrevChar.m_ActiveWeapon = m_Snap.m_pLocalCharacter->m_Weapon; // H-Client: DDNet
+			m_PredictedPrevChar.m_Team = m_Snap.m_pLocalInfo->m_Team; // H-Client: DDNet
 		}
 		return;
 	}
@@ -1095,6 +1097,7 @@ void CGameClient::OnPredict()
 		World.m_apCharacters[i] = &g_GameClient.m_aClients[i].m_Predicted;
 		g_GameClient.m_aClients[i].m_Predicted.Read(&m_Snap.m_aCharacters[i].m_Cur);
 		g_GameClient.m_aClients[i].m_Predicted.m_ActiveWeapon = m_Snap.m_aCharacters[i].m_Cur.m_Weapon; // H-Client: DDNet
+		g_GameClient.m_aClients[i].m_Predicted.m_Team = m_Snap.m_paPlayerInfos[i]->m_Team; // H-Client: DDNet
 	}
 
 	// predict
