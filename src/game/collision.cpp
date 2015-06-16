@@ -25,13 +25,15 @@ CCollision::CCollision()
 	m_pSpeedUp = 0x0;
 	m_pDoor = 0x0;
 	m_pSwitchers = 0x0;
+	m_pSwitch = 0x0;
 	m_NumSwitchers = 0;
 	//
 }
 CCollision::~CCollision()
 {
-	if (m_pDoor)
-		delete m_pDoor; // H-Client
+	// H-Client
+	if (m_pDoor) delete m_pDoor;
+	if (m_pSwitchers) delete m_pSwitchers;
 }
 
 void CCollision::Init(class CLayers *pLayers)
@@ -42,6 +44,7 @@ void CCollision::Init(class CLayers *pLayers)
     m_pSpeedUp = 0x0;
     m_pDoor = 0x0;
     m_pSwitchers = 0x0;
+    m_pSwitch = 0x0;
     m_NumSwitchers = 0;
     //
 
@@ -163,6 +166,9 @@ void CCollision::InitTeleports()
 }
 void CCollision::InitSwitchers()
 {
+	if (m_pSwitchers)
+		delete m_pSwitchers;
+
 	if(m_NumSwitchers)
 	{
 		m_pSwitchers = new SSwitchers[m_NumSwitchers+1];
@@ -521,7 +527,7 @@ bool CCollision::GetRadTiles(int tilemap, vec2 pos, int *index, int *flags, int 
 	static const float sProximityRadius = 14.0f; // FIXME: Perhaps best TILE_SIZE/2?
 	static const float sOffset = 4.0f;
 
-	int tmpIndex[] = {
+	const int tmpIndex[] = {
 			GetPureMapIndex(pos), // Current
 			GetPureMapIndex(vec2(pos.x + sProximityRadius + sOffset, pos.y)), // Left
 			GetPureMapIndex(vec2(pos.x - sProximityRadius - sOffset, pos.y)), // Right

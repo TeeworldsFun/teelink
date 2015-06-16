@@ -451,7 +451,7 @@ void CCharacterCore::Tick(bool UseInput)
 		m_pCollision->GetRadTiles(CCollision::TILEMAP_FRONT, m_Pos, TilesIndexFront, TilesFlagsFront);
 		m_pCollision->GetRadTiles(CCollision::TILEMAP_SWITCH, m_Pos, TilesIndexSwitch, TilesFlagsSwitch, m_Team);
 
-		if (m_Vel.x > 0.0f && ((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_270) ||
+		if (((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_270) ||
 		      (TilesIndexGame[1] == TILE_STOP && TilesFlagsGame[1] == ROTATION_270) ||
 			  (TilesIndexGame[1] == TILE_STOPS && (TilesFlagsGame[1] == ROTATION_90 || TilesFlagsGame[1] == ROTATION_270)) ||
 			  (TilesIndexGame[1] == TILE_STOPA) ||
@@ -466,7 +466,7 @@ void CCharacterCore::Tick(bool UseInput)
 		{
 			m_Vel.x = 0;
 		}
-		if (m_Vel.x < 0.0f && ((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_90) ||
+		if (((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_90) ||
 				(TilesIndexGame[2] == TILE_STOP && TilesFlagsGame[2] == ROTATION_90) ||
 				(TilesIndexGame[2] == TILE_STOPS && (TilesFlagsGame[2] == ROTATION_90 || TilesFlagsGame[2] == ROTATION_270)) ||
 				(TilesIndexGame[2] == TILE_STOPA) ||
@@ -481,7 +481,7 @@ void CCharacterCore::Tick(bool UseInput)
 		{
 			m_Vel.x = 0;
 		}
-		if (m_Vel.y < 0.0f && ((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_180) ||
+		if (((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_180) ||
 				(TilesIndexGame[3] == TILE_STOP && TilesFlagsGame[3] == ROTATION_180) ||
 				(TilesIndexGame[3] == TILE_STOPS && (TilesFlagsGame[3] == ROTATION_0 || TilesFlagsGame[3] == ROTATION_180)) ||
 				(TilesIndexGame[3] == TILE_STOPA) ||
@@ -496,7 +496,7 @@ void CCharacterCore::Tick(bool UseInput)
 		{
 			m_Vel.y = 0;
 		}
-		if(m_Vel.y > 0.0f && ((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_0) ||
+		if(((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_0) ||
 				(TilesIndexGame[4] == TILE_STOP && TilesFlagsGame[4] == ROTATION_0) ||
 				(TilesIndexGame[4] == TILE_STOPS && (TilesFlagsGame[4] == ROTATION_0 || TilesFlagsGame[4] == ROTATION_180)) ||
 				(TilesIndexGame[4] == TILE_STOPA) ||

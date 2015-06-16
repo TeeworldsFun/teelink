@@ -2403,7 +2403,7 @@ int main(int argc, const char **argv) // ignore_convention
 			FreeConsole();
 			break;
 		}
-	}
+	}d
 #endif
 
 	CClient *pClient = CreateClient();

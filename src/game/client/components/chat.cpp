@@ -139,12 +139,12 @@ bool CChat::OnInput(IInput::CEvent Event)
 	if(m_Mode == MODE_NONE)
 		return false;
 
-	if(Event.m_Flags&IInput::FLAG_PRESS && Event.m_Key == KEY_ESCAPE)
+	if((Event.m_Flags&IInput::FLAG_PRESS) && Event.m_Key == KEY_ESCAPE)
 	{
 		m_Mode = MODE_NONE;
 		m_pClient->OnRelease();
 	}
-	else if(Event.m_Flags&IInput::FLAG_PRESS && (Event.m_Key == KEY_RETURN || Event.m_Key == KEY_KP_ENTER))
+	else if((Event.m_Flags&IInput::FLAG_PRESS) && (Event.m_Key == KEY_RETURN || Event.m_Key == KEY_KP_ENTER))
 	{
 		if(m_Input.GetString()[0])
 		{
@@ -172,7 +172,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 		m_Mode = MODE_NONE;
 		m_pClient->OnRelease();
 	}
-	if(Event.m_Flags&IInput::FLAG_PRESS && Event.m_Key == KEY_TAB)
+	if((Event.m_Flags&IInput::FLAG_PRESS) && Event.m_Key == KEY_TAB)
 	{
 		// fill the completion buffer
 		if(m_CompletionChosen < 0)
@@ -247,14 +247,14 @@ bool CChat::OnInput(IInput::CEvent Event)
 	else
 	{
 		// reset name completion process
-		if(Event.m_Flags&IInput::FLAG_PRESS && Event.m_Key != KEY_TAB)
+		if((Event.m_Flags&IInput::FLAG_PRESS) && Event.m_Key != KEY_TAB)
 			m_CompletionChosen = -1;
 
 		m_OldChatStringLength = m_Input.GetLength();
 		m_Input.ProcessInput(Event);
 		m_InputUpdate = true;
 	}
-	if(Event.m_Flags&IInput::FLAG_PRESS && Event.m_Key == KEY_UP)
+	if((Event.m_Flags&IInput::FLAG_PRESS) && Event.m_Key == KEY_UP)
 	{
 		if(m_pHistoryEntry)
 		{
@@ -269,7 +269,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 		if(m_pHistoryEntry)
 			m_Input.Set(m_pHistoryEntry->m_aText);
 	}
-	else if (Event.m_Flags&IInput::FLAG_PRESS && Event.m_Key == KEY_DOWN)
+	else if ((Event.m_Flags&IInput::FLAG_PRESS) && Event.m_Key == KEY_DOWN)
 	{
 		if(m_pHistoryEntry)
 			m_pHistoryEntry = m_History.Next(m_pHistoryEntry);
@@ -391,7 +391,7 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 			if(m_pClient->m_aClients[ClientID].m_Team == TEAM_SPECTATORS)
 				m_aLines[m_CurrentLine].m_NameColor = TEAM_SPECTATORS;
 
-			if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS)
+			if(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS))
 			{
 				if(m_pClient->m_aClients[ClientID].m_Team == TEAM_RED)
 					m_aLines[m_CurrentLine].m_NameColor = TEAM_RED;
