@@ -428,23 +428,23 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
                 {
                     std::string host = std::string(pItem->m_aAddress);
 				    str_copy(infoGeoThread.ip, host.substr(0, host.find_first_of(":")).c_str(), sizeof(infoGeoThread.ip));
-				    geoInfo.m_CountryCode = "_P_";
+				    str_copy(geoInfo.m_aCountryCode, "_P_", sizeof(geoInfo.m_aCountryCode));
 				    infoGeoThread.m_pGeoInfo = &geoInfo;
 				    infoGeoThread.m_pGeoIP = GeoIP();
 				    m_pClient->GeoIP()->Search(&infoGeoThread);
 
 				    str_copy(selectedServIP, pItem->m_aAddress, sizeof(selectedServIP));
                 }
-                if (geoInfo.m_CountryCode.compare("_P_") == 0)
+                if (str_comp(geoInfo.m_aCountryCode, "_P_") == 0)
                     str_format(aBuf, sizeof(aBuf), "Country: Searching...");
-                else if (geoInfo.m_CountryCode.compare("NULL") == 0)
+                else if (str_comp(geoInfo.m_aCountryCode, "NULL") == 0)
                    str_format(aBuf, sizeof(aBuf), "Country: Unknown");
                 else
-                    str_format(aBuf, sizeof(aBuf), "Country: %s", geoInfo.m_CountryName.c_str());
+                    str_format(aBuf, sizeof(aBuf), "Country: %s", geoInfo.m_aCountryName);
                 UI()->DoLabel(&LabelB, aBuf, 12.0f, -1);
                 LabelB.y+=20.0f;
 
-                const CCountryFlags::CCountryFlag *pFlag = m_pClient->m_pCountryFlags->GetByCountryCodeName(geoInfo.m_CountryCode.c_str());
+                const CCountryFlags::CCountryFlag *pFlag = m_pClient->m_pCountryFlags->GetByCountryCodeName(geoInfo.m_aCountryCode);
                 if (pFlag)
                 {
                     Graphics()->TextureSet(pFlag->m_Texture);

@@ -187,31 +187,63 @@ bool CChat::OnInput(IInput::CEvent Event)
 			str_copy(m_aCompletionBuffer, m_Input.GetString()+m_PlaceholderOffset, min(static_cast<int>(sizeof(m_aCompletionBuffer)), m_PlaceholderLength+1));
 		}
 
-		// find next possible name
 		const char *pCompletionString = 0;
-		m_CompletionChosen = (m_CompletionChosen+1)%(2*MAX_CLIENTS);
-		for(int i = 0; i < 2*MAX_CLIENTS; ++i)
+		if (Input()->KeyPressed(KEY_LSHIFT)) // H-Client
 		{
-			int SearchType = ((m_CompletionChosen+i)%(2*MAX_CLIENTS))/MAX_CLIENTS;
-			int Index = (m_CompletionChosen+i)%MAX_CLIENTS;
-			if(!m_pClient->m_Snap.m_paPlayerInfos[Index])
-				continue;
-
-			bool Found = false;
-			if(SearchType == 1)
+			// find back possible name
+			m_CompletionChosen = (m_CompletionChosen+((2*MAX_CLIENTS)-1))%(2*MAX_CLIENTS);
+			for(int i = 0; i < 2*MAX_CLIENTS; ++i)
 			{
-				if(str_comp_nocase_num(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer, str_length(m_aCompletionBuffer)) &&
-					str_find_nocase(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer))
+				int SearchType = ((m_CompletionChosen-i)%(2*MAX_CLIENTS))/MAX_CLIENTS;
+				int Index = (m_CompletionChosen-i)%MAX_CLIENTS;
+				if(!m_pClient->m_Snap.m_paPlayerInfos[Index])
+					continue;
+
+				bool Found = false;
+				if(SearchType == 1)
+				{
+					if(str_comp_nocase_num(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer, str_length(m_aCompletionBuffer)) &&
+						str_find_nocase(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer))
+						Found = true;
+				}
+				else if(!str_comp_nocase_num(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer, str_length(m_aCompletionBuffer)))
 					Found = true;
-			}
-			else if(!str_comp_nocase_num(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer, str_length(m_aCompletionBuffer)))
-				Found = true;
 
-			if(Found)
+				if(Found)
+				{
+					pCompletionString = m_pClient->m_aClients[Index].m_aName;
+					m_CompletionChosen = Index+SearchType*MAX_CLIENTS;
+					break;
+				}
+			}
+		}
+		else
+		{
+			// find next possible name
+			m_CompletionChosen = (m_CompletionChosen+1)%(2*MAX_CLIENTS);
+			for(int i = 0; i < 2*MAX_CLIENTS; ++i)
 			{
-				pCompletionString = m_pClient->m_aClients[Index].m_aName;
-				m_CompletionChosen = Index+SearchType*MAX_CLIENTS;
-				break;
+				int SearchType = ((m_CompletionChosen+i)%(2*MAX_CLIENTS))/MAX_CLIENTS;
+				int Index = (m_CompletionChosen+i)%MAX_CLIENTS;
+				if(!m_pClient->m_Snap.m_paPlayerInfos[Index])
+					continue;
+
+				bool Found = false;
+				if(SearchType == 1)
+				{
+					if(str_comp_nocase_num(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer, str_length(m_aCompletionBuffer)) &&
+						str_find_nocase(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer))
+						Found = true;
+				}
+				else if(!str_comp_nocase_num(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer, str_length(m_aCompletionBuffer)))
+					Found = true;
+
+				if(Found)
+				{
+					pCompletionString = m_pClient->m_aClients[Index].m_aName;
+					m_CompletionChosen = Index+SearchType*MAX_CLIENTS;
+					break;
+				}
 			}
 		}
 
@@ -247,7 +279,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 	else
 	{
 		// reset name completion process
-		if((Event.m_Flags&IInput::FLAG_PRESS) && Event.m_Key != KEY_TAB)
+		if((Event.m_Flags&IInput::FLAG_PRESS) && Event.m_Key != KEY_TAB && Event.m_Key != KEY_LSHIFT) // H-Client
 			m_CompletionChosen = -1;
 
 		m_OldChatStringLength = m_Input.GetLength();

@@ -51,7 +51,7 @@ void CGeoIP::Search(InfoGeoIPThread *pGeoInfo)
     m_pGeoIPThread = thread_create(ThreadGeoIP, pGeoInfo);
 }
 
-void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
+IGeoIP::GeoInfo CGeoIP::GetInfo(std::string ip)
 {
     dbg_msg("GeoIP", "Searching geolocation of '%s'...", ip.c_str());
 
@@ -59,6 +59,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     mem_zero(&bindAddr, sizeof(bindAddr));
     char aNetBuff[1024];
     std::string jsonData;
+    IGeoIP::GeoInfo rInfo;
 
     //Connect
     bindAddr.type = NETTYPE_IPV4;
@@ -70,8 +71,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     	{
     		dbg_msg("GeoIP","ERROR: Can't connect.");
     		net_tcp_close(m_Socket);
-    		geoInfo->m_CountryCode = "NULL";
-    		return;
+    		return rInfo;
     	}
     }
 
@@ -83,6 +83,7 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     net_tcp_send(m_Socket, aNetBuff, strlen(aNetBuff));
 
     //read data
+    bool errors = true;
     std::string NetData;
     int TotalRecv = 0;
     int TotalBytes = 0;
@@ -127,15 +128,17 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
                 {
                     net_tcp_close(m_Socket);
                     dbg_msg("GeoIP","ERROR: Error with size received data.");
-                    geoInfo->m_CountryCode = "NULL";
-                    return;
+                    break;
                 }
 
                 jsonData += aNetBuff[i];
 
                 TotalRecv++;
                 if (TotalRecv == TotalBytes)
+                {
+                	errors = false;
                     break;
+                }
             }
         }
     }
@@ -143,32 +146,38 @@ void CGeoIP::GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo)
     //Finish
     net_tcp_close(m_Socket);
 
-    // parse json data
-	json_settings JsonSettings;
-	mem_zero(&JsonSettings, sizeof(JsonSettings));
-	char aError[256];
-	json_value *pJsonData = json_parse_ex(&JsonSettings, jsonData.c_str(), jsonData.length(), aError);
-	if (pJsonData == 0)
-	{
-		dbg_msg("GeoIP", "Error: %s", aError);
-		return;
-	}
+    if (!errors)
+    {
+		// parse json data
+		json_settings JsonSettings;
+		mem_zero(&JsonSettings, sizeof(JsonSettings));
+		char aError[256];
+		json_value *pJsonData = json_parse_ex(&JsonSettings, jsonData.c_str(), jsonData.length(), aError);
+		if (pJsonData == 0)
+		{
+			dbg_msg("GeoIP", "Error: %s", aError);
+			return rInfo;
+		}
 
-	// generate configurations
-	const json_value &countryCode = (*pJsonData)["country_code"];
-	if (countryCode.type == json_string) geoInfo->m_CountryCode = (const char *)countryCode;
-	const json_value &countryName = (*pJsonData)["country"];
-	if (countryName.type == json_string) geoInfo->m_CountryName = (const char *)countryName;
-	const json_value &isp = (*pJsonData)["isp"];
-	if (isp.type == json_string) geoInfo->m_Isp = (const char *)isp;
+		// generate configurations
+		const json_value &countryCode = (*pJsonData)["country_code"];
+		if (countryCode.type == json_string) str_copy(rInfo.m_aCountryCode, (const char *)countryCode, sizeof(rInfo.m_aCountryCode));
+		const json_value &countryName = (*pJsonData)["country"];
+		if (countryName.type == json_string) str_copy(rInfo.m_aCountryName, (const char *)countryName, sizeof(rInfo.m_aCountryName));
+		//const json_value &isp = (*pJsonData)["isp"];
+		//if (isp.type == json_string) geoInfo->m_Isp = (const char *)isp;
+    }
+
+	return rInfo;
 }
 
 void CGeoIP::ThreadGeoIP(void *params)
 {
     InfoGeoIPThread *pInfoThread = static_cast<InfoGeoIPThread*>(params);
+    IGeoIP::GeoInfo info = GetInfo(pInfoThread->ip);
 
     lock_wait(m_GeoIPLock);
-    GetInfo(pInfoThread->ip, pInfoThread->m_pGeoInfo);
+    *pInfoThread->m_pGeoInfo = info;
     lock_release(m_GeoIPLock);
 }
 

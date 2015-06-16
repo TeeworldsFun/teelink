@@ -109,7 +109,7 @@ int CNetConnection::QueueChunkEx(int Flags, int DataSize, const void *pData, int
 
 	// set packet flags aswell
 
-	if(Flags&NET_CHUNKFLAG_VITAL && !(Flags&NET_CHUNKFLAG_RESEND))
+	if((Flags&NET_CHUNKFLAG_VITAL) && !(Flags&NET_CHUNKFLAG_RESEND))
 	{
 		// save packet if we need to resend
 		CNetChunkResend *pResend = m_Buffer.Allocate(sizeof(CNetChunkResend)+DataSize);
@@ -181,13 +181,13 @@ void CNetConnection::Disconnect(const char *pReason)
 
 	if(m_RemoteClosed == 0)
 	{
-		if(pReason)
+		if(pReason && pReason[0] != 0) // H-Client
 			SendControl(NET_CTRLMSG_CLOSE, pReason, str_length(pReason)+1);
 		else
 			SendControl(NET_CTRLMSG_CLOSE, 0, 0);
 
 		m_ErrorString[0] = 0;
-		if(pReason)
+		if(pReason && pReason[0] != 0) // H-Client
 			str_copy(m_ErrorString, pReason, sizeof(m_ErrorString));
 	}
 

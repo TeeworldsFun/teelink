@@ -16,12 +16,12 @@ public:
     {
         GeoInfo()
         {
-            m_CountryCode = "NULL";
+        	str_copy(m_aCountryCode, "NULL", sizeof(m_aCountryCode));
+        	str_copy(m_aCountryName, "NULL", sizeof(m_aCountryName));
         }
 
-        std::string m_CountryCode;
-        std::string m_CountryName;
-        std::string m_Isp;
+        char m_aCountryCode[8];
+        char m_aCountryName[32];
     };
 
     struct InfoGeoIPThread

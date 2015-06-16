@@ -25,7 +25,7 @@ protected:
     bool m_Active;
 
 private:
-    static void GetInfo(std::string ip, IGeoIP::GeoInfo *geoInfo);
+    static IGeoIP::GeoInfo GetInfo(std::string ip);
     static void ThreadGeoIP(void *params);
 };
 
