@@ -41,6 +41,9 @@ void CGeoIP::Init()
 
 void CGeoIP::Search(InfoGeoIPThread *pGeoInfo)
 {
+	if (!m_Active)
+		return;
+
     if (m_pGeoIPThread)
     {
     	net_tcp_close(m_Socket);
@@ -48,7 +51,7 @@ void CGeoIP::Search(InfoGeoIPThread *pGeoInfo)
         m_pGeoIPThread = 0x0;
     }
 
-    m_pGeoIPThread = thread_create(ThreadGeoIP, pGeoInfo);
+    m_pGeoIPThread = thread_init(ThreadGeoIP, pGeoInfo);
 }
 
 IGeoIP::GeoInfo CGeoIP::GetInfo(std::string ip)
@@ -178,6 +181,6 @@ void CGeoIP::ThreadGeoIP(void *params)
 
     lock_wait(m_GeoIPLock);
     *pInfoThread->m_pGeoInfo = info;
-    lock_release(m_GeoIPLock);
+    lock_unlock(m_GeoIPLock);
 }
 

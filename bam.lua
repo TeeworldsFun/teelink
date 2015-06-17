@@ -146,9 +146,10 @@ function build(settings)
 	if config.compiler.driver == "cl" then
 		settings.cc.flags:Add("/wd4244", "/EHsc")
 	else
-		settings.cc.flags:Add("-Wall", "-fexceptions", "-O2", "-s")
+		settings.cc.flags:Add("-Wall", "-fexceptions", "-O2")
 		if family == "windows" then
 			-- disable visibility attribute support for gcc on windows
+			settings.cc.flags:Add("-s")
 			settings.cc.defines:Add("NO_VIZ")
 			settings.cc.defines:Add("_WIN32_WINNT=0x0501")
 		elseif platform == "macosx" then
@@ -159,7 +160,7 @@ function build(settings)
 				settings.link.flags:Add("-isysroot /Developer/SDKs/MacOSX10.5.sdk")
 			end
 		elseif config.stackprotector.value == 1 then
-			settings.cc.flags:Add("-fstack-protector", "-fstack-protector-all")
+			settings.cc.flags:Add("-s", "-fstack-protector", "-fstack-protector-all")
 			settings.link.flags:Add("-fstack-protector", "-fstack-protector-all")
 		end
 	end

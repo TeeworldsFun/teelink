@@ -1265,7 +1265,7 @@ int CMenus::Render()
                 static InfoUpdatesThread infoUpdatesThread;
                 infoUpdatesThread.m_pAutoUpdate = AutoUpdate();
                 infoUpdatesThread.m_pMenus = this;
-                thread_create(ThreadUpdates, &infoUpdatesThread);
+                thread_init(ThreadUpdates, &infoUpdatesThread);
             }
         }
         else if(m_Popup == POPUP_AUTOUPDATE_DOWNLOADING)

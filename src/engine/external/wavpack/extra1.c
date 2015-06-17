@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////
 //                           **** WAVPACK ****                            //
 //                  Hybrid Lossless Wavefile Compressor                   //
-//              Copyright (c) 1998 - 2006 Conifer Software.               //
+//              Copyright (c) 1998 - 2013 Conifer Software.               //
 //                          All Rights Reserved.                          //
 //      Distributed under the BSD Software License (see license.txt)      //
 ////////////////////////////////////////////////////////////////////////////
@@ -10,28 +10,29 @@
 
 // This module handles the "extra" mode for mono files.
 
-#include "wavpack_local.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
+#include "wavpack_local.h"
+
+// This flag causes this module to take into account the size of the header
+// (which grows with more decorrelation passes) when making decisions about
+// adding additional passes (as opposed to just considering the resulting
+// magnitude of the residuals). With small blocks this seems to work correctly,
+// but with longer blocks it seems to actually hurt compression (for reasons I
+// cannot explain), so it's disabled by default
+
 //#define USE_OVERHEAD
+
+// If the log2 value of any sample in a buffer being scanned exceeds this value,
+// we abandon that configuration. This prevents us from going down paths that
+// are wildly unstable.
+
 #define LOG_LIMIT 6912
-//#define EXTRA_DUMP
 
-#ifdef DEBUG_ALLOC
-#define malloc malloc_db
-#define realloc realloc_db
-#define free free_db
-void *malloc_db (uint32_t size);
-void *realloc_db (void *ptr, uint32_t size);
-void free_db (void *ptr);
-int32_t dump_alloc (void);
-#endif
-
-//////////////////////////////// local tables ///////////////////////////////
+//#define EXTRA_DUMP        // dump generated filter data  error_line()
 
 typedef struct {
     int32_t *sampleptrs [MAX_NTERMS+2];
@@ -224,7 +225,7 @@ static void recurse_mono (WavpackContext *wpc, WavpackExtraInfo *info, int depth
         info->dps [depth].term = term;
         info->dps [depth].delta = delta;
         decorr_mono_buffer (samples, outsamples, wps->wphdr.block_samples, info->dps, depth);
-        bits = log2buffer (outsamples, wps->wphdr.block_samples, info->log_limit);
+        bits = LOG2BUFFER (outsamples, wps->wphdr.block_samples, info->log_limit);
 
         if (bits != (uint32_t) -1)
             bits += log2overhead (info->dps [0].term, depth + 1);
@@ -289,7 +290,7 @@ static void delta_mono (WavpackContext *wpc, WavpackExtraInfo *info)
             decorr_mono_buffer (info->sampleptrs [i], info->sampleptrs [i+1], wps->wphdr.block_samples, info->dps, i);
         }
 
-        bits = log2buffer (info->sampleptrs [i], wps->wphdr.block_samples, info->log_limit);
+        bits = LOG2BUFFER (info->sampleptrs [i], wps->wphdr.block_samples, info->log_limit);
 
         if (bits != (uint32_t) -1)
             bits += log2overhead (wps->decorr_passes [0].term, i);
@@ -314,7 +315,7 @@ static void delta_mono (WavpackContext *wpc, WavpackExtraInfo *info)
             decorr_mono_buffer (info->sampleptrs [i], info->sampleptrs [i+1], wps->wphdr.block_samples, info->dps, i);
         }
 
-        bits = log2buffer (info->sampleptrs [i], wps->wphdr.block_samples, info->log_limit);
+        bits = LOG2BUFFER (info->sampleptrs [i], wps->wphdr.block_samples, info->log_limit);
 
         if (bits != (uint32_t) -1)
             bits += log2overhead (wps->decorr_passes [0].term, i);
@@ -358,7 +359,7 @@ static void sort_mono (WavpackContext *wpc, WavpackExtraInfo *info)
             for (i = ri; i < info->nterms && wps->decorr_passes [i].term; ++i)
                 decorr_mono_buffer (info->sampleptrs [i], info->sampleptrs [i+1], wps->wphdr.block_samples, info->dps, i);
 
-            bits = log2buffer (info->sampleptrs [i], wps->wphdr.block_samples, info->log_limit);
+            bits = LOG2BUFFER (info->sampleptrs [i], wps->wphdr.block_samples, info->log_limit);
 
             if (bits != (uint32_t) -1)
                 bits += log2overhead (wps->decorr_passes [0].term, i);
@@ -412,13 +413,13 @@ static void analyze_mono (WavpackContext *wpc, int32_t *samples, int do_samples)
     for (i = 0; i < info.nterms && info.dps [i].term; ++i)
         decorr_mono_pass (info.sampleptrs [i], info.sampleptrs [i + 1], wps->wphdr.block_samples, info.dps + i, 1);
 
-    info.best_bits = log2buffer (info.sampleptrs [info.nterms], wps->wphdr.block_samples, 0) * 1;
+    info.best_bits = LOG2BUFFER (info.sampleptrs [info.nterms], wps->wphdr.block_samples, 0) * 1;
     info.best_bits += log2overhead (info.dps [0].term, i);
     memcpy (info.sampleptrs [info.nterms + 1], info.sampleptrs [i], wps->wphdr.block_samples * 4);
 
     if (wpc->config.extra_flags & EXTRA_BRANCHES)
         recurse_mono (wpc, &info, 0, (int) floor (wps->delta_decay + 0.5),
-            log2buffer (info.sampleptrs [0], wps->wphdr.block_samples, 0));
+            LOG2BUFFER (info.sampleptrs [0], wps->wphdr.block_samples, 0));
 
     if (wpc->config.extra_flags & EXTRA_SORT_FIRST)
         sort_mono (wpc, &info);
@@ -500,6 +501,12 @@ void execute_mono (WavpackContext *wpc, int32_t *samples, int no_history, int do
     uint32_t best_size = (uint32_t) -1, size;
     int log_limit, pi, i;
 
+#ifdef SKIP_DECORRELATION
+    CLEAR (wps->decorr_passes);
+    wps->num_terms = 0;
+    return;
+#endif
+
     for (i = 0; i < num_samples; ++i)
         if (samples [i])
             break;
@@ -571,7 +578,7 @@ void execute_mono (WavpackContext *wpc, int32_t *samples, int no_history, int do
         }
 
         wpds = &wps->decorr_specs [c];
-        nterms = (int) strlen (wpds->terms);
+        nterms = (int) strlen ((char *) wpds->terms);
 
         while (1) {
         memcpy (temp_buffer [0], noisy_buffer ? noisy_buffer : samples, buf_size);
@@ -598,7 +605,7 @@ void execute_mono (WavpackContext *wpc, int32_t *samples, int no_history, int do
             decorr_mono_pass (temp_buffer [j&1], temp_buffer [~j&1], num_samples, &temp_decorr_pass, 1);
         }
 
-        size = log2buffer (temp_buffer [j&1], num_samples, log_limit);
+        size = LOG2BUFFER (temp_buffer [j&1], num_samples, log_limit);
 
         if (size == (uint32_t) -1 && nterms)
             nterms >>= 1;

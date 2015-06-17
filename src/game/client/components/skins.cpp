@@ -193,7 +193,7 @@ int CSkins::Find(const char *pName, bool tryDownload)
 			InfoDownloadSkinThread *pInfoDownloadSkinThread = new InfoDownloadSkinThread;
 			pInfoDownloadSkinThread->m_pSkins = this;
 			str_copy(pInfoDownloadSkinThread->m_SkinName, pName, sizeof(pInfoDownloadSkinThread->m_SkinName));
-			thread_create(ThreadDownloadSkin, pInfoDownloadSkinThread);
+			thread_init(ThreadDownloadSkin, pInfoDownloadSkinThread);
     	}
     }
 
