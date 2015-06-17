@@ -17,6 +17,7 @@ public:
         m_TextureDamage = -1;
 		m_ColorBody = vec4(1,1,1,1);
 		m_ColorFeet = vec4(1,1,1,1);
+		m_ColorHand = vec4(1,1,1,1); // H-Client
 		m_Size = 1.0f;
 		m_GotAirJump = 1;
 	};
@@ -25,6 +26,7 @@ public:
 	int m_TextureDamage;
 	vec4 m_ColorBody;
 	vec4 m_ColorFeet;
+	vec4 m_ColorHand; // H-Client
 	float m_Size;
 	int m_GotAirJump;
 };

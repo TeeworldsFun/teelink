@@ -1246,7 +1246,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 			TextRender()->TextColor(1.0f, 0.4f, 0.4f, 1.0f);
 		}
 		else
-			str_format(aBuf, sizeof(aBuf), Localize("Current version: %s"), GAME_VERSION);
+			str_format(aBuf, sizeof(aBuf), Localize("Current version: %s, %s"), GAME_VERSION, HCLIENT_VERSION); // H-Client
 		UI()->DoLabelScaled(&Button, aBuf, 14.0f, -1);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -1258,7 +1258,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 		Button.VMargin(2.0f, &Button);
 
 		static int s_RefreshButton = 0;
-		if(DoButton_Menu(&s_RefreshButton, Localize("Refresh"), 0, &Button))
+		if(DoButton_Menu(&s_RefreshButton, Localize("Refresh"), 0, &Button) || Input()->KeyDown(KEY_F5))
 		{
 			if(g_Config.m_UiPage == PAGE_INTERNET)
 				ServerBrowser()->Refresh(IServerBrowser::TYPE_INTERNET);

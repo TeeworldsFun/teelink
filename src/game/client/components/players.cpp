@@ -54,7 +54,7 @@ void CPlayers::RenderHand(CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float
 	//Graphics()->TextureSet(data->m_aImages[IMAGE_CHAR_DEFAULT].id);
 	Graphics()->TextureSet(pInfo->m_Texture);
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(pInfo->m_ColorBody.r, pInfo->m_ColorBody.g, pInfo->m_ColorBody.b, pInfo->m_ColorBody.a);
+	Graphics()->SetColor(pInfo->m_ColorHand.r, pInfo->m_ColorHand.g, pInfo->m_ColorHand.b, pInfo->m_ColorHand.a); // H-Client
 
 	// two passes
 	for (int i = 0; i < 2; i++)

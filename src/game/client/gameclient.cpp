@@ -811,6 +811,7 @@ void CGameClient::OnNewSnapshot()
 
 				m_aClients[ClientID].m_SkinInfo.m_ColorBody = m_pSkins->GetColorV4(m_aClients[ClientID].m_ColorBody);
 				m_aClients[ClientID].m_SkinInfo.m_ColorFeet = m_pSkins->GetColorV4(m_aClients[ClientID].m_ColorFeet);
+				m_aClients[ClientID].m_SkinInfo.m_ColorHand = m_aClients[ClientID].m_SkinInfo.m_ColorBody; // H-Client
 				m_aClients[ClientID].m_SkinInfo.m_Size = 64;
 
                 // H-Client
@@ -835,6 +836,7 @@ void CGameClient::OnNewSnapshot()
 					m_aClients[ClientID].m_SkinInfo.m_Texture = g_GameClient.m_pSkins->Get(m_aClients[ClientID].m_SkinID)->m_OrgTexture;
 					m_aClients[ClientID].m_SkinInfo.m_ColorBody = vec4(1,1,1,1);
 					m_aClients[ClientID].m_SkinInfo.m_ColorFeet = vec4(1,1,1,1);
+					m_aClients[ClientID].m_SkinInfo.m_ColorHand = m_aClients[ClientID].m_SkinInfo.m_ColorBody; // H-Client
 				}
 
 				m_aClients[ClientID].UpdateRenderInfo();
@@ -1206,15 +1208,19 @@ void CGameClient::CClientData::UpdateRenderInfo()
 	if(g_GameClient.m_Snap.m_pGameInfoObj && (g_GameClient.m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS))
 	{
 		m_RenderInfo.m_Texture = g_GameClient.m_pSkins->Get(m_SkinID)->m_ColorTexture;
-		const int TeamColors[2] = {65387, 10223467};
+		const int TeamColorsBody[2] = {16576623, 10154095};
+		const int TeamColorsHands[2] = {16773271, 10154135};
+		const int TeamColorsFeet[2] = {16707735, 10154135};
 		if(m_Team >= TEAM_RED && m_Team <= TEAM_BLUE)
 		{
-			m_RenderInfo.m_ColorBody = g_GameClient.m_pSkins->GetColorV4(TeamColors[m_Team]);
-			m_RenderInfo.m_ColorFeet = g_GameClient.m_pSkins->GetColorV4(TeamColors[m_Team]);
+			m_RenderInfo.m_ColorBody = g_GameClient.m_pSkins->GetColorV4(TeamColorsBody[m_Team]);
+			m_RenderInfo.m_ColorHand = g_GameClient.m_pSkins->GetColorV4(TeamColorsHands[m_Team]);
+			m_RenderInfo.m_ColorFeet = g_GameClient.m_pSkins->GetColorV4(TeamColorsFeet[m_Team]);
 		}
 		else
 		{
 			m_RenderInfo.m_ColorBody = g_GameClient.m_pSkins->GetColorV4(12895054);
+			m_RenderInfo.m_ColorHand = g_GameClient.m_pSkins->GetColorV4(12895054);
 			m_RenderInfo.m_ColorFeet = g_GameClient.m_pSkins->GetColorV4(12895054);
 		}
 	}
@@ -1235,6 +1241,7 @@ void CGameClient::CClientData::Reset()
 	m_SkinInfo.m_Texture = g_GameClient.m_pSkins->Get(0)->m_ColorTexture;
 	m_SkinInfo.m_ColorBody = vec4(1,1,1,1);
 	m_SkinInfo.m_ColorFeet = vec4(1,1,1,1);
+	m_SkinInfo.m_ColorHand = m_SkinInfo.m_ColorBody;
 	UpdateRenderInfo();
 }
 
