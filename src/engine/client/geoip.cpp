@@ -177,9 +177,15 @@ IGeoIP::GeoInfo CGeoIP::GetInfo(std::string ip)
 void CGeoIP::ThreadGeoIP(void *params)
 {
     InfoGeoIPThread *pInfoThread = static_cast<InfoGeoIPThread*>(params);
-    IGeoIP::GeoInfo info = GetInfo(pInfoThread->ip);
+    std::string host = pInfoThread->m_aIpAddress;
+    IGeoIP::GeoInfo info = GetInfo(host.substr(0, host.find_first_of(":")).c_str());
 
     lock_wait(m_GeoIPLock);
+    if (pInfoThread->m_pServerInfoReg)
+    {
+    	str_copy(pInfoThread->m_pServerInfoReg->m_aCountryCode, info.m_aCountryCode, sizeof(pInfoThread->m_pServerInfoReg->m_aCountryCode));
+    	str_copy(pInfoThread->m_pServerInfoReg->m_aCountryName, info.m_aCountryName, sizeof(pInfoThread->m_pServerInfoReg->m_aCountryName));
+    }
     *pInfoThread->m_pGeoInfo = info;
     lock_release(m_GeoIPLock);
 }

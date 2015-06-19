@@ -317,8 +317,11 @@ public:
 
 	void ServerBrowserUpdate();
 
-	virtual const char* GetCurrentMap(); // H-Client
-	virtual bool IsServerType(const char *pServer); // H-Client
+	// H-Client
+	virtual const char* GetCurrentMap();
+	virtual bool IsServerType(const char *pServer);
+	virtual const char* GetCurrentServerAddress() const { return m_aServerAddressStr; }
+	//
 };
 
 void init_openssl_library(); // H-Client

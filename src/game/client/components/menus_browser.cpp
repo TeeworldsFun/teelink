@@ -332,7 +332,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 		{
 			if(Selected)
 			{
-			    CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(g_Config.m_UiServerAddress); //H-Client
+			    CServerInfoRegv2 *pServerInfo = ServerBrowser()->GetServerInfoReg(g_Config.m_UiServerAddress); //H-Client
 
 			    char aBuf[125];
 				CUIRect r = Row;
@@ -352,10 +352,10 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 				ExtraInfo.HSplitTop(20.0f, &LabelA, &ExtraInfo);
 				LabelA.VSplitLeft(130.0f, &LabelA, &LabelB);
 				LabelA.Margin(2.0f, &LabelA);
-				if (ServerInfo)
+				if (pServerInfo)
 				{
-                    float ratio = static_cast<float>(ServerInfo->m_Wins)/static_cast<float>((ServerInfo->m_Losts+1));
-                    str_format(aBuf, sizeof(aBuf), "Win/Lost: %i/%i [Ratio: %.2f]", ServerInfo->m_Wins, ServerInfo->m_Losts, ratio);
+                    float ratio = static_cast<float>(pServerInfo->m_Wins)/static_cast<float>((pServerInfo->m_Losts+1));
+                    str_format(aBuf, sizeof(aBuf), "Win/Lost: %i/%i [Ratio: %.2f]", pServerInfo->m_Wins, pServerInfo->m_Losts, ratio);
 				}
                 else
                     str_format(aBuf, sizeof(aBuf), "Win/Lost: 0/0 [0.00%c]", '%');
@@ -364,8 +364,8 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 				ExtraInfo.HSplitTop(20.0f, &LabelA, &ExtraInfo);
 				LabelA.VSplitLeft(130.0f, &LabelA, 0x0);
 				LabelA.Margin(2.0f, &LabelA);
-				if (ServerInfo)
-                    str_format(aBuf, sizeof(aBuf), "Connections: %i", ServerInfo->m_NumEntry);
+				if (pServerInfo)
+                    str_format(aBuf, sizeof(aBuf), "Connections: %i", pServerInfo->m_NumEntry);
 				else
                     str_copy(aBuf, "Connections: 0", sizeof(aBuf));
 
@@ -393,10 +393,10 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 				ExtraInfo.HSplitTop(20.0f, &LabelA, &ExtraInfo);
 				LabelA.VSplitLeft(200.0f, &LabelA, 0x0);
 				LabelA.Margin(2.0f, &LabelA);
-				if (ServerInfo)
+				if (pServerInfo)
                 {
                     char LastEntry[20];
-                    str_copy(LastEntry, ServerInfo->m_LastEntry, sizeof(LastEntry));
+                    str_copy(LastEntry, pServerInfo->m_LastEntry, sizeof(LastEntry));
 
                     //Parse String
                     int c=0;
@@ -426,15 +426,24 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 				LabelB.Margin(2.0f, &LabelB);
                 if (str_comp(pItem->m_aAddress, selectedServIP) != 0)
                 {
-                    std::string host = std::string(pItem->m_aAddress);
-				    str_copy(infoGeoThread.ip, host.substr(0, host.find_first_of(":")).c_str(), sizeof(infoGeoThread.ip));
-				    str_copy(geoInfo.m_aCountryCode, "_P_", sizeof(geoInfo.m_aCountryCode));
-				    infoGeoThread.m_pGeoInfo = &geoInfo;
-				    infoGeoThread.m_pGeoIP = GeoIP();
-				    m_pClient->GeoIP()->Search(&infoGeoThread);
+                	if (!pServerInfo || pServerInfo->m_aCountryCode[0] == 0)
+                	{
+						str_copy(infoGeoThread.m_aIpAddress, pItem->m_aAddress, sizeof(infoGeoThread.m_aIpAddress));
+						str_copy(geoInfo.m_aCountryCode, "_P_", sizeof(geoInfo.m_aCountryCode));
+						infoGeoThread.m_pGeoInfo = &geoInfo;
+						infoGeoThread.m_pServerInfoReg = pServerInfo;
+						infoGeoThread.m_pGeoIP = GeoIP();
+						m_pClient->GeoIP()->Search(&infoGeoThread);
+                	}
+                	else
+                	{
+                		str_copy(geoInfo.m_aCountryCode, pServerInfo->m_aCountryCode, sizeof(geoInfo.m_aCountryCode));
+                		str_copy(geoInfo.m_aCountryName, pServerInfo->m_aCountryName, sizeof(geoInfo.m_aCountryName));
+                	}
 
 				    str_copy(selectedServIP, pItem->m_aAddress, sizeof(selectedServIP));
                 }
+
                 if (str_comp(geoInfo.m_aCountryCode, "_P_") == 0)
                     str_format(aBuf, sizeof(aBuf), "Country: Searching...");
                 else if (str_comp(geoInfo.m_aCountryCode, "NULL") == 0)

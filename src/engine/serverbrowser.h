@@ -123,7 +123,7 @@ public:
     virtual bool SaveServerInfo() = 0;
     virtual bool LoadServerInfo() = 0;
     virtual void UpdateServerInfo(const char *address) = 0;
-    virtual CServerInfoReg* GetServerInfoReg(const char *address) = 0;
+    virtual CServerInfoRegv2* GetServerInfoReg(const char *address) = 0;
     //
 };
 

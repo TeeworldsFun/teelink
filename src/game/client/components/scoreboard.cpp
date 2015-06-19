@@ -706,7 +706,7 @@ void CScoreboard::OnRender()
 
 		    if (Client()->State() != IClient::STATE_DEMOPLAYBACK && s_NeedUpdate)
 		    {
-                CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(g_Config.m_UiServerAddress); //H-Client
+                CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(Client()->GetCurrentServerAddress()); //H-Client
                 if (ServerInfo)
                 {
                     if (m_pClient->m_Snap.m_paInfoByScore[0]->m_ClientID != m_pClient->m_Snap.m_LocalClientID)
@@ -737,7 +737,7 @@ void CScoreboard::OnRender()
 
                     if (s_NeedUpdate)
                     {
-                        CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(g_Config.m_UiServerAddress); //H-Client
+                        CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(Client()->GetCurrentServerAddress()); //H-Client
                         if (ServerInfo)
                         {
                             if (m_pClient->m_Snap.m_pLocalInfo->m_Team == TEAM_RED)
@@ -758,7 +758,7 @@ void CScoreboard::OnRender()
 
                     if (s_NeedUpdate)
                     {
-                        CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(g_Config.m_UiServerAddress); //H-Client
+                        CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(Client()->GetCurrentServerAddress()); //H-Client
                         if (ServerInfo)
                         {
                             if (m_pClient->m_Snap.m_pLocalInfo->m_Team == TEAM_BLUE)

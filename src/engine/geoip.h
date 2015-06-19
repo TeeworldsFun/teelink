@@ -7,6 +7,7 @@
 #include "kernel.h"
 #include <string>
 #include <csignal>
+#include "serverbrowser.h"
 
 class IGeoIP : public IInterface
 {
@@ -28,7 +29,9 @@ public:
     {
         IGeoIP *m_pGeoIP;
         IGeoIP::GeoInfo *m_pGeoInfo;
-        char ip[64];
+        CServerInfoRegv2 *m_pServerInfoReg;
+
+        char m_aIpAddress[256];
     };
 
     virtual void Search(InfoGeoIPThread *pGeoInfo) = 0;

@@ -137,8 +137,11 @@ public:
 
 	virtual int GetDebugFont() = 0;
 
-	virtual const char* GetCurrentMap() = 0; // H-Client
-	virtual bool IsServerType(const char *pServer) = 0; // H-Client
+	// H-Client
+	virtual const char* GetCurrentMap() = 0;
+	virtual bool IsServerType(const char *pServer) = 0;
+	virtual const char* GetCurrentServerAddress() const = 0;
+	//
 };
 
 class IGameClient : public IInterface
