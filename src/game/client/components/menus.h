@@ -105,6 +105,7 @@ class CMenus : public CComponent
 		PAGE_INTERNET,
 		PAGE_LAN,
 		PAGE_FAVORITES,
+		PAGE_HISTORY, // H-Client
 		PAGE_DEMOS,
 		PAGE_SETTINGS,
 		PAGE_SYSTEM,

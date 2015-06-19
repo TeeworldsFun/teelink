@@ -99,10 +99,12 @@ public:
 		TYPE_INTERNET = 0,
 		TYPE_LAN = 1,
 		TYPE_FAVORITES = 2,
+		TYPE_HISTORY = 4, // H-Client
 
 		SET_MASTER_ADD=1,
 		SET_FAV_ADD,
-		SET_TOKEN
+		SET_TOKEN,
+		SET_HISTORY_ADD, // H-Client
 	};
 
 	virtual void Refresh(int Type) = 0;

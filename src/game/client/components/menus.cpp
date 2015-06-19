@@ -665,6 +665,14 @@ int CMenus::RenderMenubar(CUIRect r)
 			NewPage = PAGE_FAVORITES;
 		}
 
+		Box.HSplitTop(20.0f, &Button, &Box);
+		static int s_HistoryButton=0;
+		if(DoButton_MenuTab(&s_HistoryButton, Localize("History"), m_ActivePage==PAGE_HISTORY, &Button, 0, -1, false))
+		{
+			ServerBrowser()->Refresh(IServerBrowser::TYPE_HISTORY);
+			NewPage = PAGE_HISTORY;
+		}
+
 		Box.HSplitTop(20.0f, 0, &Box);
         Box.HSplitTop(20.0f, &Button, &Box);
         if(DoButton_MenuTab(&s_SettingsButton, Localize("Settings"), m_ActivePage==PAGE_SETTINGS, &Button, 0, -1, false))
@@ -927,6 +935,8 @@ int CMenus::Render()
 			ServerBrowser()->Refresh(IServerBrowser::TYPE_LAN);
 		else if(g_Config.m_UiPage == PAGE_FAVORITES)
 			ServerBrowser()->Refresh(IServerBrowser::TYPE_FAVORITES);
+		else if(g_Config.m_UiPage == PAGE_HISTORY)
+			ServerBrowser()->Refresh(IServerBrowser::TYPE_HISTORY);
 
 		m_pClient->m_pSounds->Enqueue(CSounds::CHN_MUSIC, SOUND_MENU);
 		s_First = false;
@@ -1002,14 +1012,8 @@ int CMenus::Render()
 
             if(g_Config.m_UiPage == PAGE_NEWS)
                 RenderNews(MainView);
-            else if(g_Config.m_UiPage == PAGE_INTERNET)
-                RenderServerbrowser(MainView);
-            else if(g_Config.m_UiPage == PAGE_LAN)
-                RenderServerbrowser(MainView);
-            else if(g_Config.m_UiPage == PAGE_DEMOS)
-                RenderDemoList(MainView);
-            else if(g_Config.m_UiPage == PAGE_FAVORITES)
-                RenderServerbrowser(MainView);
+            else if(g_Config.m_UiPage == PAGE_INTERNET || g_Config.m_UiPage == PAGE_LAN || g_Config.m_UiPage == PAGE_DEMOS || g_Config.m_UiPage == PAGE_FAVORITES || g_Config.m_UiPage == PAGE_HISTORY)
+                 RenderServerbrowser(MainView);
             else if(g_Config.m_UiPage == PAGE_SETTINGS)
                 RenderSettings(MainView);
 		}

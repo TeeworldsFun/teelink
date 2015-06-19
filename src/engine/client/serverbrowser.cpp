@@ -18,6 +18,8 @@
 
 #include <mastersrv/mastersrv.h>
 #include <zlib.h> // H-Client
+#include <string> // H-Client
+#include <cstdio> // H-Client
 
 #include "serverbrowser.h"
 class SortWrap
@@ -473,6 +475,18 @@ void CServerBrowser::Set(const NETADDR &Addr, int Type, int Token, const CServer
 			RemoveRequest(pEntry);
 		}
 	}
+	else if(Type == IServerBrowser::SET_HISTORY_ADD)
+	{
+		if(m_ServerlistType != IServerBrowser::TYPE_HISTORY)
+			return;
+		m_LastPacketTick = 0;
+		++temp;
+		if(!Find(Addr))
+		{
+			pEntry = Add(Addr);
+			QueueRequest(pEntry);
+		}
+	}
 
 	Sort();
 }
@@ -527,6 +541,23 @@ void CServerBrowser::Refresh(int Type)
 	{
 		for(int i = 0; i < m_NumFavoriteServers; i++)
 			Set(m_aFavoriteServers[i], IServerBrowser::SET_FAV_ADD, -1, 0);
+	}
+	else if(Type == IServerBrowser::TYPE_HISTORY) // H-Client
+	{
+		for(int i = 0; i < m_lServInfo.size(); i++)
+		{
+			NETADDR netAddr;
+			mem_zero(&netAddr, sizeof(netAddr));
+
+			netAddr.type = NETTYPE_IPV4;
+			std::string host = m_lServInfo[i].m_Address;
+			std::size_t npos = host.find_first_of(":");
+
+			sscanf(host.substr(0, npos).c_str(), "%d.%d.%d.%d", &netAddr.ip[0], &netAddr.ip[1], &netAddr.ip[2], &netAddr.ip[3]); // FIXME: warnings
+			sscanf(host.substr(npos+1).c_str(), "%d", &netAddr.port); // FIXME: warnings
+
+			Set(netAddr, IServerBrowser::SET_HISTORY_ADD, -1, 0);
+		}
 	}
 }
 
@@ -944,7 +975,7 @@ bool CServerBrowser::LoadServerInfo()
         io_read(File, &numServInfoRegs, sizeof(numServInfoRegs));
 
         CServerInfoRegv2 ServReg;
-        for (unsigned int i=0;i<numServInfoRegs;i++)
+        for (int i=0;i<numServInfoRegs;i++)
         {
             io_read(File, &ServReg, sizeof(CServerInfoReg));
             mem_zero(ServReg.m_aCountryCode, sizeof(ServReg.m_aCountryCode));
@@ -962,7 +993,7 @@ bool CServerBrowser::LoadServerInfo()
         io_read(File, &numServInfoRegs, sizeof(numServInfoRegs));
 
         CServerInfoRegOld ServReg;
-        for (unsigned int i=0;i<numServInfoRegs;i++)
+        for (int i=0;i<numServInfoRegs;i++)
         {
             io_read(File, &ServReg, sizeof(ServReg));
 
@@ -985,7 +1016,7 @@ bool CServerBrowser::LoadServerInfo()
 
 void CServerBrowser::UpdateServerInfo(const char *address)
 {
-    unsigned int i = 0;
+    int i = 0;
 
 	for (i=0;i<m_lServInfo.size();i++)
 	{
@@ -1015,7 +1046,7 @@ void CServerBrowser::UpdateServerInfo(const char *address)
 
 CServerInfoRegv2* CServerBrowser::GetServerInfoReg(const char *address)
 {
-    unsigned int i = 0;
+    int i = 0;
 
 	for (i=0;i<m_lServInfo.size();i++)
 	{
