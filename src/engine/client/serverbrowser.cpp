@@ -17,6 +17,7 @@
 #include <engine/masterserver.h>
 
 #include <mastersrv/mastersrv.h>
+#include <zlib.h> // H-Client
 
 #include "serverbrowser.h"
 class SortWrap
@@ -877,14 +878,26 @@ bool CServerBrowser::SaveServerInfo()
 		return false;
 
     //H-Client 1.0.4
-    char version[] = { 'H', 'C', '1', '0', '4', 0 };
+    char version[] = { 'H', 'C', '3', '8', '0', 0 };
     io_write(File, version, sizeof(version));
     //
 
-	io_write(File, &m_NumServInfoRegs, sizeof(m_NumServInfoRegs));
-	for (unsigned int i=0;i<m_NumServInfoRegs;i++)
-        io_write(File, &m_lServInfo[i], sizeof(m_lServInfo[i]));
+    unsigned long TotalSize = m_lServInfo.size() * sizeof(CServerInfoRegv2);
+	unsigned long s = compressBound(TotalSize);
+	void *pCompData = mem_alloc(s, 1); // temporary buffer that we use during compression
+
+	int Result = compress((Bytef*)pCompData, &s, (Bytef*)m_lServInfo.base_ptr(), TotalSize); // ignore_convention
+	if(Result != Z_OK)
+	{
+		dbg_msg("datafile", "compression error %d", Result);
+		dbg_assert(0, "zlib error");
+	}
+
+	io_write(File, &TotalSize, sizeof(TotalSize));
+	io_write(File, pCompData, (int)s);
 	io_close(File);
+
+	mem_free(pCompData);
 
 	return true;
 }
@@ -896,17 +909,46 @@ bool CServerBrowser::LoadServerInfo()
 		return false;
 
     //Verify Version
-    char version[] = { 'H', 'C', '1', '0', '4', 0 };
+    char version[] = { 'H', 'C', '3', '8', '0', 0 };
     io_read(File, version, sizeof(version));
-    if (str_comp(version, "HC104") == 0)
+    if (str_comp(version, "HC380") == 0)
+    {
+    	unsigned long UncompressedSize;
+    	io_read(File, &UncompressedSize, sizeof(UncompressedSize));
+    	unsigned char *pUncompressedData = (unsigned char*)mem_alloc(UncompressedSize, 1);
+
+    	int ctt = io_tell(File);
+    	io_seek(File, 0, IOSEEK_END);
+    	int TotalSize = io_tell(File) - ctt;
+
+    	io_seek(File, ctt, IOSEEK_START);
+    	unsigned char *pData = (unsigned char*)mem_alloc(TotalSize, 1);
+    	io_read(File, pData, TotalSize);
+
+    	uncompress((Bytef*)pUncompressedData, &UncompressedSize, (Bytef*)pData, TotalSize); // ignore_convention
+
+        CServerInfoRegv2 ServReg;
+        for (std::size_t cursor = 0; cursor<UncompressedSize-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
+        {
+        	mem_copy(&ServReg, pUncompressedData+cursor, sizeof(CServerInfoRegv2));
+            m_lServInfo.add(ServReg);
+        }
+
+        mem_free(pUncompressedData);
+        mem_free(pData);
+    }
+    else if (str_comp(version, "HC104") == 0)
     {
         //Load Num Of Regs
-        io_read(File, &m_NumServInfoRegs, sizeof(m_NumServInfoRegs));
+    	int numServInfoRegs = 0;
+        io_read(File, &numServInfoRegs, sizeof(numServInfoRegs));
 
-        CServerInfoReg ServReg;
-        for (unsigned int i=0;i<m_NumServInfoRegs;i++)
+        CServerInfoRegv2 ServReg;
+        for (unsigned int i=0;i<numServInfoRegs;i++)
         {
-            io_read(File, &ServReg, sizeof(ServReg));
+            io_read(File, &ServReg, sizeof(CServerInfoReg));
+            mem_zero(ServReg.m_aCountryCode, sizeof(ServReg.m_aCountryCode));
+            mem_zero(ServReg.m_aCountryName, sizeof(ServReg.m_aCountryName));
             m_lServInfo.add(ServReg);
         }
     }
@@ -916,19 +958,22 @@ bool CServerBrowser::LoadServerInfo()
         io_seek(File, 0, IOSEEK_START);
 
         //Load Num Of Regs
-        io_read(File, &m_NumServInfoRegs, sizeof(m_NumServInfoRegs));
+        int numServInfoRegs = 0;
+        io_read(File, &numServInfoRegs, sizeof(numServInfoRegs));
 
         CServerInfoRegOld ServReg;
-        for (unsigned int i=0;i<m_NumServInfoRegs;i++)
+        for (unsigned int i=0;i<numServInfoRegs;i++)
         {
             io_read(File, &ServReg, sizeof(ServReg));
 
-            CServerInfoReg parseReg;
+            CServerInfoRegv2 parseReg;
             str_copy(parseReg.m_Address, ServReg.m_Address, sizeof(parseReg.m_Address));
             str_copy(parseReg.m_LastEntry, ServReg.m_LastEntry, sizeof(parseReg.m_LastEntry));
             parseReg.m_NumEntry = ServReg.m_NumEntry;
             parseReg.m_Wins = 0;
             parseReg.m_Losts = 0;
+            mem_zero(parseReg.m_aCountryCode, sizeof(parseReg.m_aCountryCode));
+            mem_zero(parseReg.m_aCountryName, sizeof(parseReg.m_aCountryName));
             m_lServInfo.add(parseReg);
         }
     }
@@ -942,7 +987,7 @@ void CServerBrowser::UpdateServerInfo(const char *address)
 {
     unsigned int i = 0;
 
-	for (i=0;i<m_NumServInfoRegs;i++)
+	for (i=0;i<m_lServInfo.size();i++)
 	{
 	    if (str_comp(m_lServInfo[i].m_Address, address) == 0)
 	    {
@@ -952,27 +997,27 @@ void CServerBrowser::UpdateServerInfo(const char *address)
 	    }
 	}
 
-	if (i == m_NumServInfoRegs)
+	if (i == m_lServInfo.size())
 	{
-	    CServerInfoReg nServReg;
+	    CServerInfoRegv2 nServReg;
 	    nServReg.m_NumEntry = 1;
 	    str_timestamp(nServReg.m_LastEntry, sizeof(nServReg.m_LastEntry));
 	    str_copy(nServReg.m_Address, address, sizeof(nServReg.m_Address));
 	    nServReg.m_Wins = 0;
 	    nServReg.m_Losts = 0;
-
+        mem_zero(nServReg.m_aCountryCode, sizeof(nServReg.m_aCountryCode));
+        mem_zero(nServReg.m_aCountryName, sizeof(nServReg.m_aCountryName));
 	    m_lServInfo.add(nServReg);
-	    m_NumServInfoRegs++;
 	}
 
 	return;
 }
 
-CServerInfoReg* CServerBrowser::GetServerInfoReg(const char *address)
+CServerInfoRegv2* CServerBrowser::GetServerInfoReg(const char *address)
 {
     unsigned int i = 0;
 
-	for (i=0;i<m_NumServInfoRegs;i++)
+	for (i=0;i<m_lServInfo.size();i++)
 	{
 	    if (str_comp(m_lServInfo[i].m_Address, address) == 0)
             return &m_lServInfo[i];

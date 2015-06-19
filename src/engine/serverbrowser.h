@@ -66,6 +66,11 @@ struct CServerInfoReg
     int m_Wins;
     int m_Losts;
 };
+struct CServerInfoRegv2 : public CServerInfoReg
+{
+    char m_aCountryCode[8];
+    char m_aCountryName[32];
+};
 //
 
 class IServerBrowser : public IInterface

@@ -62,13 +62,12 @@ public:
 	IStorage *m_pStorage;
 	IStorage *Storage() { return m_pStorage; }
 
-	array<CServerInfoReg> m_lServInfo;
-	unsigned int m_NumServInfoRegs;
+	array<CServerInfoRegv2> m_lServInfo;
 
     bool SaveServerInfo();
     bool LoadServerInfo();
     void UpdateServerInfo(const char *address);
-    CServerInfoReg* GetServerInfoReg(const char *address);
+    CServerInfoRegv2* GetServerInfoReg(const char *address);
 	//
 
 private:
