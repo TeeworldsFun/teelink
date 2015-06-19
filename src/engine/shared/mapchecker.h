@@ -32,7 +32,7 @@ public:
 	CMapChecker();
 	void AddMaplist(struct CMapVersion *pMaplist, int Num);
 	bool IsMapValid(const char *pMapName, unsigned MapCrc, unsigned MapSize);
-	bool ReadAndValidateMap(class IStorage *pStorage, const char *pFilename, int StorageType);
+	bool ReadAndValidateMap(class IStorage *pStorage, const char *pFilename, int StorageType, char *pBuffer, int BufferSize);
 };
 
 #endif

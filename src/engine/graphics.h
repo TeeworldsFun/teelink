@@ -140,10 +140,13 @@ public:
 
 	virtual void Swap() = 0;
 
-	virtual int GetInvalidTexture() = 0; // H-Client
-	virtual bool Tumbtail() const = 0; // H-Client
-    virtual bool ShowInfoKills() const = 0; // H-Client
-	virtual void ShowInfoKills(bool state) = 0; // H-Client
+	// H-Client
+	virtual int GetInvalidTexture() = 0;
+	virtual bool Thumbnail() const = 0;
+    virtual bool ShowInfoKills() const = 0;
+	virtual void ShowInfoKills(bool state) = 0;
+	virtual void NotifyWindow() = 0; // H-Client (Vanilla issue #1305)
+	//
 
 	// syncronization
 	virtual void InsertSignal(class semaphore *pSemaphore) = 0;
@@ -163,7 +166,6 @@ public:
 
 	virtual int WindowActive() = 0;
 	virtual int WindowOpen() = 0;
-
 };
 
 extern IEngineGraphics *CreateEngineGraphics();

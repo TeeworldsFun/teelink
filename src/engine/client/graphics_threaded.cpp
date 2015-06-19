@@ -487,7 +487,7 @@ void CGraphics_Threaded::ScreenshotDirect(const char *pFilename)
 
         int w = Image.m_Width;
         int h = Image.m_Height;
-        if (Tumbtail())
+        if (Thumbnail())
         {
             w = 200;
             h = 133;
@@ -897,6 +897,13 @@ void CGraphics_Threaded::WaitForIdle()
 {
 	m_pBackend->WaitForIdle();
 }
+
+// H-Client (Vanilla issue #1305)
+void CGraphics_Threaded::NotifyWindow()
+{
+	return m_pBackend->NotifyWindow();
+}
+//
 
 int CGraphics_Threaded::GetVideoModes(CVideoMode *pModes, int MaxModes)
 {

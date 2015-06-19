@@ -1191,16 +1191,11 @@ char *CServer::GetMapName()
 
 int CServer::LoadMap(const char *pMapName)
 {
-	//DATAFILE *df;
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf), "maps/%s.map", pMapName);
 
-	/*df = datafile_load(buf);
-	if(!df)
-		return 0;*/
-
 	// check for valid standard map
-	if(!m_MapChecker.ReadAndValidateMap(Storage(), aBuf, IStorage::TYPE_ALL))
+	if(!m_MapChecker.ReadAndValidateMap(Storage(), aBuf, IStorage::TYPE_ALL, aBuf, sizeof(aBuf))) // H-Client (Vanilla issue #1052)
 	{
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "mapchecker", "invalid standard map");
 		return 0;
@@ -1222,7 +1217,6 @@ int CServer::LoadMap(const char *pMapName)
 	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBufMsg);
 
 	str_copy(m_aCurrentMap, pMapName, sizeof(m_aCurrentMap));
-	//map_set(df);
 
 	// load complete map into memory for download
 	{

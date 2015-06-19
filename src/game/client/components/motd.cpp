@@ -29,7 +29,7 @@ void CMotd::OnStateChange(int NewState, int OldState)
 
 void CMotd::OnRender()
 {
-	if(!IsActive() || Graphics()->Tumbtail())
+	if(!IsActive() || Graphics()->Thumbnail())
 		return;
 
 	float Width = 400*3.0f*Graphics()->ScreenAspect();

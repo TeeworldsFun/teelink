@@ -312,6 +312,7 @@ public:
 	virtual void Maximize() = 0;
 	virtual int WindowActive() = 0;
 	virtual int WindowOpen() = 0;
+	virtual void NotifyWindow() = 0; // H-Client (Vanilla issue #1305)
 
 	virtual void RunBuffer(CCommandBuffer *pBuffer) = 0;
 	virtual bool IsIdle() const = 0;
@@ -431,6 +432,7 @@ public:
 
 	virtual int WindowActive();
 	virtual int WindowOpen();
+	virtual void NotifyWindow(); // H-Client (Vanilla issue #1305)
 
 	virtual int Init();
 	virtual void Shutdown();
@@ -447,7 +449,7 @@ public:
 
 	virtual int GetInvalidTexture(); // H-Cleint
 	virtual void TakeScreenshotFree(const char *pFilename, bool tumbtail); // H-Client
-	virtual bool Tumbtail() const { return m_DoScreenshotTumbtail; } // H-Client
+	virtual bool Thumbnail() const { return m_DoScreenshotTumbtail; } // H-Client
     virtual bool ShowInfoKills() const { return m_DoScreenShowInfoKills; } // H-Client
 	virtual void ShowInfoKills(bool state); // H-Client
 };

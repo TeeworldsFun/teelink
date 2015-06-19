@@ -125,10 +125,12 @@ public:
 	virtual void QuadsDrawFreeform(const CFreeformItem *pArray, int Num);
 	virtual void QuadsText(float x, float y, float Size, const char *pText);
 
-	virtual int GetInvalidTexture(); // H-Client
-	virtual bool Tumbtail() const { return m_DoScreenshotTumbtail; } // H-Client
-	virtual bool ShowInfoKills() const { return m_DoScreenShowInfoKills; } // H-Client
-	virtual void ShowInfoKills(bool state); // H-Client
+	// H-Client
+	virtual int GetInvalidTexture();
+	virtual bool Thumbnail() const { return m_DoScreenshotTumbtail; }
+	virtual bool ShowInfoKills() const { return m_DoScreenShowInfoKills; }
+	virtual void ShowInfoKills(bool state);
+	//
 
 	virtual int Init();
 };
@@ -150,6 +152,7 @@ public:
 
 	virtual int WindowActive();
 	virtual int WindowOpen();
+	virtual void NotifyWindow(); // H-Client (Vanilla issue #1305)
 
 	virtual void TakeScreenshot(const char *pFilename);
 	virtual void TakeScreenshotFree(const char *pFilename, bool tumbtail = false); //H-Client

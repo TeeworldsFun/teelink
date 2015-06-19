@@ -8,8 +8,6 @@
 #include <versionsrv/versionsrv.h>
 #include <versionsrv/mapversions.h>
 
-#include "datafile.h"
-#include "memheap.h"
 #include "mapchecker.h"
 
 CMapChecker::CMapChecker()
@@ -60,18 +58,17 @@ bool CMapChecker::IsMapValid(const char *pMapName, unsigned MapCrc, unsigned Map
 				return true;
 		}
 	}
+
 	return StandardMap?false:true;
 }
 
-bool CMapChecker::ReadAndValidateMap(IStorage *pStorage, const char *pFilename, int StorageType)
+bool CMapChecker::ReadAndValidateMap(IStorage *pStorage, const char *pFilename, int StorageType, char *pBuffer, int BufferSize)
 {
-	bool LoadedMapInfo = false;
 	bool StandardMap = false;
-	unsigned MapCrc = 0;
-	unsigned MapSize = 0;
 
 	// extract map name
 	char aMapName[MAX_MAP_LENGTH];
+	char aMapNameExt[MAX_MAP_LENGTH+4]; // H-Client  (Vanilla issue #1052)
 	const char *pExtractedName = pFilename;
 	const char *pEnd = 0;
 	for(const char *pSrc = pFilename; *pSrc; ++pSrc)
@@ -85,22 +82,25 @@ bool CMapChecker::ReadAndValidateMap(IStorage *pStorage, const char *pFilename, 
 	if(Length <= 0 || Length >= MAX_MAP_LENGTH)
 		return true;
 	str_copy(aMapName, pExtractedName, min((int)MAX_MAP_LENGTH, (int)(pEnd-pExtractedName+1)));
+	str_format(aMapNameExt, sizeof(aMapNameExt), "%s.map", aMapName); // H-Client  (Vanilla issue #1052)
 
 	// check for valid map
 	for(CWhitelistEntry *pCurrent = m_pFirst; pCurrent; pCurrent = pCurrent->m_pNext)
 	{
 		if(str_comp(pCurrent->m_aMapName, aMapName) == 0)
 		{
-			StandardMap = true;
-			if(!LoadedMapInfo)
+			char aBuffer[512]; // TODO: MAX_PATH_LENGTH (512) should be defined in a more central header and not in storage.cpp and editor.h
+			bool CrcSizeMatch = false;
+			if(!pStorage->FindFile(aMapNameExt, "maps", StorageType, aBuffer, sizeof(aBuffer), pCurrent->m_MapCrc, pCurrent->m_MapSize, &CrcSizeMatch))
 			{
-				if(!CDataFileReader::GetCrcSize(pStorage, pFilename, StorageType, &MapCrc, &MapSize))
-					return true;
-				LoadedMapInfo = true;
+				return true;
 			}
 
-			if(pCurrent->m_MapCrc == MapCrc && pCurrent->m_MapSize == MapSize)
-				return true;
+			// output filename
+			if(pBuffer != 0 && BufferSize > 0)
+				str_format(pBuffer, BufferSize, "%s", aBuffer);
+
+			return CrcSizeMatch;
 		}
 	}
 	return StandardMap?false:true;

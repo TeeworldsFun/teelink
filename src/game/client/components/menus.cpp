@@ -1868,7 +1868,7 @@ void CMenus::OnRender()
 		Render();
 
 	// render cursor
-	if (!Graphics()->Tumbtail()) // H-Client
+	if (!Graphics()->Thumbnail()) // H-Client
 	{
         Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CURSOR].m_Id);
         Graphics()->QuadsBegin();

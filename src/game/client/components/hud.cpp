@@ -554,7 +554,7 @@ void CHud::RenderVoting()
 void CHud::RenderCursor()
 {
     //H-Client: IF Change
-	if(!m_pClient->m_Snap.m_pLocalCharacter || Client()->State() == IClient::STATE_DEMOPLAYBACK || Graphics()->Tumbtail())
+	if(!m_pClient->m_Snap.m_pLocalCharacter || Client()->State() == IClient::STATE_DEMOPLAYBACK || Graphics()->Thumbnail())
 		return;
 
 	MapscreenToGroup(m_pClient->m_pCamera->m_Center.x, m_pClient->m_pCamera->m_Center.y, Layers()->GameGroup());

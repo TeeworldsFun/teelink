@@ -3,6 +3,7 @@
 #include <base/system.h>
 #include <engine/storage.h>
 #include "linereader.h"
+#include <zlib.h>
 
 // compiled-in data-dir path
 #define DATA_DIR "data"
@@ -292,11 +293,17 @@ public:
 		const char *pPath;
 		char *pBuffer;
 		int BufferSize;
+
+		// H-Client (Vanilla issue #1052)
+		unsigned WantedCrc;
+		unsigned WantedSize;
+		bool *pCrcSizeMatch;
+		//
 	};
 
 	static int FindFileCallback(const char *pName, int IsDir, int Type, void *pUser)
 	{
-		CFindCBData Data = *static_cast<CFindCBData *>(pUser);
+		CFindCBData *Data = static_cast<CFindCBData *>(pUser);
 		if(IsDir)
 		{
 			if(pName[0] == '.')
@@ -305,28 +312,50 @@ public:
 			// search within the folder
 			char aBuf[MAX_PATH_LENGTH];
 			char aPath[MAX_PATH_LENGTH];
-			str_format(aPath, sizeof(aPath), "%s/%s", Data.pPath, pName);
-			Data.pPath = aPath;
-			fs_listdir(Data.pStorage->GetPath(Type, aPath, aBuf, sizeof(aBuf)), FindFileCallback, Type, &Data);
-			if(Data.pBuffer[0])
+			str_format(aPath, sizeof(aPath), "%s/%s", Data->pPath, pName);
+			Data->pPath = aPath;
+			fs_listdir(Data->pStorage->GetPath(Type, aPath, aBuf, sizeof(aBuf)), FindFileCallback, Type, Data);
+			if(Data->pBuffer[0])
 				return 1;
 		}
-		else if(!str_comp(pName, Data.pFilename))
+		else
 		{
-			// found the file = end
-			str_format(Data.pBuffer, Data.BufferSize, "%s/%s", Data.pPath, Data.pFilename);
-			return 1;
+			if(!str_comp(pName, Data->pFilename))
+			{
+				// found the file
+				str_format(Data->pBuffer, Data->BufferSize, "%s/%s", Data->pPath, Data->pFilename);
+
+				// check crc and size
+				if(Data->pCrcSizeMatch != 0)
+				{
+					unsigned Crc = 0;
+					unsigned Size = 0;
+					if(!Data->pStorage->GetCrcSize(Data->pBuffer, Type, &Crc, &Size) || Crc != Data->WantedCrc || Size != Data->WantedSize)
+					{
+						*Data->pCrcSizeMatch = false;
+						Data->pBuffer[0] = 0;
+						return 0;
+					}
+					else
+						*Data->pCrcSizeMatch = true;
+				}
+
+				return 1;
+			}
 		}
 
 		return 0;
 	}
 
-	virtual bool FindFile(const char *pFilename, const char *pPath, int Type, char *pBuffer, int BufferSize)
+	virtual bool FindFile(const char *pFilename, const char *pPath, int Type, char *pBuffer, int BufferSize, unsigned WantedCrc, unsigned WantedSize, bool *pCrcSizeMatch) // H-Client (Vanilla issue #1052)
 	{
 		if(BufferSize < 1)
 			return false;
 
 		pBuffer[0] = 0;
+		if (pCrcSizeMatch)
+			*pCrcSizeMatch = false;
+
 		char aBuf[MAX_PATH_LENGTH];
 		CFindCBData Data;
 		Data.pStorage = this;
@@ -334,6 +363,10 @@ public:
 		Data.pPath = pPath;
 		Data.pBuffer = pBuffer;
 		Data.BufferSize = BufferSize;
+
+		Data.WantedCrc = WantedCrc;
+		Data.WantedSize = WantedSize;
+		Data.pCrcSizeMatch = pCrcSizeMatch;
 
 		if(Type == TYPE_ALL)
 		{
@@ -353,6 +386,34 @@ public:
 
 		return pBuffer[0] != 0;
 	}
+
+	// H-Client (Vanilla issue #1052)
+	virtual bool GetCrcSize(const char *pFilename, int StorageType, unsigned *pCrc, unsigned *pSize)
+	{
+		IOHANDLE File = OpenFile(pFilename, IOFLAG_READ, StorageType);
+		if(!File)
+			return false;
+
+		// get crc and size
+		unsigned Crc = 0;
+		unsigned Size = 0;
+		unsigned char aBuffer[64*1024];
+		while(1)
+		{
+			unsigned Bytes = io_read(File, aBuffer, sizeof(aBuffer));
+			if(Bytes <= 0)
+				break;
+			Crc = crc32(Crc, aBuffer, Bytes); // ignore_convention
+			Size += Bytes;
+		}
+
+		io_close(File);
+
+		*pCrc = Crc;
+		*pSize = Size;
+		return true;
+	}
+	//
 
 	virtual bool RemoveFile(const char *pFilename, int Type)
 	{

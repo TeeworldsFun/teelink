@@ -7,6 +7,12 @@
 
 #include "SDL.h"
 #include "SDL_opengl.h"
+#include "SDL_syswm.h"
+
+#if defined(SDL_VIDEO_DRIVER_X11)
+	#include <X11/Xutil.h>
+	#include <X11/Xlib.h>
+#endif
 
 #include <base/system.h>
 #include <engine/external/pnglite/pnglite.h>
@@ -501,7 +507,7 @@ void CGraphics_OpenGL::ScreenshotDirect(const char *pFilename)
 	int w = m_ScreenWidth;
 	int h = m_ScreenHeight;
 
-    if (Tumbtail())
+    if (Thumbnail())
 	{
 	    w = 200;
 	    h = 133;
@@ -512,7 +518,7 @@ void CGraphics_OpenGL::ScreenshotDirect(const char *pFilename)
 	GLint Alignment;
 	glGetIntegerv(GL_PACK_ALIGNMENT, &Alignment);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(Tumbtail()?ScreenWidth()/2-w/2:0, Tumbtail()?ScreenHeight()/2-h/2:0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pPixelData);
+    glReadPixels(Thumbnail()?ScreenWidth()/2-w/2:0, Thumbnail()?ScreenHeight()/2-h/2:0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pPixelData);
 	glPixelStorei(GL_PACK_ALIGNMENT, Alignment);
 
 	// flip the pixel because opengl works from bottom left corner
@@ -982,6 +988,51 @@ int CGraphics_SDL::WindowOpen()
 	return SDL_GetAppState()&SDL_APPACTIVE;
 
 }
+
+// H-Client (Vanilla issue #1305)
+void CGraphics_SDL::NotifyWindow()
+{
+	// get window handle
+	SDL_SysWMinfo info;
+	SDL_VERSION(&info.version);
+	if(!SDL_GetWMInfo(&info))
+	{
+		dbg_msg("gfx", "unable to obtain window handle");
+		return;
+	}
+
+	#if defined(CONF_FAMILY_WINDOWS)
+		FLASHWINFO desc;
+		desc.cbSize = sizeof(desc);
+		desc.hwnd = info.window;
+		desc.dwFlags = FLASHW_TRAY;
+		desc.uCount = 3; // flash 3 times
+		desc.dwTimeout = 0;
+
+		FlashWindowEx(&desc);
+	#elif defined(SDL_VIDEO_DRIVER_X11)
+		Display *dpy = info.info.x11.display;
+		Window win;
+		if(m_pScreenSurface->flags & SDL_FULLSCREEN)
+			win = info.info.x11.fswindow;
+		else
+			win = info.info.x11.wmwindow;
+
+		// Old hints
+		XWMHints *wmhints;
+		wmhints = XAllocWMHints();
+		wmhints->flags = XUrgencyHint;
+		XSetWMHints(dpy, win, wmhints);
+		XFree(wmhints);
+
+		// More modern way of notifying
+		static Atom demandsAttention = XInternAtom(dpy, "_NET_WM_STATE_DEMANDS_ATTENTION", true);
+		static Atom wmState = XInternAtom(dpy, "_NET_WM_STATE", true);
+		XChangeProperty(dpy, win, wmState, XA_ATOM, 32, PropModeReplace,
+			(unsigned char *) &demandsAttention, 1);
+	#endif
+}
+//
 
 void CGraphics_SDL::TakeScreenshot(const char *pFilename)
 {

@@ -181,6 +181,6 @@ void CGeoIP::ThreadGeoIP(void *params)
 
     lock_wait(m_GeoIPLock);
     *pInfoThread->m_pGeoInfo = info;
-    lock_unlock(m_GeoIPLock);
+    lock_release(m_GeoIPLock);
 }
 
