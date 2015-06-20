@@ -374,5 +374,5 @@ void ThreadUpdates(void *params)
 
     lock_wait(m_UpdatesLock);
     pInfoThread->m_pAutoUpdate->DoUpdates(pInfoThread->m_pMenus);
-    lock_release(m_UpdatesLock);
+    lock_unlock(m_UpdatesLock);
 }

@@ -401,10 +401,12 @@ int CDataFileReader::GetUncompressedDataSize(int Index)
 {
 	if(!m_pDataFile) { return 0; }
 
-	if(m_pDataFile->m_Header.m_Version == 4)
+	if(m_pDataFile->m_Header.m_Version == 4 && Index >= 0 && Index < m_pDataFile->m_Header.m_NumRawData)
 		return m_pDataFile->m_Info.m_pDataSizes[Index];
 	else
 		return GetDataSize(Index);
+
+	return 0;
 }
 //
 

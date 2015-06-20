@@ -630,7 +630,7 @@ void lock_wait(LOCK lock)
 #endif
 }
 
-void lock_release(LOCK lock)
+void lock_unlock(LOCK lock)
 {
 #if defined(CONF_FAMILY_UNIX)
 	pthread_mutex_unlock((LOCKINTERNAL *)lock);

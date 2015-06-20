@@ -410,7 +410,7 @@ void lock_destroy(LOCK lock);
 
 int lock_trylock(LOCK lock);
 void lock_wait(LOCK lock);
-void lock_release(LOCK lock);
+void lock_unlock(LOCK lock);
 
 
 /* Group: Semaphores */

@@ -32,8 +32,8 @@ CCollision::CCollision()
 CCollision::~CCollision()
 {
 	// H-Client
-	if (m_pDoor) delete m_pDoor;
-	if (m_pSwitchers) delete m_pSwitchers;
+	if (m_pDoor) delete [] m_pDoor;
+	if (m_pSwitchers) delete [] m_pSwitchers;
 }
 
 void CCollision::Init(class CLayers *pLayers)
@@ -75,7 +75,7 @@ void CCollision::Init(class CLayers *pLayers)
 			m_pSwitch = static_cast<CSwitchTile *>(m_pLayers->Map()->GetData(m_pLayers->SwitchLayer()->m_Switch));
 
 		if (m_pDoor)
-			delete m_pDoor;
+			delete [] m_pDoor;
 
 		m_pDoor = new CDoorTile[m_Width*m_Height];
 		mem_zero(m_pDoor, m_Width * m_Height * sizeof(CDoorTile));
@@ -167,13 +167,13 @@ void CCollision::InitTeleports()
 void CCollision::InitSwitchers()
 {
 	if (m_pSwitchers)
-		delete m_pSwitchers;
+		delete [] m_pSwitchers;
 
 	if(m_NumSwitchers)
 	{
 		m_pSwitchers = new SSwitchers[m_NumSwitchers+1];
 
-		for (int i = 0; i < m_NumSwitchers+1; ++i)
+		for (unsigned i = 0; i < m_NumSwitchers+1; ++i)
 		{
 			for (int j = 0; j < MAX_CLIENTS; ++j)
 			{

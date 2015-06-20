@@ -25,6 +25,7 @@ void CLayers::Init(class IKernel *pKernel)
 	// H-Client: DDNet
     m_pFrontLayer = 0;
     m_pTeleLayer = 0;
+    m_pSpeedUpLayer = 0;
     m_pSwitchLayer = 0;
     //
 

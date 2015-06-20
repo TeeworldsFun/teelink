@@ -187,6 +187,6 @@ void CGeoIP::ThreadGeoIP(void *params)
     	str_copy(pInfoThread->m_pServerInfoReg->m_aCountryName, info.m_aCountryName, sizeof(pInfoThread->m_pServerInfoReg->m_aCountryName));
     }
     *pInfoThread->m_pGeoInfo = info;
-    lock_release(m_GeoIPLock);
+    lock_unlock(m_GeoIPLock);
 }
 

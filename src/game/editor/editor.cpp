@@ -2038,17 +2038,18 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
                     if (pEnvelope->m_lPoints.size() > 0)
                     {
                         int numLines = pEnvelope->m_lPoints.size();
-                        IGraphics::CLineItem ArrayLine[numLines];
+                        IGraphics::CLineItem *pArrayLine = new IGraphics::CLineItem[numLines];
                         for (int k=0, j=0; j<pEnvelope->m_lPoints.size()-1; k++,j++)
-                            ArrayLine[k] = IGraphics::CLineItem(startPosition.x+fx2f(pEnvelope->m_lPoints[j].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[j].m_aValues[1]), startPosition.x+fx2f(pEnvelope->m_lPoints[j+1].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[j+1].m_aValues[1]));
+                            pArrayLine[k] = IGraphics::CLineItem(startPosition.x+fx2f(pEnvelope->m_lPoints[j].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[j].m_aValues[1]), startPosition.x+fx2f(pEnvelope->m_lPoints[j+1].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[j+1].m_aValues[1]));
 
-                        ArrayLine[numLines-1] = IGraphics::CLineItem(startPosition.x+fx2f(pEnvelope->m_lPoints[pEnvelope->m_lPoints.size()-1].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[pEnvelope->m_lPoints.size()-1].m_aValues[1]), UI()->MouseWorldX(), UI()->MouseWorldY());
+                        pArrayLine[numLines-1] = IGraphics::CLineItem(startPosition.x+fx2f(pEnvelope->m_lPoints[pEnvelope->m_lPoints.size()-1].m_aValues[0]), startPosition.y+fx2f(pEnvelope->m_lPoints[pEnvelope->m_lPoints.size()-1].m_aValues[1]), UI()->MouseWorldX(), UI()->MouseWorldY());
 
                         Graphics()->TextureSet(-1);
                         Graphics()->LinesBegin();
                         Graphics()->SetColor(.0f, .0f, .0f, 1.0f);
-                        Graphics()->LinesDraw(ArrayLine, numLines);
+                        Graphics()->LinesDraw(pArrayLine, numLines);
                         Graphics()->LinesEnd();
+                        delete [] pArrayLine;
                     }
 
 
