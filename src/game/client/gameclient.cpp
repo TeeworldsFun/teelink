@@ -16,8 +16,7 @@
 #include <engine/shared/config.h>
 #include <engine/geoip.h> //H-Client
 #include <engine/texturepack.h> //H-Client
-#include <engine/autoupdate.h> //H-Client
-
+#include <engine/updater.h> //H-Client
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
 
@@ -112,7 +111,7 @@ void CGameClient::OnConsoleInit()
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
 	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
 	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
-	m_pAutoUpdate = Kernel()->RequestInterface<IAutoUpdate>(); //H-Client
+	m_pAutoUpdate = Kernel()->RequestInterface<IUpdater>(); //H-Client
 
 	// setup pointers
 	m_pBinds = &::gs_Binds;

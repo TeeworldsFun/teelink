@@ -66,7 +66,7 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	IEngineMasterServer *m_pMasterServer;
 	IGeoIP *m_pGeoIP; //H-Client
 	ITexturePack *m_pTexturePack; //H-Client
-	IAutoUpdate *m_pAutoUpdate; //H-Client
+	IUpdater *m_pUpdater; //H-Client
 	IServerBrowser *m_pServerBrowser; // H-Client
 
 	enum
@@ -83,7 +83,7 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	class CMapChecker m_MapChecker;
 	class CGeoIP m_GeoIP; //H-Client
 	class CTexturePack m_TexturePack; //H-Client
-	class CAutoUpdate m_AutoUpdate; //H-Client
+	class CUpdater m_Updater; //H-Client
 
 	bool m_TimeoutCodeSent; // H-Client
 
@@ -198,7 +198,7 @@ public:
 	IStorage *Storage() { return m_pStorage; }
 	IGeoIP *GeoIP() { return m_pGeoIP; } // H-Client
 	ITexturePack *TexturePack() { return m_pTexturePack; } // H-Client
-	IAutoUpdate *AutoUpdate() { return m_pAutoUpdate; } // H-Client
+	IUpdater *Updater() { return m_pUpdater; } // H-Client
 	IServerBrowser *ServerBrowser() { return m_pServerBrowser; } // H-Client
 
 	CClient();

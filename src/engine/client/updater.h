@@ -1,18 +1,18 @@
 /*
     unsigned char*
 */
-#ifndef ENGINE_CLIENT_AUTOUPDATE_H
-#define ENGINE_CLIENT_AUTOUPDATE_H
+#ifndef ENGINE_CLIENT_UPDATER_H
+#define ENGINE_CLIENT_UPDATER_H
 
 #include <base/system.h>
-#include <engine/autoupdate.h>
+#include <engine/updater.h>
 #include <string>
 #include <vector>
 
-class CAutoUpdate : public IAutoUpdate
+class CUpdater : public IUpdater
 {
 public:
-	CAutoUpdate();
+	CUpdater();
 
 	void Reset();
 

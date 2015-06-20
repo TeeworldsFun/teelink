@@ -8,9 +8,9 @@
 #include <engine/storage.h>
 #include <engine/textrender.h>
 #include <engine/texturepack.h> // H-Client
-#include <engine/autoupdate.h> //H-Client
 #include <engine/shared/config.h>
 #include <engine/shared/linereader.h>
+#include <engine/updater.h> //H-Client
 
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>

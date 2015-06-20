@@ -1,14 +1,14 @@
 /*
     unsigned char*
 */
-#ifndef ENGINE_AUTOUPDATE_H
-#define ENGINE_AUTOUPDATE_H
+#ifndef ENGINE_UPDATER_H
+#define ENGINE_UPDATER_H
 
 #include "kernel.h"
 #include <game/client/components/menus.h>
 #include <string>
 
-class IAutoUpdate : public IInterface
+class IUpdater : public IInterface
 {
 	MACRO_INTERFACE("autoupdate", 0)
 public:
@@ -29,7 +29,7 @@ public:
 
 struct InfoUpdatesThread
 {
-    IAutoUpdate *m_pAutoUpdate;
+    IUpdater *m_pAutoUpdate;
     CMenus *m_pMenus;
 };
 

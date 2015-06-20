@@ -47,7 +47,7 @@ class CGameClient : public IGameClient
 	class IFriends *m_pFriends;
 	class IGeoIP *m_pGeoIP; //H-Client
     class ITexturePack *m_pTexturePack; //H-Client
-    class IAutoUpdate *m_pAutoUpdate; //H-Client
+    class IUpdater *m_pAutoUpdate; //H-Client
 
 	CLayers m_Layers;
 	class CCollision m_Collision;
@@ -88,7 +88,7 @@ public:
 	class IFriends *Friends() { return m_pFriends; }
 	class IGeoIP *GeoIP() const { return m_pGeoIP; } //H-Client
 	class ITexturePack *TexturePack() const { return m_pTexturePack; } //H-Client
-	class IAutoUpdate *AutoUpdate() const { return m_pAutoUpdate; } //H-Client
+	class IUpdater *AutoUpdate() const { return m_pAutoUpdate; } //H-Client
 
 	int NetobjNumCorrections() { return m_NetObjHandler.NumObjCorrections(); }
 	const char *NetobjCorrectedOn() { return m_NetObjHandler.CorrectedObjOn(); }

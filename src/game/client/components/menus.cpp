@@ -14,9 +14,9 @@
 #include <engine/keys.h>
 #include <engine/serverbrowser.h>
 #include <engine/storage.h>
-#include <engine/autoupdate.h> // H-Client
 #include <engine/textrender.h>
 #include <engine/shared/config.h>
+#include <engine/updater.h> // H-Client
 
 #include <game/version.h>
 #include <game/generated/protocol.h>

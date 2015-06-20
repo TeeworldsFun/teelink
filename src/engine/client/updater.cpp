@@ -11,7 +11,7 @@
 #endif
 #include <engine/external/json-parser/json.h>
 #include <game/client/components/menus.h>
-#include "autoupdate.h"
+#include <engine/client/updater.h>
 
 #define UPDATES_HOST            "hclient-updater.redneboa.es"
 #define UPDATES_BASE_PATH       "/"
@@ -20,13 +20,13 @@
 static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
 static LOCK m_UpdatesLock = 0;
 
-CAutoUpdate::CAutoUpdate()
+CUpdater::CUpdater()
 {
     m_UpdatesLock = lock_create();
 	Reset();
 }
 
-void CAutoUpdate::Reset()
+void CUpdater::Reset()
 {
 	m_NeedUpdateClient = false;
 	m_NeedUpdateServer = false;
@@ -36,7 +36,7 @@ void CAutoUpdate::Reset()
 	m_CurrentDownloadProgress = 0;
 }
 
-void CAutoUpdate::AddFileToDownload(const char *pFile)
+void CUpdater::AddFileToDownload(const char *pFile)
 {
     // Remove it from remove list
     for (std::vector<std::string>::iterator it=m_vToRemove.begin(); it!=m_vToRemove.end();)
@@ -52,7 +52,7 @@ void CAutoUpdate::AddFileToDownload(const char *pFile)
     m_vToDownload.push_back(pFile);
 }
 
-void CAutoUpdate::AddFileToRemove(const char *pFile)
+void CUpdater::AddFileToRemove(const char *pFile)
 {
     // Remove it from download list
     for (std::vector<std::string>::iterator it=m_vToDownload.begin(); it!=m_vToDownload.end();)
@@ -68,7 +68,7 @@ void CAutoUpdate::AddFileToRemove(const char *pFile)
     m_vToRemove.push_back(pFile);
 }
 
-void CAutoUpdate::ExecuteExit()
+void CUpdater::ExecuteExit()
 {
 	if (!NeedResetClient() || !m_Updated)
 		return;
@@ -96,7 +96,7 @@ void CAutoUpdate::ExecuteExit()
     #endif
 }
 
-void CAutoUpdate::CheckUpdates(CMenus *pMenus)
+void CUpdater::CheckUpdates(CMenus *pMenus)
 {
 	dbg_msg("autoupdate", "Checking for updates...");
 	if (!GetFile(UPDATES_MANIFEST_FILE, UPDATES_MANIFEST_FILE))
@@ -167,7 +167,7 @@ void CAutoUpdate::CheckUpdates(CMenus *pMenus)
     fs_remove(UPDATES_MANIFEST_FILE);
 }
 
-void CAutoUpdate::DoUpdates(CMenus *pMenus)
+void CUpdater::DoUpdates(CMenus *pMenus)
 {
     bool noErrors = true;
 
@@ -232,7 +232,7 @@ void CAutoUpdate::DoUpdates(CMenus *pMenus)
 }
 
 // TODO: Ugly but works
-bool CAutoUpdate::GetFile(const char *url, const char *path)
+bool CUpdater::GetFile(const char *url, const char *path)
 {
 	NETSOCKET Socket = invalid_socket;
 	NETADDR HostAddress, BindAddr;
@@ -351,7 +351,7 @@ bool CAutoUpdate::GetFile(const char *url, const char *path)
 	return true;
 }
 
-bool CAutoUpdate::SelfDelete()
+bool CUpdater::SelfDelete()
 {
 	#ifdef CONF_FAMILY_WINDOWS
         IOHANDLE bhFile = io_open("du.bat", IOFLAG_WRITE);

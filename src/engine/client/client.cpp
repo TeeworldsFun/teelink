@@ -7,6 +7,7 @@
 
 #include <base/math.h>
 #include <base/system.h>
+#include <engine/client/updater.h> // H-Client
 
 #include <engine/client.h>
 #include <engine/config.h>
@@ -42,7 +43,6 @@
 
 #include "geoip.h" //H-Client
 #include "texturepack.h" // H-Client
-#include "autoupdate.h" // H-Client
 #include "friends.h"
 #include "serverbrowser.h"
 #include "client.h"
@@ -253,7 +253,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_pGameClient = 0;
 	m_pMap = 0;
 	m_pConsole = 0;
-	m_pAutoUpdate = 0x0; // H-Client
+	m_pUpdater = 0x0; // H-Client
 	m_TimeoutCodeSent = false; // H-Client
 
 	m_RenderFrameTime = 0.0001f;
@@ -1800,7 +1800,7 @@ void CClient::RegisterInterfaces()
 
 	Kernel()->RegisterInterface(static_cast<IGeoIP*>(&m_GeoIP)); //H-Client
 	Kernel()->RegisterInterface(static_cast<ITexturePack*>(&m_TexturePack)); //H-Client
-	Kernel()->RegisterInterface(static_cast<IAutoUpdate*>(&m_AutoUpdate)); //H-Client
+	Kernel()->RegisterInterface(static_cast<IUpdater*>(&m_Updater)); //H-Client
 }
 
 void CClient::InitInterfaces()
@@ -1818,7 +1818,7 @@ void CClient::InitInterfaces()
 
 	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
 	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
-	m_pAutoUpdate = Kernel()->RequestInterface<IAutoUpdate>(); //H-Client
+	m_pUpdater = Kernel()->RequestInterface<IUpdater>(); //H-Client
 	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>(); // H-Client
 
 	//
@@ -2490,7 +2490,7 @@ int main(int argc, const char **argv) // ignore_convention
 	// write down the config and quit
 	pConfig->Save();
 
-    pClient->AutoUpdate()->ExecuteExit(); // H-Client
+    pClient->Updater()->ExecuteExit(); // H-Client
 
 	return 0;
 }
