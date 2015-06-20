@@ -454,7 +454,8 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 	{
 		if(Now-m_aLastSoundPlayed[CHAT_HIGHLIGHT] >= time_freq()*3/10)
 		{
-			Graphics()->NotifyWindow();
+			if (!Graphics()->WindowActive()) // H-Client
+				Graphics()->NotifyWindow("Teeworlds - Chat", m_aLines[m_CurrentLine].m_aText+2);
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_CHAT_HIGHLIGHT, 0);
 			m_aLastSoundPlayed[CHAT_HIGHLIGHT] = Now;
 		}

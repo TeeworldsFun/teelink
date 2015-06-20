@@ -152,7 +152,7 @@ public:
 
 	virtual int WindowActive();
 	virtual int WindowOpen();
-	virtual void NotifyWindow(); // H-Client (Vanilla issue #1305)
+	virtual void NotifyWindow(const char *pTitle, const char *pMsg); // H-Client (Vanilla issue #1305)
 
 	virtual void TakeScreenshot(const char *pFilename);
 	virtual void TakeScreenshotFree(const char *pFilename, bool tumbtail = false); //H-Client

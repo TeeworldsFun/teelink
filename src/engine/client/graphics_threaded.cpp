@@ -899,9 +899,9 @@ void CGraphics_Threaded::WaitForIdle()
 }
 
 // H-Client (Vanilla issue #1305)
-void CGraphics_Threaded::NotifyWindow()
+void CGraphics_Threaded::NotifyWindow(const char *pTitle, const char *pMsg)
 {
-	return m_pBackend->NotifyWindow();
+	m_pBackend->NotifyWindow(pTitle, pMsg);
 }
 //
 

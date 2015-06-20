@@ -990,7 +990,7 @@ int CGraphics_SDL::WindowOpen()
 }
 
 // H-Client (Vanilla issue #1305)
-void CGraphics_SDL::NotifyWindow()
+void CGraphics_SDL::NotifyWindow(const char *pTitle, const char *pMsg)
 {
 	// get window handle
 	SDL_SysWMinfo info;
@@ -1010,26 +1010,21 @@ void CGraphics_SDL::NotifyWindow()
 		desc.dwTimeout = 0;
 
 		FlashWindowEx(&desc);
-	#elif defined(SDL_VIDEO_DRIVER_X11)
-		Display *dpy = info.info.x11.display;
-		Window win;
-		if(m_pScreenSurface->flags & SDL_FULLSCREEN)
-			win = info.info.x11.fswindow;
-		else
-			win = info.info.x11.wmwindow;
+	#elif defined(CONF_FAMILY_UNIX)
+    	#ifdef CONF_PLATFORM_MACOSX
+			NMRecPtr notifRequestData = new NMRecPtr;
+			notifRequestData->nmMark = 1; //Make the app icon bounce
+			notifRequestData->nmIcon = NULL;
+			notifRequestData->nmSound = NULL;
+			notifRequestData->nmStr = NULL;
+			notifRequestData->nmResp = NULL;
 
-		// Old hints
-		XWMHints *wmhints;
-		wmhints = XAllocWMHints();
-		wmhints->flags = XUrgencyHint;
-		XSetWMHints(dpy, win, wmhints);
-		XFree(wmhints);
-
-		// More modern way of notifying
-		static Atom demandsAttention = XInternAtom(dpy, "_NET_WM_STATE_DEMANDS_ATTENTION", true);
-		static Atom wmState = XInternAtom(dpy, "_NET_WM_STATE", true);
-		XChangeProperty(dpy, win, wmState, XA_ATOM, 32, PropModeReplace,
-			(unsigned char *) &demandsAttention, 1);
+			NMInstall( notifRequestData );
+		#else
+			char aBuf[512]={0};
+			str_format(aBuf, sizeof(aBuf), "notify-send '%s' '%s'", pTitle, pMsg);
+			system(aBuf);
+		#endif
 	#endif
 }
 //

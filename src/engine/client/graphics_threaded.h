@@ -312,7 +312,7 @@ public:
 	virtual void Maximize() = 0;
 	virtual int WindowActive() = 0;
 	virtual int WindowOpen() = 0;
-	virtual void NotifyWindow() = 0; // H-Client (Vanilla issue #1305)
+	virtual void NotifyWindow(const char *pTitle, const char *pMsg) = 0; // H-Client (Vanilla issue #1305)
 
 	virtual void RunBuffer(CCommandBuffer *pBuffer) = 0;
 	virtual bool IsIdle() const = 0;
@@ -432,7 +432,7 @@ public:
 
 	virtual int WindowActive();
 	virtual int WindowOpen();
-	virtual void NotifyWindow(); // H-Client (Vanilla issue #1305)
+	virtual void NotifyWindow(const char *pTitle, const char *pMsg); // H-Client (Vanilla issue #1305)
 
 	virtual int Init();
 	virtual void Shutdown();

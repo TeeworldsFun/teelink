@@ -145,7 +145,8 @@ public:
 	virtual bool Thumbnail() const = 0;
     virtual bool ShowInfoKills() const = 0;
 	virtual void ShowInfoKills(bool state) = 0;
-	virtual void NotifyWindow() = 0; // H-Client (Vanilla issue #1305)
+	virtual void NotifyWindow(const char *pTitle, const char *pMsg) = 0; // H-Client (Vanilla issue #1305)
+	virtual int WindowActive() = 0; // H-Client (Vanilla issue #1305)
 	//
 
 	// syncronization
