@@ -9,9 +9,15 @@
 #include "SDL_opengl.h"
 #include "SDL_syswm.h"
 
-#if defined(SDL_VIDEO_DRIVER_X11)
-	#include <X11/Xutil.h>
-	#include <X11/Xlib.h>
+#if defined(CONF_FAMILY_UNIX)
+	#ifdef CONF_PLATFORM_MACOSX
+		#include <Notification.h>
+	#endif
+#elif defined(CONF_FAMILY_WINDOWS)
+	#include <Windows.h>
+	#if !defined(FLASHW_TRAY)
+		#define FLASHW_TRAY 2
+	#endif
 #endif
 
 #include <base/system.h>
