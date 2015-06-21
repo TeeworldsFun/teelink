@@ -1104,28 +1104,28 @@ int CMenus::Render()
 			pButtonText = Localize("Ok");
 			ExtraAlign = -1;
 		}
-        else if(m_Popup == POPUP_AUTOUPDATE)
+        else if(m_Popup == POPUP_UPDATER)
         {
             pTitle = Localize("Auto-Update");
             pExtraText = Localize("New H-Client v\%s available!");
             char aBuff[32];
-            str_format(aBuff, sizeof(aBuff), pExtraText, AutoUpdate()->GetNewVersion());
+            str_format(aBuff, sizeof(aBuff), pExtraText, Updater()->GetNewVersion());
             pExtraText = aBuff;
             ExtraAlign = -1;
         }
-        else if (m_Popup == POPUP_AUTOUPDATE_DOWNLOADING)
+        else if (m_Popup == POPUP_UPDATER_DOWNLOADING)
         {
             pTitle = Localize("Auto-Update");
 			pExtraText = "Downloading Files...";
 			ExtraAlign = -1;
         }
-        else if (m_Popup == POPUP_AUTOUPDATE_RESULT)
+        else if (m_Popup == POPUP_UPDATER_RESULT)
         {
             pTitle = Localize("Auto-Update");
 
-            if (AutoUpdate()->Updated())
+            if (Updater()->Updated())
             {
-                if (AutoUpdate()->NeedResetClient())
+                if (Updater()->NeedResetClient())
                     pExtraText = Localize("Client updated succesfully, need restart to apply all changes.");
                 else
                     pExtraText = Localize("Client Updated Succesfully! :)");
@@ -1188,7 +1188,7 @@ int CMenus::Render()
 			if(DoButton_Menu(&s_ButtonTryAgain, Localize("Yes"), 0, &Yes, vec4(0.0f, 0.50f, 0.10f, 0.5f)) || m_EnterPressed)
 				Client()->Quit();
 		}
-        else if(m_Popup == POPUP_AUTOUPDATE)
+        else if(m_Popup == POPUP_UPDATER)
         {
             CUIRect Yes, No, ListDownload, ListRemove;
             char aBuff[128];
@@ -1203,14 +1203,14 @@ int CMenus::Render()
             ListDownload.Margin(10.0f, &ListDownload);
             ListRemove.Margin(10.0f, &ListRemove);
 
-            unsigned numItems = AutoUpdate()->GetFilesToDownload().size();
-            if (AutoUpdate()->NeedUpdateClient()) numItems++;
-            if (AutoUpdate()->NeedUpdateServer()) numItems++;
+            unsigned numItems = Updater()->GetFilesToDownload().size();
+            if (Updater()->NeedUpdateClient()) numItems++;
+            if (Updater()->NeedUpdateServer()) numItems++;
 
             str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), numItems);
             UiDoListboxStart(&s_DownloadList, &ListDownload, 24.0f, "TO DOWNLOAD", aBuff, numItems, 1, -1, s_ScrollDownloadValue);
 
-            if (AutoUpdate()->NeedUpdateClient())
+            if (Updater()->NeedUpdateClient())
             {
                 static const char *txtClient = Localize("New Client");
                 CListboxItem Item = UiDoListboxNextItem(txtClient);
@@ -1219,7 +1219,7 @@ int CMenus::Render()
                     UI()->DoLabelScaled(&Item.m_Rect, txtClient, 16.0f, -1);
             }
 
-            if (AutoUpdate()->NeedUpdateServer())
+            if (Updater()->NeedUpdateServer())
             {
                 static const char *txtServer = Localize("New Server");
                 CListboxItem Item = UiDoListboxNextItem(txtServer);
@@ -1228,25 +1228,25 @@ int CMenus::Render()
                     UI()->DoLabelScaled(&Item.m_Rect, txtServer, 16.0f, -1);
             }
 
-            for(std::vector<std::string>::iterator it=AutoUpdate()->GetFilesToDownload().begin(); it!=AutoUpdate()->GetFilesToDownload().end(); ++it)
+            for(int i=0; i<Updater()->GetFilesToDownload().size(); i++)
             {
-                CListboxItem Item = UiDoListboxNextItem(it->c_str());
+                CListboxItem Item = UiDoListboxNextItem(Updater()->GetFilesToDownload()[i].c_str());
 
                 if(Item.m_Visible)
-                    UI()->DoLabelScaled(&Item.m_Rect, it->c_str(), 16.0f, -1);
+                    UI()->DoLabelScaled(&Item.m_Rect, Updater()->GetFilesToDownload()[i].c_str(), 16.0f, -1);
             }
 
             UiDoListboxEnd(&s_ScrollDownloadValue, 0);
 
-            str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), AutoUpdate()->GetFilesToRemove().size());
-            UiDoListboxStart(&s_RemoveList, &ListRemove, 24.0f, "TO REMOVE", aBuff, AutoUpdate()->GetFilesToRemove().size(), 1, -1, s_ScrollRemoveValue);
+            str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), Updater()->GetFilesToRemove().size());
+            UiDoListboxStart(&s_RemoveList, &ListRemove, 24.0f, "TO REMOVE", aBuff, Updater()->GetFilesToRemove().size(), 1, -1, s_ScrollRemoveValue);
 
-            for(std::vector<std::string>::iterator it=AutoUpdate()->GetFilesToRemove().begin(); it!=AutoUpdate()->GetFilesToRemove().end(); ++it)
+            for(int i=0; i<Updater()->GetFilesToRemove().size(); i++)
             {
-                CListboxItem Item = UiDoListboxNextItem(it->c_str());
+                CListboxItem Item = UiDoListboxNextItem(Updater()->GetFilesToRemove()[i].c_str());
 
                 if(Item.m_Visible)
-                    UI()->DoLabelScaled(&Item.m_Rect, it->c_str(), 16.0f, -1);
+                    UI()->DoLabelScaled(&Item.m_Rect, Updater()->GetFilesToRemove()[i].c_str(), 16.0f, -1);
             }
 
             UiDoListboxEnd(&s_ScrollRemoveValue, 0);
@@ -1264,15 +1264,15 @@ int CMenus::Render()
             static int s_ButtonTryAgain = 0;
             if(DoButton_Menu(&s_ButtonTryAgain, Localize("Update"), 0, &Yes, vec4(0.0f, 0.50f, 0.10f, 0.5f)) || m_EnterPressed)
             {
-                SetPopup(POPUP_AUTOUPDATE_DOWNLOADING);
+                SetPopup(POPUP_UPDATER_DOWNLOADING);
 
                 static InfoUpdatesThread infoUpdatesThread;
-                infoUpdatesThread.m_pAutoUpdate = AutoUpdate();
+                infoUpdatesThread.m_pUpdater = Updater();
                 infoUpdatesThread.m_pMenus = this;
                 thread_init(ThreadUpdates, &infoUpdatesThread);
             }
         }
-        else if(m_Popup == POPUP_AUTOUPDATE_DOWNLOADING)
+        else if(m_Popup == POPUP_UPDATER_DOWNLOADING)
         {
             CUIRect button;
             Box.HSplitBottom(20.f, &Box, &Part);
@@ -1281,7 +1281,7 @@ int CMenus::Render()
 
             Box.HSplitTop(64.f, 0, &Box);
             Box.HSplitTop(24.f, &Part, &Box);
-            UI()->DoLabel(&Part, AutoUpdate()->GetCurrentDownloadFileName(), 20.f, 0, -1);
+            UI()->DoLabel(&Part, Updater()->GetCurrentDownloadFileName(), 20.f, 0, -1);
 
             // progress bar
             Box.HSplitTop(20.f, 0, &Box);
@@ -1291,10 +1291,10 @@ int CMenus::Render()
             //CUIRect PartOrg = Part;
 
             Part.Margin(5.0f, &Part);
-            Part.w = max(10.0f, Part.w*AutoUpdate()->GetCurrentDownloadProgress());
+            Part.w = max(10.0f, Part.w*Updater()->GetCurrentDownloadProgress());
             RenderTools()->DrawUIRect(&Part, HexToVec4(g_Config.m_hcProgressbarSliderBackgroundColor), CUI::CORNER_ALL, 5.0f);
         }
-        else if(m_Popup == POPUP_AUTOUPDATE_RESULT)
+        else if(m_Popup == POPUP_UPDATER_RESULT)
         {
             Box.HSplitBottom(20.f, &Box, &Part);
             Box.HSplitBottom(24.f, &Box, &Part);
@@ -1305,7 +1305,7 @@ int CMenus::Render()
             static int s_ButtonAbort = 0;
             if(DoButton_Menu(&s_ButtonAbort, Localize("Ok"), 0, &Part) || m_EscapePressed || m_EnterPressed)
             {
-                if (AutoUpdate()->Updated() && AutoUpdate()->NeedResetClient())
+                if (Updater()->Updated() && Updater()->NeedResetClient())
                     Client()->Quit();
                 else
                     m_Popup = POPUP_NONE;

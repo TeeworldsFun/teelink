@@ -14,7 +14,7 @@
 		#include <Notification.h>
 	#endif
 #elif defined(CONF_FAMILY_WINDOWS)
-	#include <Windows.h>
+	#include <windows.h>
 	#if !defined(FLASHW_TRAY)
 		#define FLASHW_TRAY 2
 	#endif

@@ -6,8 +6,6 @@
 
 #include <base/system.h>
 #include <engine/updater.h>
-#include <string>
-#include <vector>
 
 class CUpdater : public IUpdater
 {
@@ -24,8 +22,8 @@ public:
 	bool NeedUpdateClient() const { return m_NeedUpdateClient; }
 	bool NeedUpdateServer() const { return m_NeedUpdateServer; }
 	const char* GetNewVersion() const { return m_NewVersion; }
-	std::vector<std::string>& GetFilesToRemove() { return m_vToRemove; }
-	std::vector<std::string>& GetFilesToDownload() { return m_vToDownload; }
+	array<std::string>& GetFilesToRemove() { return m_vToRemove; }
+	array<std::string>& GetFilesToDownload() { return m_vToDownload; }
 
 	const char* GetCurrentDownloadFileName() const { return m_CurrentDownloadFileName; }
 	float GetCurrentDownloadProgress() { return m_CurrentDownloadProgress; }
@@ -33,8 +31,8 @@ public:
 	void ExecuteExit();
 
 private:
-    std::vector<std::string> m_vToDownload;
-    std::vector<std::string> m_vToRemove;
+    array<std::string> m_vToDownload;
+    array<std::string> m_vToRemove;
 	bool m_Updated;
 	bool m_NeedUpdateClient;
 	bool m_NeedUpdateServer;

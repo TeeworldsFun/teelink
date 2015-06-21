@@ -111,7 +111,7 @@ void CGameClient::OnConsoleInit()
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
 	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
 	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
-	m_pAutoUpdate = Kernel()->RequestInterface<IUpdater>(); //H-Client
+	m_pUpdater = Kernel()->RequestInterface<IUpdater>(); //H-Client
 
 	// setup pointers
 	m_pBinds = &::gs_Binds;
@@ -277,7 +277,7 @@ void CGameClient::OnInit()
 	m_pTexturePack->Load(g_Config.m_hcTheme);
 	// auto update
     if (g_Config.m_hcAutoUpdate)
-        AutoUpdate()->CheckUpdates(m_pMenus);
+        Updater()->CheckUpdates(m_pMenus);
 
     m_TakeInitScreenShot = false;
     m_DDRaceMsgSent = false;

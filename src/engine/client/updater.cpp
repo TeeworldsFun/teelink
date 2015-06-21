@@ -39,33 +39,33 @@ void CUpdater::Reset()
 void CUpdater::AddFileToDownload(const char *pFile)
 {
     // Remove it from remove list
-    for (std::vector<std::string>::iterator it=m_vToRemove.begin(); it!=m_vToRemove.end();)
+    for (int i=0; i<m_vToRemove.size();)
     {
-        if (str_comp(it->c_str(), pFile) == 0) it = m_vToRemove.erase(it++);
-        else ++it;
+        if (str_comp(m_vToRemove[i].c_str(), pFile) == 0) m_vToRemove.remove_index(i);
+        else ++i;
     }
 
     // Check if already in the list
-    for (std::vector<std::string>::iterator it=m_vToDownload.begin(); it!=m_vToDownload.end(); ++it)
-        if (str_comp(it->c_str(), pFile) == 0) return;
+    for (int i=0; i<m_vToDownload.size(); i++)
+        if (str_comp(m_vToDownload[i].c_str(), pFile) == 0) return;
 
-    m_vToDownload.push_back(pFile);
+    m_vToDownload.add(pFile);
 }
 
 void CUpdater::AddFileToRemove(const char *pFile)
 {
     // Remove it from download list
-    for (std::vector<std::string>::iterator it=m_vToDownload.begin(); it!=m_vToDownload.end();)
+    for (int i=0; i<m_vToDownload.size();)
     {
-        if (str_comp(it->c_str(), pFile) == 0) it = m_vToDownload.erase(it++);
-        else ++it;
+        if (str_comp(m_vToDownload[i].c_str(), pFile) == 0) m_vToDownload.remove_index(i);
+        else ++i;
     }
 
     // Check if already in the list
-    for (std::vector<std::string>::iterator it=m_vToRemove.begin(); it!=m_vToRemove.end(); ++it)
-        if (str_comp(it->c_str(), pFile) == 0) return;
+    for (int i=0; i<m_vToRemove.size(); i++)
+        if (str_comp(m_vToRemove[i].c_str(), pFile) == 0) return;
 
-    m_vToRemove.push_back(pFile);
+    m_vToRemove.add(pFile);
 }
 
 void CUpdater::ExecuteExit()
@@ -159,7 +159,7 @@ void CUpdater::CheckUpdates(CMenus *pMenus)
                 AddFileToRemove((const char *)rRemove[k]);
         }
 
-        if (needUpdate) pMenus->SetPopup(CMenus::POPUP_AUTOUPDATE);
+        if (needUpdate) pMenus->SetPopup(CMenus::POPUP_UPDATER);
         else m_Updated = true;
     }
 
@@ -172,13 +172,13 @@ void CUpdater::DoUpdates(CMenus *pMenus)
     bool noErrors = true;
 
     // Remove Files
-    for (std::vector<std::string>::iterator it=m_vToRemove.begin(); it!=m_vToRemove.end(); ++it)
-        if (fs_is_file(it->c_str()) && fs_remove(it->c_str()) != 0) noErrors = false;
+    for (int i=0; i<m_vToRemove.size(); i++)
+        if (fs_is_file(m_vToRemove[i].c_str()) && fs_remove(m_vToRemove[i].c_str()) != 0) noErrors = false;
     m_vToRemove.clear();
 
     // Download Files
-    for (std::vector<std::string>::iterator it=m_vToDownload.begin(); it!=m_vToDownload.end(); ++it)
-        if (!GetFile(it->c_str(), it->c_str())) noErrors = false;
+    for (int i=0; i<m_vToDownload.size(); i++)
+        if (!GetFile(m_vToDownload[i].c_str(), m_vToDownload[i].c_str())) noErrors = false;
     m_vToDownload.clear();
 
     if (m_NeedUpdateClient)
@@ -228,7 +228,7 @@ void CUpdater::DoUpdates(CMenus *pMenus)
     if (noErrors)
         m_Updated = true;
 
-    pMenus->SetPopup(CMenus::POPUP_AUTOUPDATE_RESULT);
+    pMenus->SetPopup(CMenus::POPUP_UPDATER_RESULT);
 }
 
 // TODO: Ugly but works
@@ -373,6 +373,6 @@ void ThreadUpdates(void *params)
     InfoUpdatesThread *pInfoThread = static_cast<InfoUpdatesThread*>(params);
 
     lock_wait(m_UpdatesLock);
-    pInfoThread->m_pAutoUpdate->DoUpdates(pInfoThread->m_pMenus);
+    pInfoThread->m_pUpdater->DoUpdates(pInfoThread->m_pMenus);
     lock_unlock(m_UpdatesLock);
 }

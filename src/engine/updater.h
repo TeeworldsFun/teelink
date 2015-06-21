@@ -6,11 +6,12 @@
 
 #include "kernel.h"
 #include <game/client/components/menus.h>
+#include <base/tl/array.h>
 #include <string>
 
 class IUpdater : public IInterface
 {
-	MACRO_INTERFACE("autoupdate", 0)
+	MACRO_INTERFACE("updater", 0)
 public:
 	virtual void CheckUpdates(CMenus *pMenus) = 0;
 	virtual void DoUpdates(CMenus *pMenus) = 0;
@@ -20,8 +21,8 @@ public:
 	virtual bool NeedUpdateServer() const = 0;
 	virtual void ExecuteExit() = 0;
 	virtual const char* GetNewVersion() const = 0;
-    virtual std::vector<std::string>& GetFilesToRemove() = 0;
-	virtual std::vector<std::string>& GetFilesToDownload() = 0;
+    virtual array<std::string>& GetFilesToRemove() = 0;
+	virtual array<std::string>& GetFilesToDownload() = 0;
 
     virtual const char* GetCurrentDownloadFileName() const = 0;
 	virtual float GetCurrentDownloadProgress() = 0;
@@ -29,7 +30,7 @@ public:
 
 struct InfoUpdatesThread
 {
-    IUpdater *m_pAutoUpdate;
+    IUpdater *m_pUpdater;
     CMenus *m_pMenus;
 };
 

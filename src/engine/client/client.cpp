@@ -2465,8 +2465,7 @@ int main(int argc, const char **argv) // ignore_convention
 
 	pKernel->RequestInterface<IGameClient>()->OnConsoleInit();
 
-	// init client's interfaces
-	pClient->InitInterfaces();
+	// init client's interface	pClient->InitInterfaces();
 
 	// execute config file
 	pConsole->ExecuteFile("settings.cfg");

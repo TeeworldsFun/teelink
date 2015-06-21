@@ -944,7 +944,7 @@ bool CServerBrowser::LoadServerInfo()
     io_read(File, version, sizeof(version));
     if (str_comp(version, "HC380") == 0)
     {
-    	unsigned long UncompressedSize;
+    	unsigned long UncompressedSize, UncompressedSizeCalc;
     	io_read(File, &UncompressedSize, sizeof(UncompressedSize));
     	unsigned char *pUncompressedData = (unsigned char*)mem_alloc(UncompressedSize, 1);
 
@@ -956,10 +956,19 @@ bool CServerBrowser::LoadServerInfo()
     	unsigned char *pData = (unsigned char*)mem_alloc(TotalSize, 1);
     	io_read(File, pData, TotalSize);
 
-    	uncompress((Bytef*)pUncompressedData, &UncompressedSize, (Bytef*)pData, TotalSize); // ignore_convention
+    	uncompress((Bytef*)pUncompressedData, &UncompressedSizeCalc, (Bytef*)pData, TotalSize); // ignore_convention
+
+    	if (UncompressedSizeCalc != UncompressedSize)
+    	{
+    		dbg_msg("serverinfo", "Error loading server info!");
+    		io_close(File);
+            mem_free(pUncompressedData);
+            mem_free(pData);
+    		return false;
+    	}
 
         CServerInfoRegv2 ServReg;
-        for (std::size_t cursor = 0; cursor<UncompressedSize-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
+        for (std::size_t cursor = 0; cursor<UncompressedSizeCalc-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
         {
         	mem_copy(&ServReg, pUncompressedData+cursor, sizeof(CServerInfoRegv2));
             m_lServInfo.add(ServReg);

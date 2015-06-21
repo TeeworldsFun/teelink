@@ -1052,7 +1052,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	CUIRect PanelL, PanelR;
 	CUIRect StandartGame, DDRaceGame, HUDItem;
 
-	MainView.VSplitMid(&PanelL, &PanelR);
+	MainView.VSplitLeft(300.0f, &PanelL, &PanelR);
     PanelL.VSplitRight(10.0f, &PanelL, 0x0);
     PanelR.VSplitLeft(10.0f, 0x0, &PanelR);
 
@@ -1063,21 +1063,14 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
     if (g_Config.m_hcAutoDownloadSkins)
     	splitTop += 20.0f;
 
-    PanelL.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
-
-	// Logo
-//    IGraphics::CQuadItem QuadItem(450, 50, 206, 206);
-//    Graphics()->TextureSet(g_pData->m_aImages[IMAGE_HCLIENT_LOGO].m_Id);
-//    Graphics()->QuadsBegin();
-//        Graphics()->SetColor(1.0f, 1.0f , 1.0f, 0.5f);
-//        Graphics()->QuadsDrawTL(&QuadItem, 1);
-//    Graphics()->QuadsEnd();
+    //PanelL.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
+    StandartGame = PanelL;
+    DDRaceGame = PanelR;
 
     //Standart Game
     {
         //Head
         StandartGame.HSplitTop(ms_ListheaderHeight, &HUDItem, &StandartGame);
-        HUDItem.VSplitLeft(400.0f, &HUDItem, 0x0);
         RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
         HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
         UI()->DoLabel(&HUDItem, Localize("⚫·· General"), HUDItem.h*ms_FontmodHeight, -1);
@@ -1122,10 +1115,11 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             CUIRect Edit;
             static float Offset = 0.0f;
             StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
-            HUDItem.VSplitLeft(140.0f, &HUDItem, &Edit);
+            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+            HUDItem.VSplitRight(140.0f, &HUDItem, &Edit);
+            Edit.VSplitMid(&Edit, 0x0);
             TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-            Edit.VSplitRight(150.0f, &Edit, 0x0);
-            UI()->DoLabelScaled(&HUDItem, Localize("Speed Limit (KiBps): "), HUDItem.h*ms_FontmodHeight*0.8f, 1);
+            UI()->DoLabelScaled(&HUDItem, Localize("Speed Limit (KiBps): "), HUDItem.h*ms_FontmodHeight*0.8f, -1);
             if (DoEditBox(&g_Config.m_hcAutoDownloadSkinsSpeed, &Edit, g_Config.m_hcAutoDownloadSkinsSpeed, sizeof(g_Config.m_hcAutoDownloadSkinsSpeed), 12.0f, &Offset, false, CUI::CORNER_ALL))
             {
             	int downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048);
@@ -1151,10 +1145,10 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             char aBuf[128];
             str_format(aBuf, sizeof(aBuf), "Checking for an update");
             RenderUpdating(aBuf);
-            AutoUpdate()->CheckUpdates(this);
-            if (AutoUpdate()->Updated())
+            Updater()->CheckUpdates(this);
+            if (Updater()->Updated())
             {
-                if (AutoUpdate()->NeedResetClient())
+                if (Updater()->NeedResetClient())
                 {
                     Client()->Quit();
                     return;
@@ -1257,20 +1251,17 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	// DDRace/DDNet
 	{
         DDRaceGame.HSplitTop(ms_ListheaderHeight, &HUDItem, &DDRaceGame);
-        HUDItem.VSplitLeft(400.0f, &HUDItem, 0x0);
         RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
         HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
-        UI()->DoLabel(&HUDItem, "⚫·· DDRace/DDNet", HUDItem.h*ms_FontmodHeight, -1);
+        UI()->DoLabel(&HUDItem, "⚫·· DDRaceNetwork", HUDItem.h*ms_FontmodHeight, -1);
 
-        CUIRect DDRaceGameB;
-        DDRaceGame.VSplitMid(&DDRaceGame, &DDRaceGameB);
-
+        CUIRect HUDItemB;
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
+        HUDItem.VSplitMid(&HUDItem, &HUDItemB);
         if(DoButton_CheckBox(&g_Config.m_ddrShowHiddenWays, Localize("View hidden ways"), g_Config.m_ddrShowHiddenWays, &HUDItem))
             g_Config.m_ddrShowHiddenWays ^= 1;
 
-        DDRaceGameB.HSplitTop(20.0f, &HUDItem, &DDRaceGameB);
-        if(DoButton_CheckBox(&g_Config.m_ddrShowTeeDirection, Localize("View tee direction"), g_Config.m_ddrShowTeeDirection, &HUDItem))
+        if(DoButton_CheckBox(&g_Config.m_ddrShowTeeDirection, Localize("View tee direction"), g_Config.m_ddrShowTeeDirection, &HUDItemB))
             g_Config.m_ddrShowTeeDirection ^= 1;
 
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
@@ -1281,7 +1272,8 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         CUIRect Edit;
         static float Offset = 0.0f;
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
-        HUDItem.VSplitLeft(135.0f, &HUDItem, &Edit);
+        HUDItem.VSplitRight(260.0f, &HUDItem, &Edit);
+        Edit.VSplitLeft(40.0f, &Edit, 0x0);
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
         UI()->DoLabelScaled(&HUDItem, Localize("Eyes time (Secs.):"), HUDItem.h*ms_FontmodHeight*0.8f, -1);
         DoEditBox(&g_Config.m_hcEyesSelectorTime, &Edit, g_Config.m_hcEyesSelectorTime, sizeof(g_Config.m_hcEyesSelectorTime), 12.0f, &Offset, false, CUI::CORNER_ALL);
@@ -1290,7 +1282,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         static float OffsetTimeoutCode = 0.0f;
         DDRaceGame.HSplitTop(25.0f, &HUDItem, &DDRaceGame);
         HUDItem.HSplitTop(5.0f, 0x0, &HUDItem);
-        HUDItem.VSplitLeft(135.0f, &HUDItem, &Edit);
+        HUDItem.VSplitLeft(80.0f, &HUDItem, &Edit);
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
         UI()->DoLabelScaled(&HUDItem, Localize("Client Hash:"), HUDItem.h*ms_FontmodHeight*0.8f, -1);
         Edit.w = 150.0f;
