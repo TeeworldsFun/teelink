@@ -1019,6 +1019,8 @@ bool CServerBrowser::LoadServerInfo()
     }
 
 	io_close(File);
+
+	dbg_msg("server browser", "Loaded servers sucesfully");
 	return true;
 }
 
