@@ -40,7 +40,7 @@ void CParticles::OnReset()
 
 void CParticles::Add(int Group, CParticle *pPart)
 {
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 	{
 		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 		if(pInfo->m_Paused)
@@ -48,7 +48,7 @@ void CParticles::Add(int Group, CParticle *pPart)
 	}
 	else
 	{
-		if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED)
+		if(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
 			return;
 	}
 
@@ -178,7 +178,7 @@ void CParticles::OnRender()
 	static int64 LastTime = 0;
 	int64 t = time_get();
 
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 	{
 		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 		if(!pInfo->m_Paused)

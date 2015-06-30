@@ -878,6 +878,13 @@ void CGraphics_Threaded::ShowInfoKills(bool state)
 {
     m_DoScreenShowInfoKills = state;
 }
+
+// H-Client: .webm
+unsigned char* CGraphics_Threaded::GetFrameBuffer()
+{
+	return 0x0; // TODO: implement!
+}
+//
 //
 
 // syncronization

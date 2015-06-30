@@ -34,7 +34,7 @@ void CMapLayers::OnInit()
 
 void CMapLayers::EnvelopeUpdate()
 {
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 	{
 		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 		m_CurrentLocalTick = pInfo->m_CurrentTick;
@@ -85,7 +85,7 @@ void CMapLayers::EnvelopeEval(float TimeOffset, int Env, float *pChannels, void 
 
 	static float s_Time = 0.0f;
 	static float s_LastLocalTime = pThis->Client()->LocalTime();
-	if(pThis->Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if(pThis->Client()->State() == IClient::STATE_DEMOPLAYBACK || pThis->Client()->State() == IClient::STATE_WEBM)
 	{
 		const IDemoPlayer::CInfo *pInfo = pThis->DemoPlayer()->BaseInfo();
 
@@ -124,7 +124,7 @@ void CMapLayers::EnvelopeEval(float TimeOffset, int Env, float *pChannels, void 
 
 void CMapLayers::OnRender()
 {
-	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
 		return;
 
 	CUIRect Screen;

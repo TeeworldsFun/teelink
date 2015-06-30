@@ -147,6 +147,7 @@ public:
 	virtual void ShowInfoKills(bool state) = 0;
 	virtual void NotifyWindow(const char *pTitle, const char *pMsg) = 0; // H-Client (Vanilla issue #1305)
 	virtual int WindowActive() = 0; // H-Client (Vanilla issue #1305)
+	virtual unsigned char* GetFrameBuffer() = 0;
 	//
 
 	// syncronization

@@ -1012,10 +1012,12 @@ int CMenus::Render()
 
             if(g_Config.m_UiPage == PAGE_NEWS)
                 RenderNews(MainView);
-            else if(g_Config.m_UiPage == PAGE_INTERNET || g_Config.m_UiPage == PAGE_LAN || g_Config.m_UiPage == PAGE_DEMOS || g_Config.m_UiPage == PAGE_FAVORITES || g_Config.m_UiPage == PAGE_HISTORY)
+            else if(g_Config.m_UiPage == PAGE_INTERNET || g_Config.m_UiPage == PAGE_LAN || g_Config.m_UiPage == PAGE_FAVORITES || g_Config.m_UiPage == PAGE_HISTORY)
                  RenderServerbrowser(MainView);
             else if(g_Config.m_UiPage == PAGE_SETTINGS)
                 RenderSettings(MainView);
+            else if (g_Config.m_UiPage == PAGE_DEMOS)
+            	RenderDemoList(MainView);
 		}
 	}
 	else
@@ -1682,7 +1684,7 @@ void CMenus::SetActive(bool Active)
 			m_pClient->OnRelease();
 		}
 	}
-	else if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	else if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 	{
 		m_pClient->OnRelease();
 	}
@@ -1777,7 +1779,7 @@ void CMenus::OnStateChange(int NewState, int OldState)
 	}
 	else if(NewState == IClient::STATE_CONNECTING)
 		m_Popup = POPUP_CONNECTING;
-	else if (NewState == IClient::STATE_ONLINE || NewState == IClient::STATE_DEMOPLAYBACK)
+	else if (NewState == IClient::STATE_ONLINE || NewState == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 	{
 		m_Popup = POPUP_NONE;
 		SetActive(false);
@@ -1805,10 +1807,10 @@ void CMenus::OnRender()
 	Graphics()->QuadsEnd();
 	return;*/
 
-	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
 		SetActive(true);
 
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 	{
 		CUIRect Screen = *UI()->Screen();
 		Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
@@ -1868,7 +1870,7 @@ void CMenus::OnRender()
 	UI()->Update(mx,my,mx*3.0f,my*3.0f,Buttons);
 
 	// render
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
 		Render();
 
 	// render cursor

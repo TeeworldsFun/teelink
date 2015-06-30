@@ -255,6 +255,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_pConsole = 0;
 	m_pUpdater = 0x0; // H-Client
 	m_TimeoutCodeSent = false; // H-Client
+	//m_RecordVideo = false; // H-Client
 
 	m_RenderFrameTime = 0.0001f;
 	m_RenderFrameTimeLow = 1.0f;
@@ -511,7 +512,7 @@ void CClient::OnEnterGame()
 
 void CClient::EnterGame()
 {
-	if(State() == IClient::STATE_DEMOPLAYBACK)
+	if(State() == IClient::STATE_DEMOPLAYBACK || State() == IClient::STATE_WEBM)
 		return;
 
 	// now we will wait for two snapshots
@@ -1521,7 +1522,7 @@ void CClient::PumpNetwork()
 {
 	m_NetClient.Update();
 
-	if(State() != IClient::STATE_DEMOPLAYBACK)
+	if(State() != IClient::STATE_DEMOPLAYBACK || State() == IClient::STATE_WEBM)
 	{
 		// check for errors
 		if(State() != IClient::STATE_OFFLINE && State() != IClient::STATE_QUITING && m_NetClient.State() == NETSTATE_OFFLINE)
@@ -1623,7 +1624,7 @@ void DemoPlayer()->SetPause(int paused)
 
 void CClient::Update()
 {
-	if(State() == IClient::STATE_DEMOPLAYBACK)
+	if(State() == IClient::STATE_DEMOPLAYBACK || State() == IClient::STATE_WEBM)
 	{
 		m_DemoPlayer.Update();
 		if(m_DemoPlayer.IsPlaying())
@@ -2055,6 +2056,16 @@ void CClient::Run()
 			}
 		}
 
+		/*if (m_RecordVideo)
+		{
+			unsigned char *pData = Graphics()->GetFrameBuffer();
+			if (pData)
+			{
+				m_MkvSegment.AddFrame(pData, Graphics()->ScreenWidth()*(Graphics()->ScreenHeight()+1)*3, m_MkvVidTrack, time_get()-m_MkvStartTime, 0);
+				mem_free(pData);
+			}
+		}*/
+
 		AutoScreenshot_Cleanup();
 
 		// check conditions
@@ -2200,7 +2211,7 @@ void CClient::Con_RemoveFavorite(IConsole::IResult *pResult, void *pUserData)
 		pSelf->m_ServerBrowser.RemoveFavorite(Addr);
 }
 
-const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType)
+const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType, bool RecordVideo)
 {
 	int Crc;
 	const char *pError;
@@ -2244,7 +2255,13 @@ const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType)
 	m_aSnapshots[SNAP_PREV]->m_Tick = -1;
 
 	// enter demo playback state
-	SetState(IClient::STATE_DEMOPLAYBACK);
+	if (RecordVideo) // H-Client: .webm export
+	{
+		SetState(IClient::STATE_WEBM);
+		StartRecordVideo("test.webm");
+	}
+	else
+		SetState(IClient::STATE_DEMOPLAYBACK);
 
 	m_DemoPlayer.Play();
 	GameClient()->OnEnterGame();
@@ -2295,6 +2312,7 @@ void CClient::DemoRecorder_HandleAutoStart()
 void CClient::DemoRecorder_Stop()
 {
 	m_DemoRecorder.Stop();
+	StopRecordVideo();
 }
 
 void CClient::DemoRecorder_AddDemoMarker()
@@ -2504,4 +2522,22 @@ const char* CClient::GetCurrentMap()
 bool CClient::IsServerType(const char *pServer)
 {
 	return str_find_nocase(m_CurrentServerInfo.m_aGameType, pServer);
+}
+
+void CClient::StartRecordVideo(const char *pFilename)
+{
+	//dbg_assert(m_RecordVideo, "Can't call StartRecordVideo, need stop current record.");
+
+	/*m_MkvWriter.Open(pFilename);
+	m_MkvSegment.Init(&m_MkvWriter);
+	m_MkvSegment.set_mode(mkvmuxer::Segment::kFile);
+	m_MkvVidTrack = m_MkvSegment.AddVideoTrack(g_Config.m_GfxScreenWidth, g_Config.m_GfxScreenWidth, 1);
+	m_RecordVideo = true;
+	m_MkvStartTime = time_get();*/
+}
+void CClient::StopRecordVideo()
+{
+	/*m_MkvSegment.Finalize();
+	m_MkvWriter.Close();
+	m_RecordVideo = false;*/
 }

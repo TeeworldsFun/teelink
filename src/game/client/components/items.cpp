@@ -71,7 +71,7 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 		static float s_Time = 0.0f;
 		static float s_LastLocalTime = Client()->LocalTime();
 
-		if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 		{
 			const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 			if(!pInfo->m_Paused)
@@ -139,7 +139,7 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 	static float s_Time = 0.0f;
 	static float s_LastLocalTime = Client()->LocalTime();
 	float Offset = Pos.y/32.0f + Pos.x/32.0f;
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 	{
 		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 		if(!pInfo->m_Paused)

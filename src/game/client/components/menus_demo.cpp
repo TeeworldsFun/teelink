@@ -539,10 +539,12 @@ void CMenus::RenderDemoList(CUIRect MainView)
 	RenderTools()->DrawUIRect(&MainView, HexToVec4(g_Config.m_hcContainerBackgroundColor), CUI::CORNER_ALL, 10.0f);
 	MainView.Margin(10.0f, &MainView);
 
-	CUIRect ButtonBar, RefreshRect, PlayRect, DeleteRect, RenameRect, FileIcon, ListBox;
+	CUIRect ButtonBar, RefreshRect, PlayRect, RecordVideoRect, DeleteRect, RenameRect, FileIcon, ListBox; // H-Client: .webm
 	MainView.HSplitBottom(ms_ButtonHeight+5.0f, &MainView, &ButtonBar);
 	ButtonBar.HSplitTop(5.0f, 0, &ButtonBar);
 	ButtonBar.VSplitRight(130.0f, &ButtonBar, &PlayRect);
+	ButtonBar.VSplitRight(5.0f, &ButtonBar, 0x0); // H-Client: .webm
+	ButtonBar.VSplitRight(130.0f, &ButtonBar, &RecordVideoRect); // H-Client: .webm
 	ButtonBar.VSplitLeft(130.0f, &RefreshRect, &ButtonBar);
 	ButtonBar.VSplitLeft(10.0f, 0, &ButtonBar);
 	ButtonBar.VSplitLeft(120.0f, &DeleteRect, &ButtonBar);
@@ -641,6 +643,23 @@ void CMenus::RenderDemoList(CUIRect MainView)
 		DemolistPopulate();
 		DemolistOnUpdate(false);
 	}
+
+	// H-Client: webm export
+	/*static int s_PlayRecordVideo = 0;
+	if(m_DemolistSelectedIndex >= 0 && !m_DemolistSelectedIsDir && DoButton_Menu(&s_PlayRecordVideo, Localize("Create .webm"), 0, &RecordVideoRect))
+	{
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "%s/%s", m_aCurrentDemoFolder, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
+		const char *pError = Client()->DemoPlayer_Play(aBuf, m_lDemos[m_DemolistSelectedIndex].m_StorageType, true);
+		if(pError)
+			PopupMessage(Localize("Error"), str_comp(pError, "error loading demo") ? pError : Localize("Error loading demo"), Localize("Ok"));
+		else
+		{
+			UI()->SetActiveItem(0);
+			return;
+		}
+	}*/
+	//
 
 	static int s_PlayButton = 0;
 	if(DoButton_Menu(&s_PlayButton, m_DemolistSelectedIsDir?Localize("Open"):Localize("Play"), 0, &PlayRect) || Activated)

@@ -108,7 +108,7 @@ void CSounds::OnReset()
 
 void CSounds::OnStateChange(int NewState, int OldState)
 {
-	if(NewState == IClient::STATE_ONLINE || NewState == IClient::STATE_DEMOPLAYBACK)
+	if(NewState == IClient::STATE_ONLINE || NewState == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
 		OnReset();
 }
 

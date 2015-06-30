@@ -3,6 +3,8 @@
 #ifndef ENGINE_CLIENT_CLIENT_H
 #define ENGINE_CLIENT_CLIENT_H
 
+#include <engine/external/libwebm/mkvwriter.hpp> // H-Client: .webm export
+
 class CGraph
 {
 public:
@@ -188,6 +190,14 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	static void GraphicsThreadProxy(void *pThis) { ((CClient*)pThis)->GraphicsThread(); }
 	void GraphicsThread();
 
+	// H-Client: .webm export
+	/*mkvmuxer::MkvWriter m_MkvWriter;
+	mkvmuxer::Segment m_MkvSegment;
+	long m_MkvStartTime;
+	int m_MkvVidTrack;
+	bool m_RecordVideo;*/
+	//
+
 public:
 	IEngine *Engine() { return m_pEngine; }
 	IEngineGraphics *Graphics() { return m_pGraphics; }
@@ -306,7 +316,7 @@ public:
 
 	void RegisterCommands();
 
-	const char *DemoPlayer_Play(const char *pFilename, int StorageType);
+	const char *DemoPlayer_Play(const char *pFilename, int StorageType, bool RecordVideo = false); // H-Client: .webm export
 	void DemoRecorder_Start(const char *pFilename, bool WithTimestamp);
 	void DemoRecorder_HandleAutoStart();
 	void DemoRecorder_Stop();
@@ -321,6 +331,9 @@ public:
 	virtual const char* GetCurrentMap();
 	virtual bool IsServerType(const char *pServer);
 	virtual const char* GetCurrentServerAddress() const { return m_aServerAddressStr; }
+
+	virtual void StartRecordVideo(const char *pFilename);
+	virtual void StopRecordVideo();
 	//
 };
 

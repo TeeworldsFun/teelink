@@ -130,6 +130,7 @@ public:
 	virtual bool Thumbnail() const { return m_DoScreenshotTumbtail; }
 	virtual bool ShowInfoKills() const { return m_DoScreenShowInfoKills; }
 	virtual void ShowInfoKills(bool state);
+	virtual unsigned char* GetFrameBuffer();
 	//
 
 	virtual int Init();

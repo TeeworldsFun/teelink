@@ -452,6 +452,8 @@ public:
 	virtual bool Thumbnail() const { return m_DoScreenshotTumbtail; } // H-Client
     virtual bool ShowInfoKills() const { return m_DoScreenShowInfoKills; } // H-Client
 	virtual void ShowInfoKills(bool state); // H-Client
+
+	virtual unsigned char* GetFrameBuffer();
 };
 
 extern IGraphicsBackend *CreateGraphicsBackend();

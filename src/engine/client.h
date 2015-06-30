@@ -53,6 +53,8 @@ public:
 		STATE_ONLINE,
 		STATE_DEMOPLAYBACK,
 		STATE_QUITING,
+
+		STATE_WEBM, // H-Client: .webm export
 	};
 
 	//
@@ -75,7 +77,7 @@ public:
 	virtual void Connect(const char *pAddress) = 0;
 	virtual void Disconnect() = 0;
 	virtual void Quit() = 0;
-	virtual const char *DemoPlayer_Play(const char *pFilename, int StorageType) = 0;
+	virtual const char *DemoPlayer_Play(const char *pFilename, int StorageType, bool RecordVideo = false) = 0; // H-Client: .webm export
 	virtual void DemoRecorder_Start(const char *pFilename, bool WithTimestamp) = 0;
 	virtual void DemoRecorder_HandleAutoStart() = 0;
 	virtual void DemoRecorder_Stop() = 0;
@@ -141,6 +143,9 @@ public:
 	virtual const char* GetCurrentMap() = 0;
 	virtual bool IsServerType(const char *pServer) = 0;
 	virtual const char* GetCurrentServerAddress() const = 0;
+
+	virtual void StartRecordVideo(const char *pFilename) = 0;
+	virtual void StopRecordVideo() = 0;
 	//
 };
 

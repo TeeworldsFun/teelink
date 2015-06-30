@@ -903,6 +903,8 @@ void CServerBrowser::ConfigSaveCallback(IConfig *pConfig, void *pUserData)
 //H-Client
 bool CServerBrowser::SaveServerInfo()
 {
+
+
     Storage()->RemoveFile("serverinfo.tw", IStorage::TYPE_SAVE);
     IOHANDLE File = Storage()->OpenFile("serverinfo.tw", IOFLAG_WRITE, IStorage::TYPE_SAVE);
 	if(!File)
@@ -967,12 +969,15 @@ bool CServerBrowser::LoadServerInfo()
     		return false;
     	}
 
-        CServerInfoRegv2 ServReg;
-        for (std::size_t cursor = 0; cursor<UncompressedSizeCalc-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
-        {
-        	mem_copy(&ServReg, pUncompressedData+cursor, sizeof(CServerInfoRegv2));
-            m_lServInfo.add(ServReg);
-        }
+    	if (UncompressedSize < sizeof(CServerInfoRegv2))
+    		return false;
+
+		CServerInfoRegv2 ServReg;
+		for (std::size_t cursor = 0; cursor<UncompressedSizeCalc-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
+		{
+			mem_copy(&ServReg, pUncompressedData+cursor, sizeof(CServerInfoRegv2));
+			m_lServInfo.add(ServReg);
+		}
 
         mem_free(pUncompressedData);
         mem_free(pData);
