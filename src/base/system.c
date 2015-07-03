@@ -2171,6 +2171,24 @@ void str_to_upper(char *a, int length)
     for (i=0; i<length; i++)
         a[i] = str_uppercase(a[i]);
 }
+
+void open_default_browser(const char *url)
+{
+	if (!url || url[0] == 0)
+		return;
+
+	#if defined(CONF_FAMILY_WINDOWS)
+		ShellExecute(NULL, "open", url, NULL, NULL, SW_SHOWNORMAL);
+	#elif defined(CONF_PLATFORM_MACOSX)
+		  CFURLRef cfurl = CFURLCreateWithBytes(NULL, (UInt8*)url, str_length(url), kCFStringEncodingASCII, NULL);
+		  LSOpenCFURLRef(cfurl, 0);
+		  CFRelease(cfurl);
+	#elif defined(CONF_PLATFORM_LINUX)
+		char aBuf[255]={0};
+		str_format(aBuf, sizeof(aBuf), "xdg-open %s", url);
+		system(aBuf);
+	#endif
+}
 //
 #if defined(__cplusplus)
 }

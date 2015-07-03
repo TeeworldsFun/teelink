@@ -1298,27 +1298,29 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 
 	//Feet
 	{
-        MainView.HSplitBottom(10.0f, &MainView, &HUDItem);
-        TextRender()->TextColor(1.0f, 0.39f, 0.0f, 1.0f);
-		UI()->DoLabelScaled(&HUDItem, "H-Client Mod by unsigned char* - http://hclient.wordpress.com", 14.0f, -1);
+		const char *pUrl = "http://hclient.wordpress.com";
+		CUIRect TextRect;
+        MainView.HSplitBottom(20.0f, &MainView, &HUDItem);
+        HUDItem.VSplitLeft(TextRender()->TextWidth(0, 14.0, pUrl, -1), &TextRect, &HUDItem);
+        if (UI()->MouseInside(&TextRect))
+        {
+        	TextRender()->TextColor(0.0f, 1.0f, 0.39f, 1.0f);
+        	if (UI()->MouseButtonClicked(0))
+        		open_default_browser(pUrl);
+        }
+        else
+        	TextRender()->TextColor(1.0f, 0.39f, 0.0f, 1.0f);
+		UI()->DoLabelScaled(&TextRect, pUrl, 14.0f, -1);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-	}
 
-	//Advance Options
-	{
-	    /*CUIRect Button;
-	    MainView.HSplitBottom(20.0f, 0x0, &Button);
-	    Button.VSplitRight(150.0f, 0x0, &Button);
+
+	    CUIRect Button;
+	    HUDItem.VSplitRight(150.0f, 0x0, &Button);
         Button.Margin(2.0f, &Button);
         static int s_ButtonClearCache = 0;
         if (DoButton_Menu((void*)&s_ButtonClearCache, Localize("Clear Map-Preview Cache"), 0, &Button))
-            DeleteMapPreviewCache();*/
+            DeleteMapPreviewCache();
 	}
-
-	/// PANEL RIGTH
-    //PanelR.HSplitTop(ms_ListheaderHeight, &HUDItem, &PanelR);
-    //RenderTools()->DrawUIRect(&HUDItem, HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), CUI::CORNER_TR, 5.0f);
-    //UI()->DoLabel(&HUDItem, Localize("HUD"), HUDItem.h*ms_FontmodHeight, 0);
 
 
     TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);

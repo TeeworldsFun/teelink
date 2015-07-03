@@ -20,6 +20,7 @@
 #include <zlib.h> // H-Client
 #include <string> // H-Client
 #include <cstdio> // H-Client
+#include <iostream>
 
 #include "serverbrowser.h"
 class SortWrap
@@ -949,6 +950,7 @@ bool CServerBrowser::LoadServerInfo()
     	unsigned long UncompressedSize, UncompressedSizeCalc;
     	io_read(File, &UncompressedSize, sizeof(UncompressedSize));
     	unsigned char *pUncompressedData = (unsigned char*)mem_alloc(UncompressedSize, 1);
+    	UncompressedSizeCalc = UncompressedSize;
 
     	int ctt = io_tell(File);
     	io_seek(File, 0, IOSEEK_END);
@@ -960,7 +962,7 @@ bool CServerBrowser::LoadServerInfo()
 
     	uncompress((Bytef*)pUncompressedData, &UncompressedSizeCalc, (Bytef*)pData, TotalSize); // ignore_convention
 
-    	if (UncompressedSizeCalc != UncompressedSize)
+    	if (UncompressedSizeCalc != UncompressedSize || UncompressedSize < sizeof(CServerInfoRegv2))
     	{
     		dbg_msg("serverinfo", "Error loading server info!");
     		io_close(File);
@@ -969,11 +971,8 @@ bool CServerBrowser::LoadServerInfo()
     		return false;
     	}
 
-    	if (UncompressedSize < sizeof(CServerInfoRegv2))
-    		return false;
-
 		CServerInfoRegv2 ServReg;
-		for (std::size_t cursor = 0; cursor<UncompressedSizeCalc-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
+		for (std::size_t cursor = 0; cursor<=UncompressedSizeCalc-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
 		{
 			mem_copy(&ServReg, pUncompressedData+cursor, sizeof(CServerInfoRegv2));
 			m_lServInfo.add(ServReg);
@@ -981,6 +980,7 @@ bool CServerBrowser::LoadServerInfo()
 
         mem_free(pUncompressedData);
         mem_free(pData);
+        dbg_msg("serverinfo", "Loaded %d servers from file..", m_lServInfo.size());
     }
     else if (str_comp(version, "HC104") == 0)
     {

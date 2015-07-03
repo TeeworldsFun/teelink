@@ -524,7 +524,7 @@ void CGraphics_OpenGL::ScreenshotDirect(const char *pFilename)
 	GLint Alignment;
 	glGetIntegerv(GL_PACK_ALIGNMENT, &Alignment);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(Thumbnail()?ScreenWidth()/2-w/2:0, Thumbnail()?ScreenHeight()/2-h/2:0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pPixelData);
+    glReadPixels(0, ScreenHeight()-h, w, h, GL_RGB, GL_UNSIGNED_BYTE, pPixelData);
 	glPixelStorei(GL_PACK_ALIGNMENT, Alignment);
 
 	// flip the pixel because opengl works from bottom left corner

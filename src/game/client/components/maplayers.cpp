@@ -46,14 +46,20 @@ void CMapLayers::EnvelopeUpdate()
 
 void CMapLayers::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup)
 {
-	if (Graphics()->ShowInfoKills() || Graphics()->Thumbnail())
-        Graphics()->MapScreen(0, 0, Collision()->GetWidth()*32, Collision()->GetHeight()*32);
+	//H-Client
+	if (Graphics()->ShowInfoKills())
+        Graphics()->MapScreen(0.0f, 0.0f, Collision()->GetWidth()*32, Collision()->GetHeight()*32);
+	else if (Graphics()->Thumbnail())
+	{
+		// FIXME: Don't use 'magic' numbers..
+		Graphics()->MapScreen(0.0f, 0.0f, Collision()->GetWidth()*32*7, Collision()->GetHeight()*32*6);
+	}
     else
     {
         float Points[4];
 
         RenderTools()->MapscreenToWorld(CenterX, CenterY, pGroup->m_ParallaxX/100.0f, pGroup->m_ParallaxY/100.0f,
-            pGroup->m_OffsetX, pGroup->m_OffsetY, Graphics()->ScreenAspect(), (Graphics()->Thumbnail())?4.0f:1.0f, Points);
+            pGroup->m_OffsetX, pGroup->m_OffsetY, Graphics()->ScreenAspect(), 1.0f, Points);
         Graphics()->MapScreen(Points[0], Points[1], Points[2], Points[3]);
     }
 }

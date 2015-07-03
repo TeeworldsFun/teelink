@@ -206,8 +206,6 @@ public:
 	int m_HookedPlayer;
 
 	// H-Client: DDNet
-	vec2 m_HookTeleBase;
-	bool m_NewHook;
 	bool m_Freezes;
 	int m_ActiveWeapon;
 	int m_Team;

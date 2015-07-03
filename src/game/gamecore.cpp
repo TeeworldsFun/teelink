@@ -76,7 +76,6 @@ void CCharacterCore::Reset()
 	m_TriggeredEvents = 0;
 
 	// H-Client: DDNet
-	m_NewHook = false;
 	m_Freezes = false;
 	m_ActiveWeapon = -1;
 	//
@@ -85,6 +84,7 @@ void CCharacterCore::Reset()
 void CCharacterCore::Tick(bool UseInput)
 {
 	float PhysSize = 28.0f;
+	vec2 PrevPos = m_Pos; // H-Client: DDNet
 	m_TriggeredEvents = 0;
 
 	// get ground state
@@ -208,8 +208,7 @@ void CCharacterCore::Tick(bool UseInput)
 	else if(m_HookState == HOOK_FLYING)
 	{
 		vec2 NewPos = m_HookPos+m_HookDir*m_pWorld->m_Tuning.m_HookFireSpeed;
-		if((!m_NewHook && distance(m_Pos, NewPos) > m_pWorld->m_Tuning.m_HookLength)
-		|| (m_NewHook && distance(m_HookTeleBase, NewPos) > m_pWorld->m_Tuning.m_HookLength))
+		if(distance(m_Pos, NewPos) > m_pWorld->m_Tuning.m_HookLength)
 		{
 			m_HookState = HOOK_RETRACT_START;
 			NewPos = m_Pos + normalize(NewPos-m_Pos) * m_pWorld->m_Tuning.m_HookLength;
@@ -371,10 +370,6 @@ void CCharacterCore::Tick(bool UseInput)
 			}
 		}
 
-		// H-Client: DDNet
-		if (m_HookState != HOOK_FLYING)
-			m_NewHook = false;
-
 		// SpeedUps Prediction
 		if(InTileSpeed)
 		{
@@ -464,6 +459,9 @@ void CCharacterCore::Tick(bool UseInput)
 			  (TilesIndexSwitch[1] == TILE_STOPS && (TilesFlagsSwitch[1] == ROTATION_90 || TilesFlagsSwitch[1] == ROTATION_270)) ||
 			  (TilesIndexSwitch[1] == TILE_STOPA)) && m_Vel.x > 0)
 		{
+			if((int)m_pCollision->GetPos(TilesIndexGame[1]).x < (int)m_Pos.x)
+				m_Pos = PrevPos;
+
 			m_Vel.x = 0;
 		}
 		if (((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_90) ||
@@ -479,36 +477,45 @@ void CCharacterCore::Tick(bool UseInput)
 				(TilesIndexSwitch[2] == TILE_STOPS && (TilesFlagsSwitch[2] == ROTATION_90 || TilesFlagsSwitch[2] == ROTATION_270)) ||
 				(TilesIndexSwitch[2] == TILE_STOPA)) && m_Vel.x < 0)
 		{
+			if((int)m_pCollision->GetPos(TilesIndexGame[2]).x < (int)m_Pos.x)
+				m_Pos = PrevPos;
+
 			m_Vel.x = 0;
 		}
 		if (((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_180) ||
-				(TilesIndexGame[3] == TILE_STOP && TilesFlagsGame[3] == ROTATION_180) ||
-				(TilesIndexGame[3] == TILE_STOPS && (TilesFlagsGame[3] == ROTATION_0 || TilesFlagsGame[3] == ROTATION_180)) ||
-				(TilesIndexGame[3] == TILE_STOPA) ||
+				(TilesIndexGame[4] == TILE_STOP && TilesFlagsGame[4] == ROTATION_180) ||
+				(TilesIndexGame[4] == TILE_STOPS && (TilesFlagsGame[4] == ROTATION_0 || TilesFlagsGame[4] == ROTATION_180)) ||
+				(TilesIndexGame[4] == TILE_STOPA) ||
 				(TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_180) ||
-				(TilesIndexFront[3] == TILE_STOP && TilesFlagsFront[3] == ROTATION_180) ||
-				(TilesIndexFront[3] == TILE_STOPS && (TilesFlagsFront[3] == ROTATION_0 || TilesFlagsFront[3] == ROTATION_180)) ||
-				(TilesIndexFront[3] == TILE_STOPA) ||
+				(TilesIndexFront[4] == TILE_STOP && TilesFlagsFront[4] == ROTATION_180) ||
+				(TilesIndexFront[4] == TILE_STOPS && (TilesFlagsFront[4] == ROTATION_0 || TilesFlagsFront[4] == ROTATION_180)) ||
+				(TilesIndexFront[4] == TILE_STOPA) ||
 				(TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_180) ||
-				(TilesIndexSwitch[3] == TILE_STOP && TilesFlagsSwitch[3] == ROTATION_180) ||
-				(TilesIndexSwitch[3] == TILE_STOPS && (TilesFlagsSwitch[3] == ROTATION_0 || TilesFlagsSwitch[3] == ROTATION_180)) ||
-				(TilesIndexSwitch[3] == TILE_STOPA)) && m_Vel.y < 0)
+				(TilesIndexSwitch[4] == TILE_STOP && TilesFlagsSwitch[4] == ROTATION_180) ||
+				(TilesIndexSwitch[4] == TILE_STOPS && (TilesFlagsSwitch[4] == ROTATION_0 || TilesFlagsSwitch[4] == ROTATION_180)) ||
+				(TilesIndexSwitch[4] == TILE_STOPA)) && m_Vel.y < 0)
 		{
+			if((int)m_pCollision->GetPos(TilesIndexGame[4]).y < (int)m_Pos.y)
+				m_Pos = PrevPos;
+
 			m_Vel.y = 0;
 		}
 		if(((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_0) ||
-				(TilesIndexGame[4] == TILE_STOP && TilesFlagsGame[4] == ROTATION_0) ||
-				(TilesIndexGame[4] == TILE_STOPS && (TilesFlagsGame[4] == ROTATION_0 || TilesFlagsGame[4] == ROTATION_180)) ||
-				(TilesIndexGame[4] == TILE_STOPA) ||
+				(TilesIndexGame[3] == TILE_STOP && TilesFlagsGame[3] == ROTATION_0) ||
+				(TilesIndexGame[3] == TILE_STOPS && (TilesFlagsGame[3] == ROTATION_0 || TilesFlagsGame[3] == ROTATION_180)) ||
+				(TilesIndexGame[3] == TILE_STOPA) ||
 				(TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_0) ||
-				(TilesIndexFront[4] == TILE_STOP && TilesFlagsFront[4] == ROTATION_0) ||
-				(TilesIndexFront[4] == TILE_STOPS && (TilesFlagsFront[4] == ROTATION_0 || TilesFlagsFront[4] == ROTATION_180)) ||
-				(TilesIndexFront[4] == TILE_STOPA) ||
+				(TilesIndexFront[3] == TILE_STOP && TilesFlagsFront[3] == ROTATION_0) ||
+				(TilesIndexFront[3] == TILE_STOPS && (TilesFlagsFront[3] == ROTATION_0 || TilesFlagsFront[3] == ROTATION_180)) ||
+				(TilesIndexFront[3] == TILE_STOPA) ||
 				(TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_0) ||
-				(TilesIndexSwitch[4] == TILE_STOP && TilesFlagsSwitch[4] == ROTATION_0) ||
-				(TilesIndexSwitch[4] == TILE_STOPS && (TilesFlagsSwitch[4] == ROTATION_0 || TilesFlagsSwitch[4] == ROTATION_180)) ||
-				(TilesIndexSwitch[4] == TILE_STOPA)) && m_Vel.y > 0)
+				(TilesIndexSwitch[3] == TILE_STOP && TilesFlagsSwitch[3] == ROTATION_0) ||
+				(TilesIndexSwitch[3] == TILE_STOPS && (TilesFlagsSwitch[3] == ROTATION_0 || TilesFlagsSwitch[3] == ROTATION_180)) ||
+				(TilesIndexSwitch[3] == TILE_STOPA)) && m_Vel.y > 0)
 		{
+			if((int)m_pCollision->GetPos(TilesIndexGame[3]).y < (int)m_Pos.y)
+				m_Pos = PrevPos;
+
 			m_Vel.y = 0;
 			m_Jumped = 0;
 		}
