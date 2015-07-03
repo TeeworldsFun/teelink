@@ -2178,7 +2178,9 @@ void open_default_browser(const char *url)
 		return;
 
 	#if defined(CONF_FAMILY_WINDOWS)
-		ShellExecute(NULL, "open", url, NULL, NULL, SW_SHOWNORMAL);
+		char aBuf[255]={0};
+		str_format(aBuf, sizeof(aBuf), "start %s", url);
+		system(aBuf);
 	#elif defined(CONF_PLATFORM_MACOSX)
 		  CFURLRef cfurl = CFURLCreateWithBytes(NULL, (UInt8*)url, str_length(url), kCFStringEncodingASCII, NULL);
 		  LSOpenCFURLRef(cfurl, 0);
