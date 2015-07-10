@@ -293,7 +293,7 @@ Messages = [
 
 	### Client messages
 	NetMessage("Cl_Say", [
-		NetBool("m_Team"),
+		NetIntAny("m_Team"), # H-Client: DDNet
 		NetStringStrict("m_pMessage"),
 	]),
 

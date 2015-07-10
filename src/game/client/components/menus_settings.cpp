@@ -1105,6 +1105,18 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         if(DoButton_CheckBox(&g_Config.m_hcPlayerInfo, Localize("Show player info"), g_Config.m_hcPlayerInfo, &HUDItem))
             g_Config.m_hcPlayerInfo ^= 1;
 
+        //Show Map Preview
+        StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+        if(DoButton_CheckBox(&g_Config.m_hcShowPreviewMap, Localize("Show map preview in server browser"), g_Config.m_hcShowPreviewMap, &HUDItem))
+            g_Config.m_hcShowPreviewMap ^= 1;
+
+        if (g_Config.m_hcShowPreviewMap)
+        {
+            StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+            UI()->DoLabelScaled(&HUDItem, Localize("Max. map dimensions: "), HUDItem.h*ms_FontmodHeight*0.8f, -1);
+        }
+
         //Auto-Download Skins
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcAutoDownloadSkins, Localize("Auto download skins (Thanks to DDNet Database)"), g_Config.m_hcAutoDownloadSkins, &HUDItem))

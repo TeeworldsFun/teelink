@@ -39,6 +39,9 @@ CCollision::~CCollision()
 void CCollision::Init(class CLayers *pLayers)
 {
 	// H-Client: DDNet
+	if (m_pDoor) delete [] m_pDoor;
+	if (m_pSwitchers) delete [] m_pSwitchers;
+
     m_pFront = 0x0;
     m_pTele = 0x0;
     m_pSpeedUp = 0x0;

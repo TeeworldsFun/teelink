@@ -904,10 +904,7 @@ void CServerBrowser::ConfigSaveCallback(IConfig *pConfig, void *pUserData)
 //H-Client
 bool CServerBrowser::SaveServerInfo()
 {
-
-
-    Storage()->RemoveFile("serverinfo.tw", IStorage::TYPE_SAVE);
-    IOHANDLE File = Storage()->OpenFile("serverinfo.tw", IOFLAG_WRITE, IStorage::TYPE_SAVE);
+    IOHANDLE File = Storage()->OpenFile("history_servers.dat", IOFLAG_WRITE, IStorage::TYPE_SAVE);
 	if(!File)
 		return false;
 
@@ -938,9 +935,16 @@ bool CServerBrowser::SaveServerInfo()
 
 bool CServerBrowser::LoadServerInfo()
 {
+	bool oldName = false;
     IOHANDLE File = Storage()->OpenFile("serverinfo.tw", IOFLAG_READ, IStorage::TYPE_SAVE);
 	if(!File)
-		return false;
+	{
+		File = Storage()->OpenFile("history_servers.dat", IOFLAG_READ, IStorage::TYPE_SAVE);
+		if (!File)
+			return false;
+	}
+	else
+		oldName = true;
 
     //Verify Version
     char version[] = { 'H', 'C', '3', '8', '0', 0 };
@@ -1024,6 +1028,9 @@ bool CServerBrowser::LoadServerInfo()
     }
 
 	io_close(File);
+
+	if (oldName)
+		Storage()->RemoveFile("serverinfo.tw", IStorage::TYPE_SAVE);
 
 	dbg_msg("server browser", "Loaded servers sucesfully");
 	return true;

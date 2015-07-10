@@ -97,5 +97,7 @@ public:
 	virtual void OnRender();
 	virtual void OnMessage(int MsgType, void *pRawMsg);
 	virtual bool OnInput(IInput::CEvent Events);
+
+	bool IsOpen(); // H-Client
 };
 #endif
