@@ -454,7 +454,6 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 			}
 
 		}
-		}
 
 		char aBuf[1024];
 		str_format(aBuf, sizeof(aBuf), "%s%s", m_aLines[m_CurrentLine].m_aName, m_aLines[m_CurrentLine].m_aText);
