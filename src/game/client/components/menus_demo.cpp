@@ -273,15 +273,21 @@ void CMenus::UiDoListboxStart(const void *pID, const CUIRect *pRect, float RowHe
 	CUIRect Header, Footer;
 
 	// draw header
-	View.HSplitTop(ms_ListheaderHeight, &Header, &View);
-	RenderTools()->DrawUIRect(&Header, HexToVec4(g_Config.m_hcListHeaderBackgroundColor), CUI::CORNER_T, 5.0f);
-	UI()->DoLabel(&Header, pTitle, Header.h*ms_FontmodHeight, 0);
+	if (pTitle && pTitle[0] != 0) // H-Client
+	{
+		View.HSplitTop(ms_ListheaderHeight, &Header, &View);
+		RenderTools()->DrawUIRect(&Header, HexToVec4(g_Config.m_hcListHeaderBackgroundColor), CUI::CORNER_T, 5.0f);
+		UI()->DoLabel(&Header, pTitle, Header.h*ms_FontmodHeight, 0);
+	}
 
 	// draw footers
-	View.HSplitBottom(ms_ListheaderHeight, &View, &Footer);
-	RenderTools()->DrawUIRect(&Footer, HexToVec4(g_Config.m_hcListFooterBackgroundColor), CUI::CORNER_B, 5.0f);
-	Footer.VSplitLeft(10.0f, 0, &Footer);
-	UI()->DoLabel(&Footer, pBottomText, Header.h*ms_FontmodHeight, 0);
+	if (pBottomText && pBottomText[0] != 0) // H-Client
+	{
+		View.HSplitBottom(ms_ListheaderHeight, &View, &Footer);
+		RenderTools()->DrawUIRect(&Footer, HexToVec4(g_Config.m_hcListFooterBackgroundColor), CUI::CORNER_B, 5.0f);
+		Footer.VSplitLeft(10.0f, 0, &Footer);
+		UI()->DoLabel(&Footer, pBottomText, Header.h*ms_FontmodHeight, 0);
+	}
 
 	// background
 	RenderTools()->DrawUIRect(&View, HexToVec4(g_Config.m_hcListBackgroundColor), 0, 0);

@@ -37,7 +37,7 @@ Exec=${TWNAMEBIN}
 EOM
 
 
-echo "Installing Teeworlds..."
+echo "Installing H-Client..."
 echo -e "Teeworlds Binary: $TWFILENAME\n"
 
 # Put icon in share/pixmaps folder

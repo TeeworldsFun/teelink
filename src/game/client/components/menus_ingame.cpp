@@ -145,6 +145,24 @@ void CMenus::RenderPlayers(CUIRect MainView)
 	Graphics()->QuadsDrawTL(&QuadItem, 1);
 	Graphics()->QuadsEnd();
 
+	unsigned numClients = 0;
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(!m_pClient->m_Snap.m_paInfoByTeam[i])
+			continue;
+
+		int Index = m_pClient->m_Snap.m_paInfoByTeam[i]->m_ClientID;
+		if(Index == m_pClient->m_Snap.m_LocalClientID)
+			continue;
+
+		numClients++;
+	}
+
+	static int s_VoteList = 0;
+	static float s_ScrollValue = 0;
+	CUIRect List = Options;
+	UiDoListboxStart(&s_VoteList, &List, 24.0f, "", "", numClients, 1, -1, s_ScrollValue);
+
 	// options
 	static int s_aPlayerIDs[MAX_CLIENTS][2] = {{0}};
 	for(int i = 0, Count = 0; i < MAX_CLIENTS; ++i)
@@ -156,7 +174,9 @@ void CMenus::RenderPlayers(CUIRect MainView)
 		if(Index == m_pClient->m_Snap.m_LocalClientID)
 			continue;
 
-		Options.HSplitTop(28.0f, &ButtonBar, &Options);
+		CListboxItem Item = UiDoListboxNextItem(0x0);
+
+		ButtonBar = Item.m_Rect;
 		if(Count++%2 == 0)
 			RenderTools()->DrawUIRect(&ButtonBar, HexToVec4(g_Config.m_hcListItemOddColor), CUI::CORNER_ALL, 10.0f);
 		ButtonBar.VSplitRight(220.0f, &Player, &ButtonBar);
@@ -203,56 +223,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 		}
 	}
 
-	/*
-	CUIRect bars;
-	votearea.HSplitTop(10.0f, 0, &votearea);
-	votearea.HSplitTop(25.0f + 10.0f*3 + 25.0f, &votearea, &bars);
-
-	RenderTools()->DrawUIRect(&votearea, color_tabbar_active, CUI::CORNER_ALL, 10.0f);
-
-	votearea.VMargin(20.0f, &votearea);
-	votearea.HMargin(10.0f, &votearea);
-
-	votearea.HSplitBottom(35.0f, &votearea, &bars);
-
-	if(gameclient.voting->is_voting())
-	{
-		// do yes button
-		votearea.VSplitLeft(50.0f, &button, &votearea);
-		static int yes_button = 0;
-		if(UI()->DoButton(&yes_button, "Yes", 0, &button, ui_draw_menu_button, 0))
-			gameclient.voting->vote(1);
-
-		// do no button
-		votearea.VSplitLeft(5.0f, 0, &votearea);
-		votearea.VSplitLeft(50.0f, &button, &votearea);
-		static int no_button = 0;
-		if(UI()->DoButton(&no_button, "No", 0, &button, ui_draw_menu_button, 0))
-			gameclient.voting->vote(-1);
-
-		// do time left
-		votearea.VSplitRight(50.0f, &votearea, &button);
-		char buf[256];
-		str_format(buf, sizeof(buf), "%d", gameclient.voting->seconds_left());
-		UI()->DoLabel(&button, buf, 24.0f, 0);
-
-		// do description and command
-		votearea.VSplitLeft(5.0f, 0, &votearea);
-		UI()->DoLabel(&votearea, gameclient.voting->vote_description(), 14.0f, -1);
-		votearea.HSplitTop(16.0f, 0, &votearea);
-		UI()->DoLabel(&votearea, gameclient.voting->vote_command(), 10.0f, -1);
-
-		// do bars
-		bars.HSplitTop(10.0f, 0, &bars);
-		bars.HMargin(5.0f, &bars);
-
-		gameclient.voting->render_bars(bars, true);
-
-	}
-	else
-	{
-		UI()->DoLabel(&votearea, "No vote in progress", 18.0f, -1);
-	}*/
+	UiDoListboxEnd(&s_ScrollValue, 0);
 }
 
 void CMenus::RenderServerInfo(CUIRect MainView)

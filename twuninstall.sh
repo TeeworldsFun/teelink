@@ -12,7 +12,7 @@ DFFILENAME="$HOME/.local/share/applications/$TWNAMEBIN.desktop"
 DESKTOPF=$(xdg-user-dir DESKTOP)"/$TWNAMEBIN.desktop"
 
 
-echo "Uninstalling Teeworlds..."
+echo "Uninstalling H-Client..."
 
 # Remove from desktop folder
 if [ -f $DESKTOPF ]; then
