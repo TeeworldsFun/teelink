@@ -318,7 +318,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 
 void CChat::EnableMode(int Team)
 {
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 		return;
 
 	if(m_Mode == MODE_NONE)

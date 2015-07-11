@@ -8,6 +8,7 @@
 #include <engine/shared/protocol.h>
 #include <map>
 #include <vector>
+#include <list> // Ghost
 //
 
 class CCollision
@@ -87,6 +88,8 @@ public:
     int IsTeleport(int Index);
     int IntersectLineTeleHook(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, int *pTeleNr, bool AllowThrough);
     std::map<int, std::vector<vec2> > *GetTeleOuts() { return &m_TeleOuts; }
+    std::list<int> GetMapIndices(vec2 PrevPos, vec2 Pos, unsigned MaxIndices = 0); // Ghost
+    bool TileExists(int Index); // Ghost
 
     void CreateTile(vec2 pos, int group, int layer, int index, int flags); // Android
 };

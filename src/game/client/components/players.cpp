@@ -110,7 +110,7 @@ void CPlayers::RenderHook(
 
 
 	// use preditect players if needed
-	if(pInfo.m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+	if(pInfo.m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		if(!m_pClient->m_Snap.m_pLocalCharacter || (m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
 		{
@@ -140,7 +140,7 @@ void CPlayers::RenderHook(
 		{
 			if(m_pClient->m_Snap.m_pLocalInfo && pPlayerChar->m_HookedPlayer == m_pClient->m_Snap.m_pLocalInfo->m_ClientID)
 			{
-				if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM) // only use prediction if needed
+				if(Client()->State() == IClient::STATE_DEMOPLAYBACK) // only use prediction if needed
 					HookPos = vec2(m_pClient->m_LocalCharacterPos.x, m_pClient->m_LocalCharacterPos.y);
 				else
 					HookPos = mix(vec2(m_pClient->m_PredictedPrevChar.m_Pos.x, m_pClient->m_PredictedPrevChar.m_Pos.y),
@@ -238,7 +238,7 @@ void CPlayers::RenderPlayer(
 
 	//float angle = 0;
 
-	if(pInfo.m_Local && Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+	if(pInfo.m_Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		// just use the direct input if it's local player we are rendering
 		Angle = GetAngle(m_pClient->m_pControls->m_MousePos);
@@ -267,7 +267,7 @@ void CPlayers::RenderPlayer(
 	}
 
 	// use preditect players if needed
-	if(pInfo.m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+	if(pInfo.m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		if(!m_pClient->m_Snap.m_pLocalCharacter || (m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
 		{
@@ -355,7 +355,7 @@ void CPlayers::RenderPlayer(
         vec2 orgPos, toPos, ExDirection = Direction;
         int Hit = 0;
 
-        if (pPlayerInfo->m_Local && Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+        if (pPlayerInfo->m_Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
             ExDirection = normalize(vec2(m_pClient->m_pControls->m_InputData.m_TargetX, m_pClient->m_pControls->m_InputData.m_TargetY));
 
         orgPos = Position+ExDirection*RealPhysSize;
@@ -439,7 +439,7 @@ void CPlayers::RenderPlayer(
 			{
 				int IteX = rand() % g_pData->m_Weapons.m_aId[iw].m_NumSpriteMuzzles;
 				static int s_LastIteX = IteX;
-				if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+				if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 				{
 					const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 					if(pInfo->m_Paused)
@@ -501,7 +501,7 @@ void CPlayers::RenderPlayer(
 
 				int IteX = rand() % g_pData->m_Weapons.m_aId[iw].m_NumSpriteMuzzles;
 				static int s_LastIteX = IteX;
-				if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+				if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 				{
 					const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 					if(pInfo->m_Paused)

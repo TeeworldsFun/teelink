@@ -24,7 +24,7 @@ void CSpectator::ConKeySpectator(IConsole::IResult *pResult, void *pUserData)
 {
 	CSpectator *pSelf = (CSpectator *)pUserData;
 	if(pSelf->m_pClient->m_Snap.m_SpecInfo.m_Active &&
-		(pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK || pSelf->Client()->State() != IClient::STATE_WEBM || pSelf->DemoPlayer()->GetDemoType() == IDemoPlayer::DEMOTYPE_SERVER))
+		(pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK || pSelf->DemoPlayer()->GetDemoType() == IDemoPlayer::DEMOTYPE_SERVER))
 		pSelf->m_Active = pResult->GetInteger(0) != 0;
 }
 
@@ -270,7 +270,7 @@ void CSpectator::OnReset()
 
 void CSpectator::Spectate(int SpectatorID)
 {
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		m_pClient->m_DemoSpecID = clamp(SpectatorID, (int)SPEC_FREEVIEW, MAX_CLIENTS-1);
 		return;

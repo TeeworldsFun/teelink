@@ -109,6 +109,8 @@ class CMenus : public CComponent
 		PAGE_DEMOS,
 		PAGE_SETTINGS,
 		PAGE_SYSTEM,
+
+		SUBPAGE_GHOST, // H-Client
 	};
 
 	int m_GamePage;
@@ -263,6 +265,8 @@ class CMenus : public CComponent
 	void RenderSettingsHClient(CUIRect MainView); // H-Client
 	void RenderSettingsTheme(CUIRect MainView); // H-Client
 	void RenderLaser(vec2 From, vec2 Pos); // H-Client
+    void RenderGhost(CUIRect MainView); // H-Client: Ghost
+    static int GhostlistFetchCallback(const char *pName, int IsDir, int StorageType, void *pUser); // H-Client: Ghost
 
 	void SetActive(bool Active);
 
@@ -312,6 +316,25 @@ public:
 	virtual bool OnMouseMove(float x, float y);
 
     //H-Client
+	// Ghost
+	struct CGhostItem
+	{
+		char m_aFilename[256];
+		char m_aPlayer[MAX_NAME_LENGTH];
+
+		float m_Time;
+
+		bool m_Active;
+		int m_ID;
+
+		bool operator<(const CGhostItem &Other) { return m_Time < Other.m_Time; }
+		bool operator==(const CGhostItem &Other) { return m_ID == Other.m_ID; }
+	};
+
+	sorted_array<CGhostItem> m_lGhosts;
+	CGhostItem *m_OwnGhost;
+	void GhostlistPopulate();
+	//
 	void DeleteMapPreviewCache();
 	int GetImageMapPreview(const char *sMap, bool reload = false);
 	void SetPopup(int popup) { m_Popup = popup; }

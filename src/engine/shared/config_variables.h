@@ -137,10 +137,16 @@ MACRO_CONFIG_INT(hcPreviewMapMaxHeight, hc_preview_map_max_height, 600, 1, 99999
 
 MACRO_CONFIG_STR(hcEyesSelectorTime, hc_eyes_selector_time, 4, "3", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Eyes Selector Time")
 
+MACRO_CONFIG_INT(hcRaceGhost, hc_race_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Enable ghost")
+MACRO_CONFIG_INT(hcRaceShowGhost, hc_race_show_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show ghost")
+MACRO_CONFIG_INT(hcRaceSaveGhost, hc_race_save_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Save ghost")
+
 MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")
 MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")
 MACRO_CONFIG_INT(ddrPreventPrediction, ddr_prevent_prediction, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Prevent Predection When Freeze")
 MACRO_CONFIG_STR(ddrTimeoutHash, ddrace_timeout_hash, 16, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "DDRace Timeout Hash")
+
+MACRO_CONFIG_INT(UiSubPage, ui_subpage, 13, 0, 13, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Interface Subpage") //H-Client
 
 // Editor Vars
 MACRO_CONFIG_INT(hcEditorDrawRouteAccuracy, hc_editor_draw_route_accuracy, 5, 0, 100, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Editor Draw Route Accuracy")

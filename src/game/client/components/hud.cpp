@@ -335,7 +335,7 @@ void CHud::RenderTeambalanceWarning()
 void CHud::RenderVoting()
 {
     static bool sFindFile = true;
-	if(!m_pClient->m_pVoting->IsVoting() || Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	if(!m_pClient->m_pVoting->IsVoting() || Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
         sFindFile = true;
 		return;
@@ -554,7 +554,7 @@ void CHud::RenderVoting()
 void CHud::RenderCursor()
 {
     //H-Client: IF Change
-	if(!m_pClient->m_Snap.m_pLocalCharacter || Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM || Graphics()->Thumbnail())
+	if(!m_pClient->m_Snap.m_pLocalCharacter || Client()->State() == IClient::STATE_DEMOPLAYBACK || Graphics()->Thumbnail())
 		return;
 
 	MapscreenToGroup(m_pClient->m_pCamera->m_Center.x, m_pClient->m_pCamera->m_Center.y, Layers()->GameGroup());
@@ -762,7 +762,7 @@ void CHud::OnRender()
         RenderScoreHud();
 		RenderWarmupTimer();
 		RenderFps();
-		if(Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+		if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 			RenderConnectionWarning();
 		RenderTeambalanceWarning();
 		RenderVoting();

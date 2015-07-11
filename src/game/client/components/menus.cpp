@@ -1684,7 +1684,7 @@ void CMenus::SetActive(bool Active)
 			m_pClient->OnRelease();
 		}
 	}
-	else if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	else if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		m_pClient->OnRelease();
 	}
@@ -1779,7 +1779,7 @@ void CMenus::OnStateChange(int NewState, int OldState)
 	}
 	else if(NewState == IClient::STATE_CONNECTING)
 		m_Popup = POPUP_CONNECTING;
-	else if (NewState == IClient::STATE_ONLINE || NewState == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	else if (NewState == IClient::STATE_ONLINE || NewState == IClient::STATE_DEMOPLAYBACK)
 	{
 		m_Popup = POPUP_NONE;
 		SetActive(false);
@@ -1807,10 +1807,10 @@ void CMenus::OnRender()
 	Graphics()->QuadsEnd();
 	return;*/
 
-	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		SetActive(true);
 
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		CUIRect Screen = *UI()->Screen();
 		Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
@@ -1870,7 +1870,7 @@ void CMenus::OnRender()
 	UI()->Update(mx,my,mx*3.0f,my*3.0f,Buttons);
 
 	// render
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		Render();
 
 	// render cursor

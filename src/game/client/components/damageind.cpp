@@ -52,7 +52,7 @@ void CDamageInd::OnRender()
 	static float s_LastLocalTime = Client()->LocalTime();
 	for(int i = 0; i < m_NumItems;)
 	{
-		if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 		{
 			const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 			if(pInfo->m_Paused)

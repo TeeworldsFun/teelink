@@ -53,6 +53,7 @@
 #include "components/sounds.h"
 #include "components/spectator.h"
 #include "components/voting.h"
+#include "components/ghost.h" //H-Client
 
 CGameClient g_GameClient;
 
@@ -87,6 +88,9 @@ static CMapImages gs_MapImages;
 
 static CMapLayers gs_MapLayersBackGround(CMapLayers::TYPE_BACKGROUND);
 static CMapLayers gs_MapLayersForeGround(CMapLayers::TYPE_FOREGROUND);
+
+//H-Client
+static CGhost gs_Ghost;
 
 CGameClient::CStack::CStack() { m_Num = 0; }
 void CGameClient::CStack::Add(class CComponent *pComponent) { m_paComponents[m_Num++] = pComponent; }
@@ -134,6 +138,7 @@ void CGameClient::OnConsoleInit()
 	m_pItems = &::gs_Items;
 	m_pMapLayersBackGround = &::gs_MapLayersBackGround;
 	m_pMapLayersForeGround = &::gs_MapLayersForeGround;
+	m_pGhost = &::gs_Ghost; //H-Client: Ghost
 
 	// make a list of all the systems, make sure to add them in the corrent render order
 	m_All.Add(m_pSkins);
@@ -153,6 +158,7 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pItems);
 	m_All.Add(&gs_Players);
 	m_All.Add(&m_pParticles->m_RenderHClientFreeze); //H-Client
+	m_All.Add(m_pGhost); //H-Client
 	m_All.Add(&gs_MapLayersForeGround);
 	m_All.Add(&m_pParticles->m_RenderHClientBlood); //H-Client
 	m_All.Add(&m_pParticles->m_RenderExplosions);
@@ -390,7 +396,7 @@ void CGameClient::OnReset()
 void CGameClient::UpdatePositions()
 {
 	// local character position
-	if(g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+	if(g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		if(!m_Snap.m_pLocalCharacter || (m_Snap.m_pGameInfoObj && (m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
 		{
@@ -409,7 +415,7 @@ void CGameClient::UpdatePositions()
 	// spectator position
 	if(m_Snap.m_SpecInfo.m_Active)
 	{
-		if((Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM) && DemoPlayer()->GetDemoType() == IDemoPlayer::DEMOTYPE_SERVER &&
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && DemoPlayer()->GetDemoType() == IDemoPlayer::DEMOTYPE_SERVER &&
 			m_Snap.m_SpecInfo.m_SpectatorID != SPEC_FREEVIEW)
 		{
 			m_Snap.m_SpecInfo.m_Position = mix(
@@ -418,7 +424,7 @@ void CGameClient::UpdatePositions()
 				Client()->IntraGameTick());
 			m_Snap.m_SpecInfo.m_UsePosition = true;
 		}
-		else if(m_Snap.m_pSpectatorInfo && (Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM || m_Snap.m_SpecInfo.m_SpectatorID != SPEC_FREEVIEW))
+		else if(m_Snap.m_pSpectatorInfo && (Client()->State() == IClient::STATE_DEMOPLAYBACK || m_Snap.m_SpecInfo.m_SpectatorID != SPEC_FREEVIEW))
 		{
 			if(m_Snap.m_pPrevSpectatorInfo)
 				m_Snap.m_SpecInfo.m_Position = mix(vec2(m_Snap.m_pPrevSpectatorInfo->m_X, m_Snap.m_pPrevSpectatorInfo->m_Y),
@@ -672,7 +678,7 @@ void CGameClient::OnEnterGame() {}
 
 void CGameClient::OnGameOver()
 {
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM && g_Config.m_ClEditor == 0)
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && g_Config.m_ClEditor == 0)
 		Client()->AutoScreenshot_Start();
 
     Graphics()->ShowInfoKills(true); // H-Client
@@ -680,7 +686,7 @@ void CGameClient::OnGameOver()
 
 void CGameClient::OnStartGame()
 {
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM)
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		Client()->DemoRecorder_HandleAutoStart();
 
     m_TakeInitScreenShot = true;
@@ -948,7 +954,7 @@ void CGameClient::OnNewSnapshot()
 	else
 	{
 		m_Snap.m_SpecInfo.m_Active = true;
-		if((Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM) && DemoPlayer()->GetDemoType() == IDemoPlayer::DEMOTYPE_SERVER &&
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && DemoPlayer()->GetDemoType() == IDemoPlayer::DEMOTYPE_SERVER &&
 			m_DemoSpecID != SPEC_FREEVIEW && m_Snap.m_aCharacters[m_DemoSpecID].m_Active)
 			m_Snap.m_SpecInfo.m_SpectatorID = m_DemoSpecID;
 		else

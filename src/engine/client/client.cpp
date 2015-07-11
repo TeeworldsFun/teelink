@@ -512,7 +512,7 @@ void CClient::OnEnterGame()
 
 void CClient::EnterGame()
 {
-	if(State() == IClient::STATE_DEMOPLAYBACK || State() == IClient::STATE_WEBM)
+	if(State() == IClient::STATE_DEMOPLAYBACK)
 		return;
 
 	// now we will wait for two snapshots
@@ -1522,7 +1522,7 @@ void CClient::PumpNetwork()
 {
 	m_NetClient.Update();
 
-	if(State() != IClient::STATE_DEMOPLAYBACK || State() == IClient::STATE_WEBM)
+	if(State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		// check for errors
 		if(State() != IClient::STATE_OFFLINE && State() != IClient::STATE_QUITING && m_NetClient.State() == NETSTATE_OFFLINE)
@@ -1624,7 +1624,7 @@ void DemoPlayer()->SetPause(int paused)
 
 void CClient::Update()
 {
-	if(State() == IClient::STATE_DEMOPLAYBACK || State() == IClient::STATE_WEBM)
+	if(State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		m_DemoPlayer.Update();
 		if(m_DemoPlayer.IsPlaying())
@@ -2211,7 +2211,7 @@ void CClient::Con_RemoveFavorite(IConsole::IResult *pResult, void *pUserData)
 		pSelf->m_ServerBrowser.RemoveFavorite(Addr);
 }
 
-const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType, bool RecordVideo)
+const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType)
 {
 	int Crc;
 	const char *pError;
@@ -2255,13 +2255,7 @@ const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType, boo
 	m_aSnapshots[SNAP_PREV]->m_Tick = -1;
 
 	// enter demo playback state
-	if (RecordVideo) // H-Client: .webm export
-	{
-		SetState(IClient::STATE_WEBM);
-		StartRecordVideo("test.webm");
-	}
-	else
-		SetState(IClient::STATE_DEMOPLAYBACK);
+	SetState(IClient::STATE_DEMOPLAYBACK);
 
 	m_DemoPlayer.Play();
 	GameClient()->OnEnterGame();
@@ -2312,7 +2306,6 @@ void CClient::DemoRecorder_HandleAutoStart()
 void CClient::DemoRecorder_Stop()
 {
 	m_DemoRecorder.Stop();
-	StopRecordVideo();
 }
 
 void CClient::DemoRecorder_AddDemoMarker()
@@ -2519,25 +2512,12 @@ const char* CClient::GetCurrentMap()
 	return m_aCurrentMap;
 }
 
+int CClient::GetCurrentMapCrc()
+{
+	return m_CurrentMapCrc;
+}
+
 bool CClient::IsServerType(const char *pServer)
 {
 	return str_find_nocase(m_CurrentServerInfo.m_aGameType, pServer);
-}
-
-void CClient::StartRecordVideo(const char *pFilename)
-{
-	//dbg_assert(m_RecordVideo, "Can't call StartRecordVideo, need stop current record.");
-
-	/*m_MkvWriter.Open(pFilename);
-	m_MkvSegment.Init(&m_MkvWriter);
-	m_MkvSegment.set_mode(mkvmuxer::Segment::kFile);
-	m_MkvVidTrack = m_MkvSegment.AddVideoTrack(g_Config.m_GfxScreenWidth, g_Config.m_GfxScreenWidth, 1);
-	m_RecordVideo = true;
-	m_MkvStartTime = time_get();*/
-}
-void CClient::StopRecordVideo()
-{
-	/*m_MkvSegment.Finalize();
-	m_MkvWriter.Close();
-	m_RecordVideo = false;*/
 }

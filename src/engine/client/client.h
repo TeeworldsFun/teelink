@@ -316,7 +316,7 @@ public:
 
 	void RegisterCommands();
 
-	const char *DemoPlayer_Play(const char *pFilename, int StorageType, bool RecordVideo = false); // H-Client: .webm export
+	const char *DemoPlayer_Play(const char *pFilename, int StorageType);
 	void DemoRecorder_Start(const char *pFilename, bool WithTimestamp);
 	void DemoRecorder_HandleAutoStart();
 	void DemoRecorder_Stop();
@@ -331,9 +331,7 @@ public:
 	virtual const char* GetCurrentMap();
 	virtual bool IsServerType(const char *pServer);
 	virtual const char* GetCurrentServerAddress() const { return m_aServerAddressStr; }
-
-	virtual void StartRecordVideo(const char *pFilename);
-	virtual void StopRecordVideo();
+	virtual int GetCurrentMapCrc();
 	//
 };
 

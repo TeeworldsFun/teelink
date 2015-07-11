@@ -704,7 +704,7 @@ void CScoreboard::OnRender()
                 RenderScoreboard(Width/2-w/2, 270.0f, w, 0, 0);
 		    //
 
-		    if (Client()->State() != IClient::STATE_DEMOPLAYBACK && Client()->State() != IClient::STATE_WEBM && s_NeedUpdate)
+		    if (Client()->State() != IClient::STATE_DEMOPLAYBACK && s_NeedUpdate)
 		    {
                 CServerInfoReg *ServerInfo = ServerBrowser()->GetServerInfoReg(Client()->GetCurrentServerAddress()); //H-Client
                 if (ServerInfo)

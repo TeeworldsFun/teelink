@@ -54,7 +54,7 @@ void CMotd::OnRender()
 
 void CMotd::OnMessage(int MsgType, void *pRawMsg)
 {
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 		return;
 
 	if(MsgType == NETMSGTYPE_SV_MOTD)

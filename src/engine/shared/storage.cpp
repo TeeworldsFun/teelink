@@ -63,6 +63,7 @@ public:
 				fs_makedir(GetPath(TYPE_SAVE, "maps", aPath, sizeof(aPath)));
 				fs_makedir(GetPath(TYPE_SAVE, "downloadedmaps", aPath, sizeof(aPath)));
 				fs_makedir(GetPath(TYPE_SAVE, "mappreviews", aPath, sizeof(aPath))); // H-Client
+				fs_makedir(GetPath(TYPE_SAVE, "ghosts", aPath, sizeof(aPath))); //H-Client: Ghost
 			}
 			fs_makedir(GetPath(TYPE_SAVE, "dumps", aPath, sizeof(aPath)));
 			fs_makedir(GetPath(TYPE_SAVE, "demos", aPath, sizeof(aPath)));

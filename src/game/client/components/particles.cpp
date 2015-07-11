@@ -40,7 +40,7 @@ void CParticles::OnReset()
 
 void CParticles::Add(int Group, CParticle *pPart)
 {
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 		if(pInfo->m_Paused)
@@ -178,7 +178,7 @@ void CParticles::OnRender()
 	static int64 LastTime = 0;
 	int64 t = time_get();
 
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK || Client()->State() == IClient::STATE_WEBM)
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
 		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 		if(!pInfo->m_Paused)

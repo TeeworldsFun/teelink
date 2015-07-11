@@ -1050,7 +1050,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	//char aBuf[128];
     static vec4 s_HeaderColors[] = {HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), vec4(0.0f,0.0f,0.0f,0.0f), vec4(0.0f,0.0f,0.0f,0.0f), HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor)};
 	CUIRect PanelL, PanelR;
-	CUIRect StandartGame, DDRaceGame, HUDItem;
+	CUIRect StandartGame, DDRaceGame, Ghost, HUDItem;
 
 	MainView.VSplitLeft(300.0f, &PanelL, &PanelR);
     PanelL.VSplitRight(10.0f, &PanelL, 0x0);
@@ -1065,7 +1065,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 
     //PanelL.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
     StandartGame = PanelL;
-    DDRaceGame = PanelR;
+    PanelR.HSplitTop(160.0f, &DDRaceGame, &Ghost);
 
     //Standart Game
     {
@@ -1119,7 +1119,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 
         //Auto-Download Skins
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
-        if(DoButton_CheckBox(&g_Config.m_hcAutoDownloadSkins, Localize("Auto download skins (Thanks to DDNet Database)"), g_Config.m_hcAutoDownloadSkins, &HUDItem))
+        if(DoButton_CheckBox(&g_Config.m_hcAutoDownloadSkins, Localize("Auto download skins (DDNet Database)"), g_Config.m_hcAutoDownloadSkins, &HUDItem))
             g_Config.m_hcAutoDownloadSkins ^= 1;
 
         if (g_Config.m_hcAutoDownloadSkins)
@@ -1306,6 +1306,32 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         if (DoButton_Menu((void*)&s_ButtonGenerateClientHash, Localize("Generate"), 0, &Button))
         	for (size_t i = 0; i < sizeof(g_Config.m_ddrTimeoutHash)-1; g_Config.m_ddrTimeoutHash[i++] = (rand() % 26) + 97);
 	}
+
+	//Ghost
+    {
+    	Ghost.HSplitTop(ms_ListheaderHeight, &HUDItem, &Ghost);
+        RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
+        HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
+        UI()->DoLabel(&HUDItem, "⚫·· Ghost (By Rajh, Redix and Sushi)", HUDItem.h*ms_FontmodHeight, -1);
+
+        Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
+        if(DoButton_CheckBox(&g_Config.m_hcRaceGhost, Localize("Enable ghost"), g_Config.m_hcRaceGhost, &HUDItem))
+            g_Config.m_hcRaceGhost ^= 1;
+
+        if (g_Config.m_hcRaceGhost)
+        {
+
+            Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
+            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+            if(DoButton_CheckBox(&g_Config.m_hcRaceShowGhost, Localize("Show ghost"), g_Config.m_hcRaceShowGhost, &HUDItem))
+                g_Config.m_hcRaceShowGhost ^= 1;
+
+            Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
+            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+            if(DoButton_CheckBox(&g_Config.m_hcRaceSaveGhost, Localize("Auto-Save ghost"), g_Config.m_hcRaceSaveGhost, &HUDItem))
+                g_Config.m_hcRaceSaveGhost ^= 1;
+        }
+    }
 
 	//Feet
 	{
