@@ -212,25 +212,25 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
     if (Type == 0)
     {
         int SubType = 0;
-        for(int i = 0; i < 20; i++)
+        for(int i = 0; i < 45; i++)
         {
             CParticle p;
             p.SetDefault();
 
             if (!SubType)
             {
-                p.m_Spr = SPRITE_PART_SMOKE;
+                p.m_Spr = SPRITE_BLOOD_BODY_PART;
                 p.m_Vel = Dir * (powf(frandom(), 3)*600.0f);
             }
             else
             {
-                p.m_Spr = SPRITE_PART_SMOKE;
+                p.m_Spr = SPRITE_BLOOD_BODY_PART;
                 p.m_Vel = RandomDir() * (powf(frandom(), 3)*200.0f);
             }
 
             p.m_Pos = Pos;
             p.m_LifeSpan = 1.5f + frandom()*0.3f;
-            p.m_StartSize = 10.0f + frandom()*32;
+            p.m_StartSize = 10.0f + frandom()*16.0f;
             p.m_EndSize = 0;
             p.m_Rot = frandom()*pi*2;
             p.m_Rotspeed = frandom();
@@ -238,7 +238,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p.m_Friction = 0.7f;
             p.m_Collide = false;
             p.m_Color = vec4(BloodColor.r, BloodColor.g, BloodColor.b, 0.75f);
-            m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
+            m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_BLOOD, &p);
 
             if (i == 10)
                 SubType ^= 1;
@@ -250,11 +250,11 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
         {
             CParticle p;
             p.SetDefault();
-            p.m_Spr = SPRITE_PART_SMOKE;
+            p.m_Spr = SPRITE_BLOOD_BODY_PART;
             p.m_Pos = Pos;
             p.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
             p.m_LifeSpan = 4.0f + frandom()*0.3f;
-            p.m_StartSize = 5.0f + frandom()*32;
+            p.m_StartSize = 5.0f + frandom()*16.0f;
             p.m_EndSize = 0.0f;
             p.m_Rot = frandom()*pi*2;
             p.m_Rotspeed = frandom();
@@ -263,7 +263,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p.m_Collide = false;
             p.m_Color = vec4(BloodColor.r, BloodColor.g, BloodColor.b, 0.75f);
             p.m_Type = CParticles::PARTICLE_BLOOD;
-            m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
+            m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_BLOOD, &p);
         }
     }
 }

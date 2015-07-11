@@ -116,7 +116,7 @@ void CParticles::Update(float TimePassed)
 
                     CParticle p;
                     p.SetDefault();
-                    p.m_Spr = SPRITE_PART_EXPL01;
+                    p.m_Spr = SPRITE_BLOOD_SPREAD;
                     p.m_Pos = m_aParticles[i].m_Pos + Dir * 8.0f;
                     p.m_Vel = vec2(0.0,0.0f);
                     p.m_LifeSpan = 30.0f + frandom()*0.3f;
@@ -199,6 +199,8 @@ void CParticles::RenderGroup(int Group)
 	//gfx_blend_additive();
 	if (Group == GROUP_HCLIENT_FREEZE)
         Graphics()->TextureSet(g_pData->m_aImages[IMAGE_UNFREEZE_EFFECT].m_Id);
+	else if (Group == GROUP_HCLIENT_BLOOD)
+		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_BLOOD].m_Id);
     else
         Graphics()->TextureSet(g_pData->m_aImages[IMAGE_PARTICLES].m_Id);
 
