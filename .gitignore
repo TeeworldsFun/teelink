@@ -10,6 +10,7 @@ src/game/generated
 SDL.dll
 freetype.dll
 autoexec.cfg
+data/skins/*.png
 
 crapnet*
 dilate*
