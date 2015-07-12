@@ -554,8 +554,8 @@ void CServerBrowser::Refresh(int Type)
 			std::string host = m_lServInfo[i].m_Address;
 			std::size_t npos = host.find_first_of(":");
 
-			sscanf(host.substr(0, npos).c_str(), "%d.%d.%d.%d", &netAddr.ip[0], &netAddr.ip[1], &netAddr.ip[2], &netAddr.ip[3]); // FIXME: warnings
-			sscanf(host.substr(npos+1).c_str(), "%d", &netAddr.port); // FIXME: warnings
+			sscanf(host.substr(0, npos).c_str(), "%hhu.%hhu.%hhu.%hhu", &netAddr.ip[0], &netAddr.ip[1], &netAddr.ip[2], &netAddr.ip[3]); 
+			sscanf(host.substr(npos+1).c_str(), "%hu", &netAddr.port); 
 
 			Set(netAddr, IServerBrowser::SET_HISTORY_ADD, -1, 0);
 		}
