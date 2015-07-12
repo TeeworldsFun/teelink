@@ -278,7 +278,7 @@ set_fileicons = SpriteSet("fileicons", image_fileicons, 8, 1)
 set_guibuttons = SpriteSet("guibuttons", image_guibuttons, 12, 4)
 set_guiicons = SpriteSet("guiicons", image_guiicons, 8, 2)
 set_chat_emoticons = SpriteSet("chat_emoticons", image_chat_emoticons, 6, 5) #H-Client
-set_settings_icons = SpriteSet("settings_icon", image_settings_icons, 9, 1) #H-Client
+set_settings_icons = SpriteSet("settings_icon", image_settings_icons, 10, 1) #H-Client
 set_unfreeze_effect = SpriteSet("unfreeze_effect", image_unfreeze_effect, 4, 1) #H-Client
 set_guicontrols = SpriteSet("guicontrols", image_guicontrols, 2, 1) #H-Client
 set_blood = SpriteSet("blood", image_blood, 2, 1) #H-Client
@@ -437,6 +437,7 @@ container.sprites.Add(Sprite("icon_graphics", set_settings_icons, 5,  0,  1,  1)
 container.sprites.Add(Sprite("icon_sound", set_settings_icons, 6,  0,  1,  1))
 container.sprites.Add(Sprite("icon_mod", set_settings_icons, 7,  0,  1,  1))
 container.sprites.Add(Sprite("icon_theme", set_settings_icons, 8,  0,  1,  1))
+container.sprites.Add(Sprite("icon_statistics", set_settings_icons, 9,  0,  1,  1))
 
 container.sprites.Add(Sprite("chat_emote1", set_chat_emoticons, 0,  0,  1,  1))
 container.sprites.Add(Sprite("chat_emote2", set_chat_emoticons, 1,  0,  1,  1))

@@ -993,22 +993,24 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("Graphics"),
 		Localize("Sound"),
 		("H-Client"),
-		Localize("Themes")};
-    static int sIDs[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    const int imgSprites[] = { SPRITE_ICON_LANGUAGE, SPRITE_ICON_GENERAL, SPRITE_ICON_PLAYER, SPRITE_ICON_TEE, SPRITE_ICON_CONTROLS, SPRITE_ICON_GRAPHICS, SPRITE_ICON_SOUND, SPRITE_ICON_MOD, SPRITE_ICON_THEME };
+		Localize("Themes"),
+		Localize("Statistics")
+	};
 
-	int NumTabs = (int)(sizeof(aTabs)/sizeof(*aTabs));
+    const int imgSprites[] = { SPRITE_ICON_LANGUAGE, SPRITE_ICON_GENERAL, SPRITE_ICON_PLAYER, SPRITE_ICON_TEE, SPRITE_ICON_CONTROLS, SPRITE_ICON_GRAPHICS, SPRITE_ICON_SOUND, SPRITE_ICON_MOD, SPRITE_ICON_THEME, SPRITE_ICON_STATISTICS };
 
     ms_ColorTabbarActive = HexToVec4(g_Config.m_hcSettingsPaneltabSelectedBackgroundColor);
     ms_ColorTabbarInactive = HexToVec4(g_Config.m_hcSettingsPaneltabBackgroundColor);
+
+    int NumTabs = (int)(sizeof(aTabs)/sizeof(*aTabs));
 	for(int i = 0; i < NumTabs; i++)
 	{
 		//TabBar.HSplitTop(10, &Button, &TabBar);
-		TabBar.HSplitTop((i==7?30:10), &Button, &TabBar); //H-Client
+		TabBar.HSplitTop(((i==7||i==9)?30:10), &Button, &TabBar); //H-Client
 		TabBar.HSplitTop(26, &Button, &TabBar);
         if (i != s_SettingsPage && !UI()->MouseInside(&Button)) //H-Client
             Button.VSplitRight(5.0f, &Button, 0x0);
-		if(DoButton_MenuTabIcon(&sIDs[i], aTabs[i], s_SettingsPage == i, &Button, CUI::CORNER_R, IMAGE_SETTINGS_ICONS, 16.0f, imgSprites[i]))
+		if(DoButton_MenuTabIcon(&aTabs[i], aTabs[i], s_SettingsPage == i, &Button, CUI::CORNER_R, IMAGE_SETTINGS_ICONS, 16.0f, imgSprites[i]))
 			s_SettingsPage = i;
 	}
     ms_ColorTabbarActive = HexToVec4(g_Config.m_hcPaneltabSelectedBackgroundColor);
@@ -1035,6 +1037,8 @@ void CMenus::RenderSettings(CUIRect MainView)
         RenderSettingsHClient(MainView);
     else if (s_SettingsPage == 8)
         RenderSettingsTheme(MainView);
+    else if (s_SettingsPage == 9)
+        RenderStatistics(MainView);
 
     if (!m_NeedUpdateThemesList && s_SettingsPage != 8)
         m_NeedUpdateThemesList = true;
@@ -1418,6 +1422,117 @@ void CMenus::RenderSettingsTheme(CUIRect MainView)
         m_pClient->TexturePack()->Load(g_Config.m_hcTheme);
         m_NeedRestartSound = true;
 	}
+}
+
+void CMenus::RenderStatistics(CUIRect MainView)
+{
+	CUIRect HUDItem;
+	char aBuf[128];
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Started H-Client: %d times", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Total time played: %d:%d:%d", 0, 0, 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, 0x0, &MainView);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Kills: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Deaths: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Total damage received: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, 0x0, &MainView);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Joined on a server: %d times", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "User name changes: %d times", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Skin changes: %d times", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Chat messages sent: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Chat messages received: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	UI()->DoLabel(&HUDItem, "Best Score", HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "CTF: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "TDM: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "DM: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, 0x0, &MainView);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Weapon changes: %d times", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Shooting: %d times", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "Hammer: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "Pistol: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "Shotgun: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "Grenades: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "Laser: %d", 0);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitBottom(20.0f, &MainView, &HUDItem);
+    CUIRect Button;
+    HUDItem.VSplitRight(150.0f, 0x0, &Button);
+    Button.Margin(2.0f, &Button);
+    static int s_ButtonClearCache = 0;
+    if (DoButton_Menu((void*)&s_ButtonClearCache, Localize("Reset Statistics"), 0, &Button))
+        DeleteMapPreviewCache();
 }
 
 // H-Client

@@ -264,6 +264,7 @@ class CMenus : public CComponent
 
 	void RenderSettingsHClient(CUIRect MainView); // H-Client
 	void RenderSettingsTheme(CUIRect MainView); // H-Client
+	void RenderStatistics(CUIRect MainView); // H-Client
 	void RenderLaser(vec2 From, vec2 Pos); // H-Client
     void RenderGhost(CUIRect MainView); // H-Client: Ghost
     static int GhostlistFetchCallback(const char *pName, int IsDir, int StorageType, void *pUser); // H-Client: Ghost
