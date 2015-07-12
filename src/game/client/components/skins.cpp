@@ -190,9 +190,13 @@ int CSkins::Find(const char *pName, bool tryDownload)
 
     	if (currentDownloads < 3) // Limit to 3 simultaneously downloads
     	{
+    		char aSanitizeSkinName[64];
+    		str_copy(aSanitizeSkinName, pName, sizeof(aSanitizeSkinName));
+    		str_sanitize_cc(aSanitizeSkinName);
+
 			InfoDownloadSkinThread *pInfoDownloadSkinThread = new InfoDownloadSkinThread;
 			pInfoDownloadSkinThread->m_pSkins = this;
-			str_copy(pInfoDownloadSkinThread->m_SkinName, pName, sizeof(pInfoDownloadSkinThread->m_SkinName));
+			str_copy(pInfoDownloadSkinThread->m_SkinName, aSanitizeSkinName, sizeof(pInfoDownloadSkinThread->m_SkinName));
 			thread_init(ThreadDownloadSkin, pInfoDownloadSkinThread);
     	}
     }
@@ -366,6 +370,9 @@ void CSkins::DownloadSkin(const char *pName)
 void ThreadDownloadSkin(void *params)
 {
     CSkins::InfoDownloadSkinThread *pInfoThread = static_cast<CSkins::InfoDownloadSkinThread*>(params);
+    if (!pInfoThread || !pInfoThread->m_pSkins || pInfoThread->m_SkinName[0] == 0)
+    	return;
+
     pInfoThread->m_pSkins->DownloadSkin(pInfoThread->m_SkinName);
     delete pInfoThread;
 }
