@@ -1790,23 +1790,6 @@ extern "C" void font_debug_render();
 
 void CMenus::OnRender()
 {
-	/*
-	// text rendering test stuff
-	render_background();
-
-	CTextCursor cursor;
-	TextRender()->SetCursor(&cursor, 10, 10, 20, TEXTFLAG_RENDER);
-	TextRender()->TextEx(&cursor, "ようこそ - ガイド", -1);
-
-	TextRender()->SetCursor(&cursor, 10, 30, 15, TEXTFLAG_RENDER);
-	TextRender()->TextEx(&cursor, "ようこそ - ガイド", -1);
-
-	//Graphics()->TextureSet(-1);
-	Graphics()->QuadsBegin();
-	Graphics()->QuadsDrawTL(60, 60, 5000, 5000);
-	Graphics()->QuadsEnd();
-	return;*/
-
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		SetActive(true);
 

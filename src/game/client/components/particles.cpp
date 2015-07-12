@@ -17,6 +17,7 @@ CParticles::CParticles()
 	m_RenderExplosions.m_pParts = this;
 	m_RenderGeneral.m_pParts = this;
 	m_RenderHClientBlood.m_pParts = this; // H-Client
+	m_RenderHClientBloodBody.m_pParts = this; // H-Client
 	m_RenderHClientFreeze.m_pParts = this; // H-Client
 }
 
@@ -163,6 +164,8 @@ void CParticles::Update(float TimePassed)
 				m_aParticles[i].m_PrevPart = -1;
 				m_aParticles[i].m_NextPart = m_FirstFree;
 				m_FirstFree = i;
+
+				mem_free(m_aParticles[i].m_pData); // H-Client
 			}
 
 			i = Next;
@@ -201,7 +204,7 @@ void CParticles::RenderGroup(int Group)
         Graphics()->TextureSet(g_pData->m_aImages[IMAGE_UNFREEZE_EFFECT].m_Id);
 	else if (Group == GROUP_HCLIENT_BLOOD)
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_BLOOD].m_Id);
-    else
+    else if (Group != GROUP_HCLIENT_BLOOD_BODY)
         Graphics()->TextureSet(g_pData->m_aImages[IMAGE_PARTICLES].m_Id);
 
     //Graphics()->QuadsBegin();
@@ -242,6 +245,15 @@ void CParticles::RenderGroup(int Group)
 
 			Graphics()->ClipEnable((int)(x0*Graphics()->ScreenWidth()), (int)(y0*Graphics()->ScreenHeight()),
 				(int)((x1-x0)*Graphics()->ScreenWidth()), (int)((y1-y0)*Graphics()->ScreenHeight()));
+	    }
+	    else if (m_aParticles[i].m_Type == PARTICLE_BLOOD_BODY)
+	    {
+	    	CGameClient::CClientData *pClientData = &m_pClient->m_aClients[*((int*)m_aParticles[i].m_pData)];
+	    	CTeeRenderInfo *pInfo = 0x0;
+	    	if (pClientData)
+				pInfo = &pClientData->m_RenderInfo;
+
+	    	Graphics()->TextureSet((pInfo)?pInfo->m_Texture:-1);
 	    }
 
 	    Graphics()->QuadsBegin();

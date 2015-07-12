@@ -23,6 +23,7 @@ struct CParticle
 		m_Collide = false; // H-Client
 		m_ToBlack = false; // H-Client
 		m_Type = 0; // H-Client
+		m_pData = 0x0; // H-Client
 	}
 
 	vec2 m_Pos;
@@ -48,6 +49,7 @@ struct CParticle
 	int m_Type;
 	int m_Collide;
 	vec2 m_LastPos;
+	void *m_pData;
 	//
 
 	vec4 m_Color;
@@ -68,6 +70,7 @@ public:
 		GROUP_EXPLOSIONS,
 		GROUP_GENERAL,
 		GROUP_HCLIENT_BLOOD,
+		GROUP_HCLIENT_BLOOD_BODY,
 		GROUP_HCLIENT_FREEZE,
 		NUM_GROUPS
 	};
@@ -77,7 +80,8 @@ public:
 	{
         PARTICLE_NONE=0,
         PARTICLE_BLOOD,
-        PARTICLE_BLOOD_L
+        PARTICLE_BLOOD_L,
+		PARTICLE_BLOOD_BODY
 	};
 	//
 
@@ -116,6 +120,7 @@ private:
 
     // H-Client
 	CRenderGroup<GROUP_HCLIENT_BLOOD> m_RenderHClientBlood;
+	CRenderGroup<GROUP_HCLIENT_BLOOD_BODY> m_RenderHClientBloodBody;
 	CRenderGroup<GROUP_HCLIENT_FREEZE> m_RenderHClientFreeze;
 };
 #endif

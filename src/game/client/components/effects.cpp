@@ -189,30 +189,36 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientID)
         }
     }
     else
+    {
         Blood(Pos, vec2(0.0f, 0.0f), 1, ClientID);
+    }
 }
 
 // H-Client
 void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
 {
     vec3 BloodColor(1.0f, 0.0f, 0.0f);
+    vec3 TeeColor(1.0f, 1.0f, 1.0f);
 
-    if(g_Config.m_hcGoreStyleTeeColors && ClientID >= 0 && ClientID < MAX_CLIENTS)
+    if(ClientID >= 0 && ClientID < MAX_CLIENTS)
     {
         if(m_pClient->m_aClients[ClientID].m_UseCustomColor)
-            BloodColor = m_pClient->m_pSkins->GetColorV3(m_pClient->m_aClients[ClientID].m_ColorBody);
+        	TeeColor = m_pClient->m_pSkins->GetColorV3(m_pClient->m_aClients[ClientID].m_ColorBody);
         else
         {
             const CSkins::CSkin *s = m_pClient->m_pSkins->Get(m_pClient->m_aClients[ClientID].m_SkinID);
             if(s)
-                BloodColor = s->m_BloodColor;
+            	TeeColor = s->m_BloodColor;
         }
     }
+
+    if (g_Config.m_hcGoreStyleTeeColors)
+    	BloodColor = TeeColor;
 
     if (Type == 0)
     {
         int SubType = 0;
-        for(int i = 0; i < 45; i++)
+        for(int i = 0; i < 25; i++)
         {
             CParticle p;
             p.SetDefault();
@@ -246,6 +252,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
     }
     else if (Type == 1)
     {
+    	// Blood
         for(int i = 0; i < 64; i++)
         {
             CParticle p;
@@ -264,6 +271,69 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p.m_Color = vec4(BloodColor.r, BloodColor.g, BloodColor.b, 0.75f);
             p.m_Type = CParticles::PARTICLE_BLOOD;
             m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_BLOOD, &p);
+        }
+
+    	// Body Parts
+        for(int i = 0; i < 2; i++)
+        {
+            CParticle p_hand;
+            p_hand.SetDefault();
+            p_hand.m_Spr = SPRITE_TEE_HAND;
+            p_hand.m_Pos = Pos;
+            p_hand.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
+            p_hand.m_LifeSpan = 8.0f + frandom()*0.3f;
+            p_hand.m_StartSize = 20.0f;
+            p_hand.m_EndSize = 20.0f;
+            p_hand.m_Rot = frandom()*pi*2;
+            p_hand.m_Gravity = 3000.0f;
+            p_hand.m_Friction = 0.95f;
+            p_hand.m_Collide = true;
+            p_hand.m_Color = vec4(TeeColor.r, TeeColor.g, TeeColor.b, 1.0f);
+            p_hand.m_Type = CParticles::PARTICLE_BLOOD_BODY;
+            p_hand.m_pData = mem_alloc(sizeof(int), 1);
+            mem_copy(p_hand.m_pData, &ClientID, sizeof(int));
+            m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_BLOOD_BODY, &p_hand);
+
+            CParticle p_foot;
+            p_foot.SetDefault();
+            p_foot.m_Spr = SPRITE_TEE_FOOT;
+            p_foot.m_Pos = Pos;
+            p_foot.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
+            p_foot.m_LifeSpan = 8.0f + frandom()*0.3f;
+            p_foot.m_StartSize = 20.0f;
+            p_foot.m_EndSize = 20.0f;
+            p_foot.m_Rot = frandom()*pi*2;
+            p_foot.m_Gravity = 3000.0f;
+            p_foot.m_Friction = 0.95f;
+            p_foot.m_Collide = true;
+            p_foot.m_Color = vec4(TeeColor.r, TeeColor.g, TeeColor.b, 1.0f);
+            p_foot.m_Type = CParticles::PARTICLE_BLOOD_BODY;
+            p_foot.m_pData = mem_alloc(sizeof(int), 1);
+            mem_copy(p_foot.m_pData, &ClientID, sizeof(int));
+            m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_BLOOD_BODY, &p_foot);
+        }
+
+        // Body
+        for(int i = 0; i < 18; i++)
+        {
+        	float size = 15.0f*frandom();
+            CParticle p_body;
+            p_body.SetDefault();
+            p_body.m_Spr = SPRITE_TEE_BODY;
+            p_body.m_Pos = Pos;
+            p_body.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
+            p_body.m_LifeSpan = 8.0f + frandom()*0.3f;
+            p_body.m_StartSize = size;
+            p_body.m_EndSize = size;
+            p_body.m_Rot = frandom()*pi*2;
+            p_body.m_Gravity = 3000.0f;
+            p_body.m_Friction = 0.95f;
+            p_body.m_Collide = true;
+            p_body.m_Color = vec4(TeeColor.r, TeeColor.g, TeeColor.b, 1.0f);
+            p_body.m_Type = CParticles::PARTICLE_BLOOD_BODY;
+            p_body.m_pData = mem_alloc(sizeof(int), 1);
+            mem_copy(p_body.m_pData, &ClientID, sizeof(int));
+            m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_BLOOD_BODY, &p_body);
         }
     }
 }

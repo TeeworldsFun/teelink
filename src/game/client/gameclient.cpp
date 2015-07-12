@@ -161,6 +161,7 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pGhost); //H-Client
 	m_All.Add(&gs_MapLayersForeGround);
 	m_All.Add(&m_pParticles->m_RenderHClientBlood); //H-Client
+	m_All.Add(&m_pParticles->m_RenderHClientBloodBody); //H-Client
 	m_All.Add(&m_pParticles->m_RenderExplosions);
 	m_All.Add(&gs_NamePlates);
 	m_All.Add(&m_pParticles->m_RenderGeneral);
@@ -1037,7 +1038,7 @@ void CGameClient::OnNewSnapshot()
 	{
 		if(str_comp(CurrentServerInfo.m_aGameType, "DM") != 0 && str_comp(CurrentServerInfo.m_aGameType, "TDM") != 0 && str_comp(CurrentServerInfo.m_aGameType, "CTF") != 0)
 			m_ServerMode = SERVERMODE_MOD;
-		else if(mem_comp(&StandardTuning, &m_Tuning, sizeof(CTuningParams)) == 0)
+		else if(mem_comp(&StandardTuning, &m_Tuning, 33) == 0) // H-Client: DDnet: Hard Coded Size to 33 (Standard Tuning Size)
 			m_ServerMode = SERVERMODE_PURE;
 		else
 			m_ServerMode = SERVERMODE_PUREMOD;
