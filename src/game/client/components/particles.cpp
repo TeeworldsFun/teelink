@@ -115,14 +115,17 @@ void CParticles::Update(float TimePassed)
 
                     vec2 Dir = normalize(m_aParticles[i].m_Vel);
 
+                    float startSize = 5.0f + frandom()*22.0f;
+                    float endSize = 5.0f + frandom()*22.0f;;
+
                     CParticle p;
                     p.SetDefault();
                     p.m_Spr = SPRITE_BLOOD_SPREAD;
                     p.m_Pos = m_aParticles[i].m_Pos + Dir * 8.0f;
                     p.m_Vel = vec2(0.0,0.0f);
                     p.m_LifeSpan = 30.0f + frandom()*0.3f;
-                    p.m_StartSize = 5.0f + frandom()*22.0f;
-                    p.m_EndSize = 5.0f + frandom()*22.0f;
+                    p.m_StartSize = vec2(startSize, startSize);
+                    p.m_EndSize = vec2(endSize, endSize);
                     p.m_Rot = frandom()*pi*2;
                     p.m_Rotspeed = 0.0f;
                     p.m_Gravity = 0.0f;
@@ -214,7 +217,11 @@ void CParticles::RenderGroup(int Group)
 	{
 	    vec2 p = m_aParticles[i].m_Pos;
 
-	    if (m_aParticles[i].m_Type == PARTICLE_BLOOD_L)
+	    if (m_aParticles[i].m_Type == PARTICLE_WEAPON)
+	    {
+	    	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+	    }
+	    else if (m_aParticles[i].m_Type == PARTICLE_BLOOD_L)
 	    {
             int Nx = 32*((int)p.x / 32);
             int Ny = 32*((int)p.y / 32);
@@ -261,7 +268,8 @@ void CParticles::RenderGroup(int Group)
 	    if(m_aParticles[i].m_Spr != -1)
             RenderTools()->SelectSprite(m_aParticles[i].m_Spr);
 		float a = m_aParticles[i].m_Life / m_aParticles[i].m_LifeSpan;
-		float Size = mix(m_aParticles[i].m_StartSize, m_aParticles[i].m_EndSize, a);
+		float SizeW = mix(m_aParticles[i].m_StartSize.x, m_aParticles[i].m_EndSize.x, a);
+		float SizeH = mix(m_aParticles[i].m_StartSize.y, m_aParticles[i].m_EndSize.y, a);
 		float EndColor = 0.7f;
 		if (m_aParticles[i].m_ToBlack) { EndColor = mix(0.7f, 0.0f, a); }
 
@@ -273,7 +281,7 @@ void CParticles::RenderGroup(int Group)
 			(m_aParticles[i].m_Color.b-(0.7f-EndColor)>0)?m_aParticles[i].m_Color.b-(0.7f-EndColor):0.0f,
 			m_aParticles[i].m_Color.a); // pow(a, 0.75f) *
 
-        IGraphics::CQuadItem QuadItem(p.x, p.y, Size, Size);
+        IGraphics::CQuadItem QuadItem(p.x, p.y, SizeW, SizeH);
         Graphics()->QuadsDraw(&QuadItem, 1);
 
         Graphics()->QuadsEnd();

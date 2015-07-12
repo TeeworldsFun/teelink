@@ -32,8 +32,8 @@ void CEffects::AirJump(vec2 Pos)
 	p.m_Pos = Pos + vec2(-6.0f, 16.0f);
 	p.m_Vel = vec2(0, -200);
 	p.m_LifeSpan = 0.5f;
-	p.m_StartSize = 48.0f;
-	p.m_EndSize = 0;
+	p.m_StartSize = vec2(48.0f, 48.0f);
+	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Rot = frandom()*pi*2;
 	p.m_Rotspeed = pi*2;
 	p.m_Gravity = 500;
@@ -63,8 +63,8 @@ void CEffects::PowerupShine(vec2 Pos, vec2 size)
 	p.m_Pos = Pos + vec2((frandom()-0.5f)*size.x, (frandom()-0.5f)*size.y);
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
-	p.m_StartSize = 16.0f;
-	p.m_EndSize = 0;
+	p.m_StartSize = vec2(16.0f, 16.0f);
+	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Rot = frandom()*pi*2;
 	p.m_Rotspeed = pi*2;
 	p.m_Gravity = 500;
@@ -78,14 +78,16 @@ void CEffects::SmokeTrail(vec2 Pos, vec2 Vel)
 	if(!m_Add50hz)
 		return;
 
+	float StartSize = 12.0f + frandom()*8;
+
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SMOKE;
 	p.m_Pos = Pos;
 	p.m_Vel = Vel + RandomDir()*50.0f;
 	p.m_LifeSpan = 0.5f + frandom()*0.5f;
-	p.m_StartSize = 12.0f + frandom()*8;
-	p.m_EndSize = 0;
+	p.m_StartSize = vec2(StartSize, StartSize);
+	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Friction = 0.7f;
 	p.m_Gravity = frandom()*-500.0f;
 	p.m_ToBlack = true;
@@ -98,14 +100,16 @@ void CEffects::SkidTrail(vec2 Pos, vec2 Vel)
 	if(!m_Add100hz)
 		return;
 
+	float StartSize = 24.0f + frandom()*12;
+
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SMOKE;
 	p.m_Pos = Pos;
 	p.m_Vel = Vel + RandomDir()*50.0f;
 	p.m_LifeSpan = 0.5f + frandom()*0.5f;
-	p.m_StartSize = 24.0f + frandom()*12;
-	p.m_EndSize = 0;
+	p.m_StartSize = vec2(StartSize, StartSize);
+	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Friction = 0.7f;
 	p.m_Gravity = frandom()*-500.0f;
 	p.m_Color = vec4(0.75f,0.75f,0.75f,1.0f);
@@ -122,8 +126,8 @@ void CEffects::BulletTrail(vec2 Pos)
 	p.m_Spr = SPRITE_PART_BALL;
 	p.m_Pos = Pos;
 	p.m_LifeSpan = 0.25f + frandom()*0.25f;
-	p.m_StartSize = 8.0f;
-	p.m_EndSize = 0;
+	p.m_StartSize = vec2(8.0f, 8.0f);
+	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Friction = 0.7f;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
@@ -132,14 +136,16 @@ void CEffects::PlayerSpawn(vec2 Pos)
 {
 	for(int i = 0; i < 32; i++)
 	{
+		float StartSize = 64.0f + frandom()*32;
+
 		CParticle p;
 		p.SetDefault();
 		p.m_Spr = SPRITE_PART_SHELL;
 		p.m_Pos = Pos;
 		p.m_Vel = RandomDir() * (powf(frandom(), 3)*600.0f);
 		p.m_LifeSpan = 0.3f + frandom()*0.3f;
-		p.m_StartSize = 64.0f + frandom()*32;
-		p.m_EndSize = 0;
+		p.m_StartSize = vec2(StartSize, StartSize);
+		p.m_EndSize = vec2(0.0f, 0.0f);
 		p.m_Rot = frandom()*pi*2;
 		p.m_Rotspeed = frandom();
 		p.m_Gravity = frandom()*-400.0f;
@@ -171,14 +177,16 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientID)
 
         for(int i = 0; i < 64; i++)
         {
+        	float StartSize = 24.0f + frandom()*16;
+
             CParticle p;
             p.SetDefault();
             p.m_Spr = SPRITE_PART_SPLAT01 + (rand()%3);
             p.m_Pos = Pos;
             p.m_Vel = RandomDir() * ((frandom()+0.1f)*900.0f);
             p.m_LifeSpan = 0.3f + frandom()*0.3f;
-            p.m_StartSize = 24.0f + frandom()*16;
-            p.m_EndSize = 0;
+            p.m_StartSize = vec2(StartSize, StartSize);
+            p.m_EndSize = vec2(0.0f, 0.0f);
             p.m_Rot = frandom()*pi*2;
             p.m_Rotspeed = (frandom()-0.5f) * pi;
             p.m_Gravity = 800.0f;
@@ -220,6 +228,8 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
         int SubType = 0;
         for(int i = 0; i < 25; i++)
         {
+        	float StartSize = 10.0f + frandom()*16.0f;
+
             CParticle p;
             p.SetDefault();
 
@@ -236,8 +246,8 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
 
             p.m_Pos = Pos;
             p.m_LifeSpan = 1.5f + frandom()*0.3f;
-            p.m_StartSize = 10.0f + frandom()*16.0f;
-            p.m_EndSize = 0;
+            p.m_StartSize = vec2(StartSize, StartSize);
+            p.m_EndSize = vec2(0.0f, 0.0f);
             p.m_Rot = frandom()*pi*2;
             p.m_Rotspeed = frandom();
             p.m_Gravity = frandom()*400.0f;
@@ -255,14 +265,16 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
     	// Blood
         for(int i = 0; i < 64; i++)
         {
+        	float StartSize = 5.0f + frandom()*16.0f;
+
             CParticle p;
             p.SetDefault();
             p.m_Spr = SPRITE_BLOOD_BODY_PART;
             p.m_Pos = Pos;
             p.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
             p.m_LifeSpan = 4.0f + frandom()*0.3f;
-            p.m_StartSize = 5.0f + frandom()*16.0f;
-            p.m_EndSize = 0.0f;
+            p.m_StartSize = vec2(StartSize, StartSize);
+            p.m_EndSize = vec2(0.0f, 0.0f);
             p.m_Rot = frandom()*pi*2;
             p.m_Rotspeed = frandom();
             p.m_Gravity = 3000.0f;
@@ -282,8 +294,8 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p_hand.m_Pos = Pos;
             p_hand.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
             p_hand.m_LifeSpan = 8.0f + frandom()*0.3f;
-            p_hand.m_StartSize = 20.0f;
-            p_hand.m_EndSize = 20.0f;
+            p_hand.m_StartSize = vec2(20.0f, 20.0f);
+            p_hand.m_EndSize = vec2(20.0f, 20.0f);
             p_hand.m_Rot = frandom()*pi*2;
             p_hand.m_Gravity = 3000.0f;
             p_hand.m_Friction = 0.95f;
@@ -300,8 +312,8 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p_foot.m_Pos = Pos;
             p_foot.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
             p_foot.m_LifeSpan = 8.0f + frandom()*0.3f;
-            p_foot.m_StartSize = 20.0f;
-            p_foot.m_EndSize = 20.0f;
+            p_foot.m_StartSize = vec2(64.0f, 32.0f);
+            p_foot.m_EndSize = vec2(64.0f, 32.0f);
             p_foot.m_Rot = frandom()*pi*2;
             p_foot.m_Gravity = 3000.0f;
             p_foot.m_Friction = 0.95f;
@@ -323,8 +335,8 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p_body.m_Pos = Pos;
             p_body.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
             p_body.m_LifeSpan = 8.0f + frandom()*0.3f;
-            p_body.m_StartSize = size;
-            p_body.m_EndSize = size;
+            p_body.m_StartSize = vec2(size, size);
+            p_body.m_EndSize = vec2(size, size);
             p_body.m_Rot = frandom()*pi*2;
             p_body.m_Gravity = 3000.0f;
             p_body.m_Friction = 0.95f;
@@ -334,6 +346,59 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p_body.m_pData = mem_alloc(sizeof(int), 1);
             mem_copy(p_body.m_pData, &ClientID, sizeof(int));
             m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_BLOOD_BODY, &p_body);
+        }
+
+        // Weapon
+        int weapon = m_pClient->m_aClients[ClientID].m_Predicted.m_ActiveWeapon;
+        if (weapon == WEAPON_HAMMER || weapon == WEAPON_GUN || weapon == WEAPON_SHOTGUN || weapon == WEAPON_GRENADE || weapon == WEAPON_RIFLE)
+        {
+			CParticle p_weapon;
+			p_weapon.SetDefault();
+
+			float f = 0.0f;
+			switch (weapon)
+			{
+				case WEAPON_HAMMER:
+					f = sqrtf(128*128 + 96*96);
+					p_weapon.m_Spr = SPRITE_WEAPON_HAMMER_BODY;
+					p_weapon.m_StartSize = vec2(g_pData->m_Weapons.m_aId[WEAPON_HAMMER].m_VisualSize * (128/f), g_pData->m_Weapons.m_aId[WEAPON_HAMMER].m_VisualSize * (96/f));
+					p_weapon.m_EndSize = p_weapon.m_StartSize;
+					break;
+				case WEAPON_GUN:
+					f = sqrtf(128*128 + 64*64);
+					p_weapon.m_Spr = SPRITE_WEAPON_GUN_BODY;
+					p_weapon.m_StartSize = vec2(g_pData->m_Weapons.m_aId[WEAPON_GUN].m_VisualSize * (128/f), g_pData->m_Weapons.m_aId[WEAPON_GUN].m_VisualSize * (64/f));
+					p_weapon.m_EndSize = p_weapon.m_StartSize;
+					break;
+				case WEAPON_SHOTGUN:
+					f = sqrtf(224*224 + 64*64);
+					p_weapon.m_Spr = SPRITE_WEAPON_SHOTGUN_BODY;
+					p_weapon.m_StartSize = vec2(g_pData->m_Weapons.m_aId[WEAPON_SHOTGUN].m_VisualSize * (224/f), g_pData->m_Weapons.m_aId[WEAPON_SHOTGUN].m_VisualSize * (64/f));
+					p_weapon.m_EndSize = p_weapon.m_StartSize;
+					break;
+				case WEAPON_GRENADE:
+					f = sqrtf(224*224 + 64*64);
+					p_weapon.m_Spr = SPRITE_WEAPON_GRENADE_BODY;
+					p_weapon.m_StartSize = vec2(g_pData->m_Weapons.m_aId[WEAPON_GRENADE].m_VisualSize * (224/f), g_pData->m_Weapons.m_aId[WEAPON_GRENADE].m_VisualSize * (64/f));
+					p_weapon.m_EndSize = p_weapon.m_StartSize;
+					break;
+				case WEAPON_RIFLE:
+					f = sqrtf(224*224 + 96*96);
+					p_weapon.m_Spr = SPRITE_WEAPON_RIFLE_BODY;
+					p_weapon.m_StartSize = vec2(g_pData->m_Weapons.m_aId[WEAPON_RIFLE].m_VisualSize * (224/f), g_pData->m_Weapons.m_aId[WEAPON_RIFLE].m_VisualSize * (96/f));
+					p_weapon.m_EndSize = p_weapon.m_StartSize;
+					break;
+			}
+			p_weapon.m_Pos = Pos;
+			p_weapon.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
+			p_weapon.m_LifeSpan = 8.0f + frandom()*0.3f;
+			p_weapon.m_Rot = frandom()*pi*2;
+			p_weapon.m_Gravity = 3000.0f;
+			p_weapon.m_Friction = 0.95f;
+			p_weapon.m_Collide = true;
+			p_weapon.m_Color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+			p_weapon.m_Type = CParticles::PARTICLE_WEAPON;
+			m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p_weapon);
         }
     }
 }
@@ -358,22 +423,24 @@ void CEffects::Explosion(vec2 Pos)
 	p.m_Spr = SPRITE_PART_EXPL01;
 	p.m_Pos = Pos;
 	p.m_LifeSpan = 0.4f;
-	p.m_StartSize = 150.0f;
-	p.m_EndSize = 0;
+	p.m_StartSize = vec2(150.0f, 150.0f);
+	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Rot = frandom()*pi*2;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_EXPLOSIONS, &p);
 
 	// add the smoke
 	for(int i = 0; i < 24; i++)
 	{
+		float StartSize = 32.0f + frandom()*8;
+
 		CParticle p;
 		p.SetDefault();
 		p.m_Spr = SPRITE_PART_SMOKE;
 		p.m_Pos = Pos;
 		p.m_Vel = RandomDir() * ((1.0f + frandom()*0.2f) * 1000.0f);
 		p.m_LifeSpan = 0.5f + frandom()*0.4f;
-		p.m_StartSize = 32.0f + frandom()*8;
-		p.m_EndSize = 0;
+		p.m_StartSize = vec2(StartSize, StartSize);
+		p.m_EndSize = vec2(0.0f, 0.0f);
 		p.m_Gravity = frandom()*-800.0f;
 		p.m_Friction = 0.4f;
 		p.m_ToBlack = true;
@@ -391,8 +458,8 @@ void CEffects::HammerHit(vec2 Pos)
 	p.m_Spr = SPRITE_PART_HIT01;
 	p.m_Pos = Pos;
 	p.m_LifeSpan = 0.3f;
-	p.m_StartSize = 120.0f;
-	p.m_EndSize = 0;
+	p.m_StartSize = vec2(120.0f, 120.0f);
+	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Rot = frandom()*pi*2;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_EXPLOSIONS, &p);
 	m_pClient->m_pSounds->PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
@@ -425,14 +492,16 @@ void CEffects::LaserTrail(vec2 Pos, vec2 Vel, vec4 color)
 	if(!m_Add50hz)
 		return;
 
+	float StartSize = 5.0f + frandom()*6;
+
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SMOKE;
 	p.m_Pos = Pos;
 	p.m_Vel = Vel + RandomDir()*50.0f;
 	p.m_LifeSpan = frandom()*0.2f;
-	p.m_StartSize = 5.0f + frandom()*6;
-	p.m_EndSize = 0;
+	p.m_StartSize = vec2(StartSize, StartSize);
+	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Friction = 0.7f;
 	p.m_Gravity = 0.0f;
 	p.m_Color = color;
@@ -445,6 +514,8 @@ void CEffects::Unfreeze(vec2 Pos, vec2 Dir, float alpha)
 
     for(int i = 0; i < 16; i++)
     {
+    	float StartSize = 1.0f + frandom()*32;
+
         CParticle p;
         p.SetDefault();
         p.m_Spr = Sprites[Client()->GameTick()%4];
@@ -454,8 +525,8 @@ void CEffects::Unfreeze(vec2 Pos, vec2 Dir, float alpha)
         else
             p.m_Vel = Dir * (powf(frandom(), 3)*1100.0f);
         p.m_LifeSpan = 2.0f + frandom()*0.3f;
-        p.m_StartSize = 1.0f + frandom()*32;
-        p.m_EndSize = 0.0f;
+        p.m_StartSize = vec2(StartSize, StartSize);
+        p.m_EndSize = vec2(0.0f, 0.0f);
         p.m_Rot = frandom()*pi*2;
         p.m_Rotspeed = frandom();
         p.m_Gravity = 2500.0f;

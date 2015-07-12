@@ -12,8 +12,8 @@ struct CParticle
 	{
 		m_Vel = vec2(0,0);
 		m_LifeSpan = 0;
-		m_StartSize = 32;
-		m_EndSize = 32;
+		m_StartSize = vec2(32.0f, 32.0f);
+		m_EndSize = vec2(32.0f, 32.0f);
 		m_Rot = 0;
 		m_Rotspeed = 0;
 		m_Gravity = 0;
@@ -35,8 +35,8 @@ struct CParticle
 
 	float m_LifeSpan;
 
-	float m_StartSize;
-	float m_EndSize;
+	vec2 m_StartSize;
+	vec2 m_EndSize;
 
 	float m_Rot;
 	float m_Rotspeed;
@@ -81,7 +81,8 @@ public:
         PARTICLE_NONE=0,
         PARTICLE_BLOOD,
         PARTICLE_BLOOD_L,
-		PARTICLE_BLOOD_BODY
+		PARTICLE_BLOOD_BODY,
+		PARTICLE_WEAPON
 	};
 	//
 
