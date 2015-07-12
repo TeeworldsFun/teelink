@@ -350,7 +350,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
 
         // Weapon
         int weapon = m_pClient->m_aClients[ClientID].m_Predicted.m_ActiveWeapon;
-        if (weapon == WEAPON_HAMMER || weapon == WEAPON_GUN || weapon == WEAPON_SHOTGUN || weapon == WEAPON_GRENADE || weapon == WEAPON_RIFLE)
+        if (g_Config.m_hcGoreStyleDropWeapons && (weapon == WEAPON_HAMMER || weapon == WEAPON_GUN || weapon == WEAPON_SHOTGUN || weapon == WEAPON_GRENADE || weapon == WEAPON_RIFLE))
         {
 			CParticle p_weapon;
 			p_weapon.SetDefault();

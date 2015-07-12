@@ -1213,6 +1213,11 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
             if(DoButton_CheckBox(&g_Config.m_hcGoreStyleTeeColors, Localize("Use tee colors"), g_Config.m_hcGoreStyleTeeColors, &HUDItem))
                 g_Config.m_hcGoreStyleTeeColors ^= 1;
+
+            StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+            if(DoButton_CheckBox(&g_Config.m_hcGoreStyleDropWeapons, Localize("Drop Weapons"), g_Config.m_hcGoreStyleDropWeapons, &HUDItem))
+                g_Config.m_hcGoreStyleDropWeapons ^= 1;
         }
 
         //Laser Color
