@@ -5,6 +5,8 @@ H-Client its a mod for the game Teeworlds created and maintained by unsigned cha
 Please visit http://hclient.wordpress.com for up-to-date information about 
 the mod.
 
+[![Circle CI](https://circleci.com/gh/CytraL/HClient.svg?style=svg)](https://circleci.com/gh/CytraL/HClient)
+
 
 
 
