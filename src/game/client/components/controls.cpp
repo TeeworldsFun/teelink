@@ -227,8 +227,6 @@ int CControls::SnapInput(int *pData)
 		// H-Client: Stats
 		if(m_pClient->m_Snap.m_pLocalCharacter && m_InputData.m_Fire != m_LastData.m_Fire && CountInput(m_LastData.m_Fire, m_InputData.m_Fire).m_Presses > 0)
 		{
-			dbg_msg("input", "Pasa!: %d",m_InputData.m_WantedWeapon-1);
-
 			int ActiveWeapon = m_pClient->m_Snap.m_pLocalCharacter->m_Weapon;
 			if (ActiveWeapon == WEAPON_HAMMER) g_Stats.m_ShootsHammer++;
 			else if (ActiveWeapon == WEAPON_GUN) g_Stats.m_ShootsGun++;

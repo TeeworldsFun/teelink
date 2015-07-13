@@ -887,11 +887,11 @@ void CGameClient::OnNewSnapshot()
 					}
 
 					// H-Client
-					if (m_pClient->IsServerType("CTF") && (unsigned long)pInfo->m_Score > g_Stats.m_BestScore[0])
+					if (m_pClient->IsServerType("CTF") && pInfo->m_Score > (long)g_Stats.m_BestScore[0])
 						g_Stats.m_BestScore[0] = pInfo->m_Score;
-					if (m_pClient->IsServerType("TDM") && (unsigned long)pInfo->m_Score > g_Stats.m_BestScore[1])
+					if (m_pClient->IsServerType("TDM") && pInfo->m_Score > (long)g_Stats.m_BestScore[1])
 						g_Stats.m_BestScore[1] = pInfo->m_Score;
-					if (m_pClient->IsServerType("DM") && (unsigned long)pInfo->m_Score > g_Stats.m_BestScore[2])
+					if (m_pClient->IsServerType("DM") && pInfo->m_Score > (long)g_Stats.m_BestScore[2])
 						g_Stats.m_BestScore[2] = pInfo->m_Score;
 					//
 				}
