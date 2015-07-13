@@ -17,6 +17,12 @@
 #include <vector>
 //
 
+// Fix compiling under Windows
+#if defined(CONF_FAMILY_WINDOWS)
+	#define _USE_MATH_DEFINES
+	#include <math.h>
+#endif
+//
 
 class CTuneParam
 {
