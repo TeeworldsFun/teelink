@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/graphics.h>
 #include <engine/textrender.h>
+#include <engine/client/stats.h> // H-Client
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
 
@@ -41,7 +42,12 @@ void CKillMessages::OnMessage(int MsgType, void *pRawMsg)
 		Kill.m_ID = 1;
 
 		if (Kill.m_VictimID == m_pClient->m_Snap.m_LocalClientID)
+		{
             m_pClient->m_LocalInfo.Reset();
+            g_Stats.m_Deaths++;
+		}
+		else if (Kill.m_KillerID == m_pClient->m_Snap.m_LocalClientID)
+			g_Stats.m_Kills++;
 		//
 
 		// add the message

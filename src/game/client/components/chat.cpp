@@ -6,12 +6,13 @@
 #include <engine/textrender.h>
 #include <engine/keys.h>
 #include <engine/shared/config.h>
+#include <engine/client/stats.h> // H-Client
 
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
 
 #include <game/client/gameclient.h>
-#include <game/client/animstate.h> //H-Client
+#include <game/client/animstate.h> // H-Client
 
 #include <game/client/components/scoreboard.h>
 #include <game/client/components/sounds.h>
@@ -340,6 +341,7 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
 		AddLine(pMsg->m_ClientID, pMsg->m_Team, pMsg->m_pMessage);
+		g_Stats.m_ChatMessagesReceived++; // H-Client
 	}
 }
 
@@ -708,6 +710,7 @@ void CChat::Say(int Team, const char *pLine)
 	Msg.m_Team = Team;
 	Msg.m_pMessage = pLine;
 	Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+	g_Stats.m_ChatMessagesSent++; // H-Client
 }
 
 //H-Client

@@ -8,9 +8,10 @@
 #include <engine/storage.h>
 #include <engine/textrender.h>
 #include <engine/texturepack.h> // H-Client
+#include <engine/updater.h> //H-Client
 #include <engine/shared/config.h>
 #include <engine/shared/linereader.h>
-#include <engine/updater.h> //H-Client
+#include <engine/client/stats.h> //H-Client
 
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
@@ -28,6 +29,7 @@
 #include "skins.h"
 
 #include <list> // H-Client
+#include <cstdio> // H-Client
 
 CMenusKeyBinder CMenus::m_Binder;
 
@@ -1435,47 +1437,46 @@ void CMenus::RenderStatistics(CUIRect MainView)
 	char aBuf[128];
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Started H-Client: %d times", 0);
+	str_format(aBuf, sizeof(aBuf), "Started H-Client: %d times", g_Stats.m_ClientRuns);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Total time played: %d:%d:%d", 0, 0, 0);
-	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
-
-	MainView.HSplitTop(20.0f, 0x0, &MainView);
-
-	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Kills: %d", 0);
-	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
-
-	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Deaths: %d", 0);
-	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
-
-	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Total damage received: %d", 0);
+    time_t rawtime = g_Stats.m_ClientTimeRun;
+    struct tm *timeinfo = localtime(&rawtime);
+    char aTime[128];
+    int days, hours, minutes, seconds;
+    strftime(aTime, sizeof(aTime), "%j:%I:%M:%S", timeinfo);
+    sscanf(aTime, "%d:%d:%d:%d", &days, &hours, &minutes, &seconds);
+    days--; hours--; // Starts from 1
+	str_format(aBuf, sizeof(aBuf), "Total time played: %d days, %02d:%02d:%02d", days, hours, minutes, seconds);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, 0x0, &MainView);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Joined on a server: %d times", 0);
+	str_format(aBuf, sizeof(aBuf), "Kills: %d", g_Stats.m_Kills);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "User name changes: %d times", 0);
+	str_format(aBuf, sizeof(aBuf), "Deaths: %d", g_Stats.m_Deaths);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Skin changes: %d times", 0);
+	str_format(aBuf, sizeof(aBuf), "Total damage received: %d", g_Stats.m_TotalDamage);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, 0x0, &MainView);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	str_format(aBuf, sizeof(aBuf), "Joined on a server: %d times", g_Stats.m_ServerJoins);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Chat messages sent: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "Chat messages sent: %d", g_Stats.m_ChatMessagesSent);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Chat messages received: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "Chat messages received: %d", g_Stats.m_ChatMessagesReceived);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
@@ -1483,52 +1484,53 @@ void CMenus::RenderStatistics(CUIRect MainView)
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
 	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-	str_format(aBuf, sizeof(aBuf), "CTF: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "CTF: %d", g_Stats.m_BestScore[0]);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
 	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-	str_format(aBuf, sizeof(aBuf), "TDM: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "TDM: %d", g_Stats.m_BestScore[1]);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
 	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-	str_format(aBuf, sizeof(aBuf), "DM: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "DM: %d", g_Stats.m_BestScore[2]);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, 0x0, &MainView);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Weapon changes: %d times", 0);
+	str_format(aBuf, sizeof(aBuf), "Weapon changes: %d times", g_Stats.m_WeaponChanges);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	str_format(aBuf, sizeof(aBuf), "Shooting: %d times", 0);
-	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
-
-	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
-	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-	str_format(aBuf, sizeof(aBuf), "Hammer: %d", 0);
+	int TotalShoots = g_Stats.m_ShootsHammer + g_Stats.m_ShootsGun + g_Stats.m_ShootsShotgun + g_Stats.m_ShootsGrenades + g_Stats.m_ShootsRifle;
+	str_format(aBuf, sizeof(aBuf), "Total Shoots: %d times", TotalShoots);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
 	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-	str_format(aBuf, sizeof(aBuf), "Pistol: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "Hammer: %d", g_Stats.m_ShootsHammer);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
 	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-	str_format(aBuf, sizeof(aBuf), "Shotgun: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "Pistol: %d", g_Stats.m_ShootsGun);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
 	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-	str_format(aBuf, sizeof(aBuf), "Grenades: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "Shotgun: %d", g_Stats.m_ShootsShotgun);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
 	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-	str_format(aBuf, sizeof(aBuf), "Laser: %d", 0);
+	str_format(aBuf, sizeof(aBuf), "Grenades: %d", g_Stats.m_ShootsGrenades);
+	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
+
+	MainView.HSplitTop(20.0f, &HUDItem, &MainView);
+	HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+	str_format(aBuf, sizeof(aBuf), "Rifle: %d", g_Stats.m_ShootsRifle);
 	UI()->DoLabel(&HUDItem, aBuf, HUDItem.h*ms_FontmodHeight, -1);
 
 	MainView.HSplitBottom(20.0f, &MainView, &HUDItem);
@@ -1537,7 +1539,7 @@ void CMenus::RenderStatistics(CUIRect MainView)
     Button.Margin(2.0f, &Button);
     static int s_ButtonClearCache = 0;
     if (DoButton_Menu((void*)&s_ButtonClearCache, Localize("Reset Statistics"), 0, &Button))
-        DeleteMapPreviewCache();
+    	g_Stats.Reset();
 }
 
 // H-Client

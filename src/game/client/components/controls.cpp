@@ -4,6 +4,7 @@
 
 #include <engine/shared/config.h>
 #include <engine/serverbrowser.h> // H-Client
+#include <engine/client/stats.h> // H-Client
 
 #include <game/collision.h>
 #include <game/client/gameclient.h>
@@ -13,6 +14,34 @@
 #include <game/client/components/scoreboard.h>
 
 #include "controls.h"
+
+
+// H-Client
+struct CInputCount
+{
+	int m_Presses;
+	int m_Releases;
+};
+
+CInputCount CountInput(int Prev, int Cur)
+{
+	CInputCount c = {0, 0};
+	Prev &= INPUT_STATE_MASK;
+	Cur &= INPUT_STATE_MASK;
+	int i = Prev;
+
+	while(i != Cur)
+	{
+		i = (i+1)&INPUT_STATE_MASK;
+		if(i&1)
+			c.m_Presses++;
+		else
+			c.m_Releases++;
+	}
+
+	return c;
+}
+//
 
 CControls::CControls()
 {
@@ -194,6 +223,19 @@ int CControls::SnapInput(int *pData)
 		// H-Client: DDNet
 		if(Client()->IsServerType("ddrace") && m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == WEAPON_NINJA && (m_InputData.m_Direction || m_InputData.m_Jump || m_InputData.m_Hook))
 			Send = true;
+
+		// H-Client: Stats
+		if(m_pClient->m_Snap.m_pLocalCharacter && m_InputData.m_Fire != m_LastData.m_Fire && CountInput(m_LastData.m_Fire, m_InputData.m_Fire).m_Presses > 0)
+		{
+			dbg_msg("input", "Pasa!: %d",m_InputData.m_WantedWeapon-1);
+
+			int ActiveWeapon = m_pClient->m_Snap.m_pLocalCharacter->m_Weapon;
+			if (ActiveWeapon == WEAPON_HAMMER) g_Stats.m_ShootsHammer++;
+			else if (ActiveWeapon == WEAPON_GUN) g_Stats.m_ShootsGun++;
+			else if (ActiveWeapon == WEAPON_SHOTGUN) g_Stats.m_ShootsShotgun++;
+			else if (ActiveWeapon == WEAPON_GRENADE) g_Stats.m_ShootsGrenades++;
+			else if (ActiveWeapon == WEAPON_RIFLE) g_Stats.m_ShootsRifle++;
+		}
 	}
 
 	// copy and return size

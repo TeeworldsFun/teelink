@@ -17,6 +17,7 @@
 #include <engine/geoip.h> //H-Client
 #include <engine/texturepack.h> //H-Client
 #include <engine/updater.h> //H-Client
+#include <engine/client/stats.h> // H-Client
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
 
@@ -366,6 +367,7 @@ void CGameClient::OnConnected()
 	// send the inital info
 	SendInfo(true);
 	Graphics()->ShowInfoKills(false); // H-Client
+	g_Stats.m_ServerJoins++; // H-Client
 }
 
 void CGameClient::OnReset()
@@ -672,6 +674,16 @@ void CGameClient::OnStateChange(int NewState, int OldState)
 	// then change the state
 	for(int i = 0; i < m_All.m_Num; i++)
 		m_All.m_paComponents[i]->OnStateChange(NewState, OldState);
+
+	// H-Client
+	if (NewState != OldState)
+	{
+		if (NewState == IClient::STATE_ONLINE)
+			m_ConnectedTime = time_get();
+		else if (NewState == IClient::STATE_OFFLINE)
+			g_Stats.m_ClientTimeRun += (time_get() - m_ConnectedTime) / time_freq();
+	}
+	//
 }
 
 void CGameClient::OnShutdown() {}
@@ -873,12 +885,20 @@ void CGameClient::OnNewSnapshot()
 						m_Snap.m_SpecInfo.m_Active = true;
 						m_Snap.m_SpecInfo.m_SpectatorID = SPEC_FREEVIEW;
 					}
+
+					// H-Client
+					if (m_pClient->IsServerType("CTF") && (unsigned long)pInfo->m_Score > g_Stats.m_BestScore[0])
+						g_Stats.m_BestScore[0] = pInfo->m_Score;
+					if (m_pClient->IsServerType("TDM") && (unsigned long)pInfo->m_Score > g_Stats.m_BestScore[1])
+						g_Stats.m_BestScore[1] = pInfo->m_Score;
+					if (m_pClient->IsServerType("DM") && (unsigned long)pInfo->m_Score > g_Stats.m_BestScore[2])
+						g_Stats.m_BestScore[2] = pInfo->m_Score;
+					//
 				}
 
 				// calculate team-balance
 				if(pInfo->m_Team != TEAM_SPECTATORS)
 					m_Snap.m_aTeamSize[pInfo->m_Team]++;
-
 			}
 			else if(Item.m_Type == NETOBJTYPE_CHARACTER)
 			{
@@ -893,6 +913,17 @@ void CGameClient::OnNewSnapshot()
 						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Prev, Client()->PrevGameTick());
 					if(m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Tick)
 						Evolve(&m_Snap.m_aCharacters[Item.m_ID].m_Cur, Client()->GameTick());
+
+					// H-Client
+					if (Item.m_ID == m_Snap.m_LocalClientID)
+					{
+						int HealthDiff = m_Snap.m_aCharacters[Item.m_ID].m_Prev.m_Health - m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Health;
+						g_Stats.m_TotalDamage += HealthDiff;
+
+						if (m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Weapon != m_Snap.m_aCharacters[Item.m_ID].m_Prev.m_Weapon)
+							g_Stats.m_WeaponChanges++;
+					}
+					//
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_SPECTATORINFO)

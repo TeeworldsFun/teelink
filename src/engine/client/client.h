@@ -3,8 +3,6 @@
 #ifndef ENGINE_CLIENT_CLIENT_H
 #define ENGINE_CLIENT_CLIENT_H
 
-//#include <engine/external/libwebm/mkvwriter.hpp> // H-Client: .webm export
-
 class CGraph
 {
 public:
@@ -189,14 +187,6 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	volatile int m_GfxState;
 	static void GraphicsThreadProxy(void *pThis) { ((CClient*)pThis)->GraphicsThread(); }
 	void GraphicsThread();
-
-	// H-Client: .webm export
-	/*mkvmuxer::MkvWriter m_MkvWriter;
-	mkvmuxer::Segment m_MkvSegment;
-	long m_MkvStartTime;
-	int m_MkvVidTrack;
-	bool m_RecordVideo;*/
-	//
 
 public:
 	IEngine *Engine() { return m_pEngine; }

@@ -7,7 +7,6 @@
 
 #include <base/math.h>
 #include <base/system.h>
-#include <engine/client/updater.h> // H-Client
 
 #include <engine/client.h>
 #include <engine/config.h>
@@ -23,6 +22,7 @@
 #include <engine/sound.h>
 #include <engine/storage.h>
 #include <engine/textrender.h>
+#include <engine/stats.h> // H-Client
 
 #include <engine/shared/config.h>
 #include <engine/shared/compression.h>
@@ -35,6 +35,9 @@
 #include <engine/shared/protocol.h>
 #include <engine/shared/ringbuffer.h>
 #include <engine/shared/snapshot.h>
+
+#include <engine/client/updater.h> // H-Client
+#include <engine/client/stats.h> // H-Client
 
 #include <game/version.h>
 
@@ -772,7 +775,6 @@ void CClient::DebugRender()
 
 void CClient::Quit()
 {
-    ServerBrowser()->SaveServerInfo(); // H-Client
 	SetState(IClient::STATE_QUITING);
 }
 
@@ -2430,6 +2432,7 @@ int main(int argc, const char **argv) // ignore_convention
 	IConsole *pConsole = CreateConsole(CFGFLAG_CLIENT);
 	IStorage *pStorage = CreateStorage("Teeworlds", IStorage::STORAGETYPE_CLIENT, argc, argv); // ignore_convention
 	IConfig *pConfig = CreateConfig();
+	IStats *pStats = CreateStats(); // H-Client
 	IEngineSound *pEngineSound = CreateEngineSound();
 	IEngineInput *pEngineInput = CreateEngineInput();
 	IEngineTextRender *pEngineTextRender = CreateEngineTextRender();
@@ -2442,6 +2445,8 @@ int main(int argc, const char **argv) // ignore_convention
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pEngine);
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pConsole);
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pConfig);
+
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pStats); // H-Client
 
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IEngineSound*>(pEngineSound)); // register as both
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<ISound*>(pEngineSound));
@@ -2468,6 +2473,7 @@ int main(int argc, const char **argv) // ignore_convention
 
 	pEngine->Init();
 	pConfig->Init();
+	pStats->Init(); // H-Client
 	pEngineMasterServer->Init();
 	pEngineMasterServer->Load();
 
@@ -2496,12 +2502,18 @@ int main(int argc, const char **argv) // ignore_convention
 
 	// run the client
 	dbg_msg("client", "starting...");
+	g_Stats.m_ClientRuns++;
 	pClient->Run();
 
 	// write down the config and quit
 	pConfig->Save();
 
-    pClient->Updater()->ExecuteExit(); // H-Client
+	// H-Client
+	pClient->ServerBrowser()->SaveServerInfo();
+	pStats->Save();
+
+    pClient->Updater()->ExecuteExit();
+    //
 
 	return 0;
 }

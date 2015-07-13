@@ -308,6 +308,8 @@ public:
 
         int m_WantedWeapon;
 	} m_LocalInfo;
+	int64 m_ConnectedTime;
+
 
 private:
 	bool m_DDRaceMsgSent; //H-Client: DDRace
