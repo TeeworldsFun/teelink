@@ -1140,7 +1140,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             UI()->DoLabelScaled(&HUDItem, Localize("Speed Limit (KiBps): "), HUDItem.h*ms_FontmodHeight*0.8f, -1);
             if (DoEditBox(&g_Config.m_hcAutoDownloadSkinsSpeed, &Edit, g_Config.m_hcAutoDownloadSkinsSpeed, sizeof(g_Config.m_hcAutoDownloadSkinsSpeed), 12.0f, &Offset, false, CUI::CORNER_ALL))
             {
-            	int downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048);
+            	int downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 0, 2048);
             	str_format(g_Config.m_hcAutoDownloadSkinsSpeed, sizeof(g_Config.m_hcAutoDownloadSkinsSpeed), "%d", downloadSpeed);
             }
         }

@@ -239,6 +239,12 @@ void CGameClient::OnInit()
 {
 	m_pGraphics = Kernel()->RequestInterface<IGraphics>();
 
+	// H-Client: TDTW: Anti-ping
+	m_Average_Prediction_Offset = -1;
+	m_Prediction_Offset_Summ = 0;
+	m_Prediction_Offset_Count = 0;
+	//
+
 	// propagate pointers
 	m_UI.SetGraphics(Graphics(), TextRender());
 	m_RenderTools.m_pGraphics = Graphics();
@@ -395,24 +401,34 @@ void CGameClient::OnReset()
     m_LocalInfo.Reset();
 }
 
-
+// H-Client: TDTW: Anti-Ping
 void CGameClient::UpdatePositions()
 {
 	// local character position
 	if(g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
-		if(!m_Snap.m_pLocalCharacter || (m_Snap.m_pGameInfoObj && (m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
+		if(!(m_Snap.m_pGameInfoObj && (m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
 		{
-			// don't use predicted
+			if (m_Snap.m_pLocalCharacter)
+				m_LocalCharacterPos = mix(m_PredictedPrevChar.m_Pos, m_PredictedChar.m_Pos, Client()->PredIntraGameTick());
 		}
-		else
-			m_LocalCharacterPos = mix(m_PredictedPrevChar.m_Pos, m_PredictedChar.m_Pos, Client()->PredIntraGameTick());
 	}
 	else if(m_Snap.m_pLocalCharacter && m_Snap.m_pLocalPrevCharacter)
 	{
 		m_LocalCharacterPos = mix(
 			vec2(m_Snap.m_pLocalPrevCharacter->m_X, m_Snap.m_pLocalPrevCharacter->m_Y),
 			vec2(m_Snap.m_pLocalCharacter->m_X, m_Snap.m_pLocalCharacter->m_Y), Client()->IntraGameTick());
+	}
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (!m_Snap.m_aCharacters[i].m_Active)
+			continue;
+
+		if (m_Snap.m_pLocalCharacter && m_Snap.m_pLocalPrevCharacter && g_Config.m_ClPredict /* && g_Config.m_AntiPing */ && !(m_Snap.m_LocalClientID == -1 || !m_Snap.m_aCharacters[m_Snap.m_LocalClientID].m_Active))
+			m_Snap.m_aCharacters[i].m_Position = mix(m_aClients[i].m_PrevPredicted.m_Pos, m_aClients[i].m_Predicted.m_Pos, Client()->PredIntraGameTick());
+		else
+			m_Snap.m_aCharacters[i].m_Position = mix(vec2(m_Snap.m_aCharacters[i].m_Prev.m_X, m_Snap.m_aCharacters[i].m_Prev.m_Y), vec2(m_Snap.m_aCharacters[i].m_Cur.m_X, m_Snap.m_aCharacters[i].m_Cur.m_Y), Client()->IntraGameTick());
 	}
 
 	// spectator position
@@ -438,6 +454,7 @@ void CGameClient::UpdatePositions()
 		}
 	}
 }
+//
 
 
 static void Evolve(CNetObj_Character *pCharacter, int Tick)
@@ -494,7 +511,6 @@ void CGameClient::OnRender()
         str_sanitize_cc(mapName);
         str_format(preview, sizeof(preview), "mappreviews/%s.png", mapName);
         Graphics()->TakeScreenshotFree(preview, true);
-
         m_pMenus->GetImageMapPreview(0);
     }
 	//
@@ -1160,6 +1176,9 @@ void CGameClient::OnPredict()
 			if(!World.m_apCharacters[c])
 				continue;
 
+			if(Tick == Client()->PredGameTick())
+				g_GameClient.m_aClients[c].m_PrevPredicted = *World.m_apCharacters[c];
+
 			mem_zero(&World.m_apCharacters[c]->m_Input, sizeof(World.m_apCharacters[c]->m_Input));
 			if(m_Snap.m_LocalClientID == c)
 			{
@@ -1211,7 +1230,19 @@ void CGameClient::OnPredict()
 		}
 
 		if(Tick == Client()->PredGameTick() && World.m_apCharacters[m_Snap.m_LocalClientID])
+		{
 			m_PredictedChar = *World.m_apCharacters[m_Snap.m_LocalClientID];
+
+			// H-Client: TDTW: Anti-Ping
+			for (int c = 0; c < MAX_CLIENTS; c++)
+			{
+				if(!World.m_apCharacters[c])
+					continue;
+
+				g_GameClient.m_aClients[c].m_Predicted = *World.m_apCharacters[c];
+			}
+			//
+		}
 	}
 
 	if(g_Config.m_Debug && g_Config.m_ClPredict && m_PredictedTick == Client()->PredGameTick())

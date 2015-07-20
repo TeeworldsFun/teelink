@@ -159,7 +159,7 @@ void CEffects::PlayerSpawn(vec2 Pos)
 
 void CEffects::PlayerDeath(vec2 Pos, int ClientID)
 {
-    if (!g_Config.m_hcGoreStyle) //H-Client
+    if (!g_Config.m_hcGoreStyle || (g_Config.m_hcGoreStyle && ClientID < 0)) //H-Client
     {
         vec3 BloodColor(1.0f,1.0f,1.0f);
 

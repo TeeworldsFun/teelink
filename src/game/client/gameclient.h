@@ -183,6 +183,7 @@ public:
 		int m_Emoticon;
 		int m_EmoticonStart;
 		CCharacterCore m_Predicted;
+		CCharacterCore m_PrevPredicted; // H-Client: TDTW: Anti-Ping
 
 		CTeeRenderInfo m_SkinInfo; // this is what the server reports
 		CTeeRenderInfo m_RenderInfo; // this is what we use
@@ -207,6 +208,12 @@ public:
 
         int m_Score; // H-Client: DDNet
 	};
+
+	// H-Client: TDTW: Anti-Ping
+	int m_Average_Prediction_Offset;
+	int m_Prediction_Offset_Summ;
+	int m_Prediction_Offset_Count;
+	//
 
 	CClientData m_aClients[MAX_CLIENTS];
 

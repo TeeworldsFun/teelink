@@ -1819,10 +1819,12 @@ void CClient::InitInterfaces()
 	m_pMasterServer = Kernel()->RequestInterface<IEngineMasterServer>();
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
 
-	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
-	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
-	m_pUpdater = Kernel()->RequestInterface<IUpdater>(); //H-Client
-	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>(); // H-Client
+	// H-Client
+	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>();
+	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>();
+	m_pUpdater = Kernel()->RequestInterface<IUpdater>();
+	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>();
+	//
 
 	//
 	m_ServerBrowser.SetBaseInfo(&m_NetClient, m_pGameClient->NetVersion());
@@ -2057,16 +2059,6 @@ void CClient::Run()
 				}
 			}
 		}
-
-		/*if (m_RecordVideo)
-		{
-			unsigned char *pData = Graphics()->GetFrameBuffer();
-			if (pData)
-			{
-				m_MkvSegment.AddFrame(pData, Graphics()->ScreenWidth()*(Graphics()->ScreenHeight()+1)*3, m_MkvVidTrack, time_get()-m_MkvStartTime, 0);
-				mem_free(pData);
-			}
-		}*/
 
 		AutoScreenshot_Cleanup();
 

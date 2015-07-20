@@ -232,13 +232,16 @@ image_demobuttons = Image("demobuttons", "demo_buttons.png")
 image_fileicons = Image("fileicons", "file_icons.png")
 image_guibuttons = Image("guibuttons", "gui_buttons.png")
 image_guiicons = Image("guiicons", "gui_icons.png")
-image_chat_emoticons = Image("chat_emoticons", "chat_emoticons.png") #H-Client
-image_settings_icons = Image("settings_icons", "settings_tabicons.png") #H-Client
-image_unfreeze_effect = Image("unfreeze_effect", "broken_freeze.png") #H-Client
-image_arrow = Image("arrow", "arrow.png") #H-Client
-image_guicontrols = Image("guicontrols", "gui_controls.png") #H-Client
-image_splashtee = Image("splashtee", "splashtee.png") #H-Client
-image_blood = Image("blood", "blood.png") #H-Client
+# H-Client
+image_chat_emoticons = Image("chat_emoticons", "chat_emoticons.png")
+image_settings_icons = Image("settings_icons", "settings_tabicons.png")
+image_unfreeze_effect = Image("unfreeze_effect", "broken_freeze.png")
+image_arrow = Image("arrow", "arrow.png")
+image_guicontrols = Image("guicontrols", "gui_controls.png")
+image_splashtee = Image("splashtee", "splashtee.png")
+image_blood = Image("blood", "blood.png")
+image_flags = Image("flags", "flags.png")
+##
 
 
 container.images.Add(image_null)
@@ -254,14 +257,17 @@ container.images.Add(image_demobuttons)
 container.images.Add(image_fileicons)
 container.images.Add(image_guibuttons)
 container.images.Add(image_guiicons)
-container.images.Add(image_chat_emoticons) #H-Client
-container.images.Add(image_settings_icons) #H-Client
-container.images.Add(image_unfreeze_effect) #H-Client
-container.images.Add(image_arrow) #H-Client
-container.images.Add(image_guicontrols) #H-Client
-container.images.Add(Image("hclient_logo", "hclient_logo.png")) #H-Client
-container.images.Add(image_splashtee) #H-Client
-container.images.Add(image_blood) #H-Client
+# H-Client
+container.images.Add(image_chat_emoticons)
+container.images.Add(image_settings_icons)
+container.images.Add(image_unfreeze_effect)
+container.images.Add(image_arrow)
+container.images.Add(image_guicontrols)
+container.images.Add(Image("hclient_logo", "hclient_logo.png"))
+container.images.Add(image_splashtee)
+container.images.Add(image_blood)
+container.images.Add(image_flags)
+##
 
 container.pickups.Add(Pickup("health"))
 container.pickups.Add(Pickup("armor"))
@@ -277,11 +283,14 @@ set_demobuttons = SpriteSet("demobuttons", image_demobuttons, 5, 1)
 set_fileicons = SpriteSet("fileicons", image_fileicons, 8, 1)
 set_guibuttons = SpriteSet("guibuttons", image_guibuttons, 12, 4)
 set_guiicons = SpriteSet("guiicons", image_guiicons, 8, 2)
-set_chat_emoticons = SpriteSet("chat_emoticons", image_chat_emoticons, 6, 5) #H-Client
-set_settings_icons = SpriteSet("settings_icon", image_settings_icons, 10, 1) #H-Client
-set_unfreeze_effect = SpriteSet("unfreeze_effect", image_unfreeze_effect, 4, 1) #H-Client
-set_guicontrols = SpriteSet("guicontrols", image_guicontrols, 2, 1) #H-Client
-set_blood = SpriteSet("blood", image_blood, 2, 1) #H-Client
+# H-Client
+set_chat_emoticons = SpriteSet("chat_emoticons", image_chat_emoticons, 6, 5)
+set_settings_icons = SpriteSet("settings_icon", image_settings_icons, 10, 1)
+set_unfreeze_effect = SpriteSet("unfreeze_effect", image_unfreeze_effect, 4, 1)
+set_guicontrols = SpriteSet("guicontrols", image_guicontrols, 2, 1)
+set_blood = SpriteSet("blood", image_blood, 2, 1)
+set_flags = SpriteSet("flags", image_flags, 8, 2)
+##
 
 container.spritesets.Add(set_particles)
 container.spritesets.Add(set_game)
@@ -292,11 +301,14 @@ container.spritesets.Add(set_demobuttons)
 container.spritesets.Add(set_fileicons)
 container.spritesets.Add(set_guibuttons)
 container.spritesets.Add(set_guiicons)
-container.spritesets.Add(set_chat_emoticons) #H-Client
-container.spritesets.Add(set_settings_icons) #H-Client
-container.spritesets.Add(set_unfreeze_effect) #H-Client
-container.spritesets.Add(set_guicontrols) # H-Client
-container.spritesets.Add(set_blood) # H-Client
+# H-Client
+container.spritesets.Add(set_chat_emoticons)
+container.spritesets.Add(set_settings_icons)
+container.spritesets.Add(set_unfreeze_effect)
+container.spritesets.Add(set_guicontrols)
+container.spritesets.Add(set_blood)
+container.spritesets.Add(set_flags)
+##
 
 container.sprites.Add(Sprite("part_slice", set_particles, 0,0,1,1))
 container.sprites.Add(Sprite("part_ball", set_particles, 1,0,1,1))
@@ -480,6 +492,23 @@ container.sprites.Add(Sprite("guicontrol_checkbox_inactive", set_guicontrols, 1,
 
 container.sprites.Add(Sprite("blood_body_part", set_blood, 0,  0,  1,  1))
 container.sprites.Add(Sprite("blood_spread", set_blood, 1,  0,  1,  1))
+
+container.sprites.Add(Sprite("flag_blue01", set_flags, 0,  0,  1,  1))
+container.sprites.Add(Sprite("flag_blue02", set_flags, 1,  0,  1,  1))
+container.sprites.Add(Sprite("flag_blue03", set_flags, 2,  0,  1,  1))
+container.sprites.Add(Sprite("flag_blue04", set_flags, 3,  0,  1,  1))
+container.sprites.Add(Sprite("flag_blue05", set_flags, 4,  0,  1,  1))
+container.sprites.Add(Sprite("flag_blue06", set_flags, 5,  0,  1,  1))
+container.sprites.Add(Sprite("flag_blue07", set_flags, 6,  0,  1,  1))
+container.sprites.Add(Sprite("flag_blue08", set_flags, 7,  0,  1,  1))
+container.sprites.Add(Sprite("flag_red01", set_flags, 0,  1,  1,  1))
+container.sprites.Add(Sprite("flag_red02", set_flags, 1,  1,  1,  1))
+container.sprites.Add(Sprite("flag_red03", set_flags, 2,  1,  1,  1))
+container.sprites.Add(Sprite("flag_red04", set_flags, 3,  1,  1,  1))
+container.sprites.Add(Sprite("flag_red05", set_flags, 4,  1,  1,  1))
+container.sprites.Add(Sprite("flag_red06", set_flags, 5,  1,  1,  1))
+container.sprites.Add(Sprite("flag_red07", set_flags, 6,  1,  1,  1))
+container.sprites.Add(Sprite("flag_red08", set_flags, 7,  1,  1,  1))
 ##
 
 anim = Animation("base")

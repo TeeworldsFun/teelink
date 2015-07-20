@@ -264,25 +264,28 @@ void CSkins::DownloadSkin(const char *pName)
 	int TotalBytes = 0;
 	int CurrentRecv = 0;
 	int nlCount = 0;
-	const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 1, 2048) * 1024;
+	const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 0, 2048) * 1024;
 	char aNetBuff[1024] = {0};
 	do
 	{
 		// Limit Speed
-		int64 ctime = time_get();
-		if (ctime - downloadTime <= time_freq())
+		if (downloadSpeed > 0)
 		{
-			if (chunkBytes >= downloadSpeed)
+			int64 ctime = time_get();
+			if (ctime - downloadTime <= time_freq())
 			{
-				int tdff = (time_freq() - (ctime - downloadTime)) / 1000;
-				thread_sleep(tdff);
-				continue;
+				if (chunkBytes >= downloadSpeed)
+				{
+					int tdff = (time_freq() - (ctime - downloadTime)) / 1000;
+					thread_sleep(tdff);
+					continue;
+				}
 			}
-		}
-		else
-		{
-			chunkBytes = 0;
-			downloadTime = time_get();
+			else
+			{
+				chunkBytes = 0;
+				downloadTime = time_get();
+			}
 		}
 		//
 

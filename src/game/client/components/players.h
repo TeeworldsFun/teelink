@@ -6,13 +6,19 @@
 
 class CPlayers : public CComponent
 {
+	enum CPlayerFlags
+	{
+		PLAYERFLAG_ANTIPING = 1
+	};
+
 	CTeeRenderInfo m_aRenderInfo[MAX_CLIENTS];
 	void RenderHand(class CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset);
 	void RenderPlayer(
 		const CNetObj_Character *pPrevChar,
 		const CNetObj_Character *pPlayerChar,
 		const CNetObj_PlayerInfo *pPrevInfo,
-		const CNetObj_PlayerInfo *pPlayerInfo
+		const CNetObj_PlayerInfo *pPlayerInfo,
+		int flags = 0
 	);
 	void RenderHook(
 		const CNetObj_Character *pPrevChar,

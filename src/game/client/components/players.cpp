@@ -201,7 +201,8 @@ void CPlayers::RenderPlayer(
 	const CNetObj_Character *pPrevChar,
 	const CNetObj_Character *pPlayerChar,
 	const CNetObj_PlayerInfo *pPrevInfo,
-	const CNetObj_PlayerInfo *pPlayerInfo
+	const CNetObj_PlayerInfo *pPlayerInfo,
+	int flags
 	)
 {
 	CNetObj_Character Prev;
@@ -217,7 +218,7 @@ void CPlayers::RenderPlayer(
 	{
 	    char skinName[25];
 	    int damage = 10-Player.m_Health;
-	    if (Client()->IsServerType("infection") && str_find_nocase(m_pClient->m_aClients[pInfo.m_ClientID].m_aClan,"zombie"))
+	    if (Client()->IsServerType("infection") && str_find_nocase(m_pClient->m_aClients[pInfo.m_ClientID].m_aClan, "zomb"))
             damage = 8;
 
         str_format(skinName, sizeof(skinName), "x_damage%i", damage);
@@ -228,11 +229,22 @@ void CPlayers::RenderPlayer(
     //
 
 	bool NewTick = m_pClient->m_NewTick;
+	float IntraTick = Client()->IntraGameTick();
 
 	// set size
 	RenderInfo.m_Size = 64.0f;
 
-	float IntraTick = Client()->IntraGameTick();
+	// use preditect players if needed
+	if(g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	{
+		if(m_pClient->m_Snap.m_pLocalCharacter && (pInfo.m_Local || (flags&PLAYERFLAG_ANTIPING)) && !(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
+		{
+			// apply predicted results
+			m_pClient->m_aClients[pInfo.m_ClientID].m_Predicted.Write(&Player);
+			m_pClient->m_aClients[pInfo.m_ClientID].m_PrevPredicted.Write(&Prev);
+			IntraTick = Client()->PredIntraGameTick();
+		}
+	}
 
 	float Angle = mix((float)Prev.m_Angle, (float)Player.m_Angle, IntraTick)/256.0f;
 
@@ -267,16 +279,13 @@ void CPlayers::RenderPlayer(
 	}
 
 	// use preditect players if needed
-	if(pInfo.m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
-		if(!m_pClient->m_Snap.m_pLocalCharacter || (m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
-		{
-		}
-		else
+		if(m_pClient->m_Snap.m_pLocalCharacter && (pInfo.m_Local || (flags&PLAYERFLAG_ANTIPING)) && !(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
 		{
 			// apply predicted results
-			m_pClient->m_PredictedChar.Write(&Player);
-			m_pClient->m_PredictedPrevChar.Write(&Prev);
+			m_pClient->m_aClients[pInfo.m_ClientID].m_Predicted.Write(&Player);
+			m_pClient->m_aClients[pInfo.m_ClientID].m_PrevPredicted.Write(&Prev);
 			IntraTick = Client()->PredIntraGameTick();
 			NewTick = m_pClient->m_NewPredictedTick;
 		}
@@ -684,6 +693,7 @@ void CPlayers::RenderPlayer(
 	}
 }
 
+// H-Client: TDTW: Anti-Ping
 void CPlayers::OnRender()
 {
 	// update RenderInfo for ninja
@@ -734,20 +744,46 @@ void CPlayers::OnRender()
 				CNetObj_Character CurChar = m_pClient->m_Snap.m_aCharacters[i].m_Cur;
 
 				if(p<2)
+				{
 					RenderHook(
 							&PrevChar,
 							&CurChar,
 							(const CNetObj_PlayerInfo *)pPrevInfo,
 							(const CNetObj_PlayerInfo *)pInfo
 						);
+				}
 				else
-					RenderPlayer(
-							&PrevChar,
-							&CurChar,
-							(const CNetObj_PlayerInfo *)pPrevInfo,
-							(const CNetObj_PlayerInfo *)pInfo
-						);
+				{
+					if (Local)
+					{
+						RenderPlayer(
+								&PrevChar,
+								&CurChar,
+								(const CNetObj_PlayerInfo *)pPrevInfo,
+								(const CNetObj_PlayerInfo *)pInfo
+							);
+					}
+					else
+					{
+						if (g_Config.m_AntiPing)
+							RenderPlayer(
+									&PrevChar,
+									&CurChar,
+									(const CNetObj_PlayerInfo *)pPrevInfo,
+									(const CNetObj_PlayerInfo *)pInfo,
+									PLAYERFLAG_ANTIPING
+								);
+						else
+							RenderPlayer(
+									&PrevChar,
+									&CurChar,
+									(const CNetObj_PlayerInfo *)pPrevInfo,
+									(const CNetObj_PlayerInfo *)pInfo
+								);
+					}
+				}
 			}
 		}
 	}
 }
+//

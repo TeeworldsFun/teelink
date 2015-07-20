@@ -22,6 +22,7 @@ void CItems::OnReset()
 	m_NumExtraProjectiles = 0;
 }
 
+// H-Client: TDTW: Anti-Ping
 void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 {
 	// get positions
@@ -61,8 +62,6 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 
 	RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[clamp(pCurrent->m_Type, 0, NUM_WEAPONS-1)].m_pSpriteProj);
 	vec2 Vel = Pos-PrevPos;
-	//vec2 pos = mix(vec2(prev->x, prev->y), vec2(current->x, current->y), Client()->IntraGameTick());
-
 
 	// add particle for this projectile
 	if(pCurrent->m_Type == WEAPON_GRENADE)
@@ -99,9 +98,60 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 
 	IGraphics::CQuadItem QuadItem(Pos.x, Pos.y, 32, 32);
 	Graphics()->QuadsDraw(&QuadItem, 1);
+
+	// Draw shadows of grenades
+	bool LocalPlayerInGame = m_pClient->m_aClients[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Team != -1;
+
+	if(g_Config.m_AntiPing && pCurrent->m_Type == WEAPON_GRENADE && LocalPlayerInGame && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
+	{
+		// Calculate average prediction offset, because client_predtick() gets varial values :(((
+		// Must be there is a normal way to realize it, but I'm too lazy to find it. ^)
+		if (m_pClient->m_Average_Prediction_Offset == -1)
+		{
+			int Offset = Client()->PredGameTick() - Client()->GameTick();
+			m_pClient->m_Prediction_Offset_Summ += Offset;
+			m_pClient->m_Prediction_Offset_Count++;
+
+			if (m_pClient->m_Prediction_Offset_Count >= 100)
+			{
+				m_pClient->m_Average_Prediction_Offset =
+					round((float)m_pClient->m_Prediction_Offset_Summ / m_pClient->m_Prediction_Offset_Count);
+			}
+		}
+
+		// Draw shadow only if grenade directed to local player
+		CNetObj_CharacterCore& CurChar = m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Cur;
+		CNetObj_CharacterCore& PrevChar = m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Prev;
+		vec2 ServerPos = mix(vec2(PrevChar.m_X, PrevChar.m_Y), vec2(CurChar.m_X, CurChar.m_Y), Client()->IntraGameTick());
+
+		float d1 = distance(Pos, ServerPos);
+		float d2 = distance(PrevPos, ServerPos);
+		if (d1 < 0) d1 *= -1;
+		if (d2 < 0) d2 *= -1;
+		bool GrenadeIsDirectedToLocalPlayer = d1 < d2;
+
+		if (m_pClient->m_Average_Prediction_Offset != -1 && GrenadeIsDirectedToLocalPlayer)
+		{
+			int PredictedTick = Client()->PrevGameTick() + m_pClient->m_Average_Prediction_Offset;
+			float PredictedCt = (PredictedTick - pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + Client()->GameTickTime();
+
+			if (PredictedCt >= 0)
+			{
+				int shadow_type = WEAPON_GUN; // Pistol bullet sprite is used for marker of shadow. TODO: use something custom.
+				RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[clamp(shadow_type, 0, NUM_WEAPONS-1)].m_pSpriteProj);
+
+				vec2 PredictedPos = CalcPos(StartPos, StartVel, Curvature, Speed, PredictedCt);
+
+				IGraphics::CQuadItem QuadItem(PredictedPos.x, PredictedPos.y, 32, 32);
+				Graphics()->QuadsDraw(&QuadItem, 1);
+			}
+		}
+	}
+
 	Graphics()->QuadsSetRotation(0);
 	Graphics()->QuadsEnd();
 }
+//
 
 void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCurrent)
 {
@@ -159,19 +209,16 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 
 void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent, const CNetObj_GameData *pPrevGameData, const CNetObj_GameData *pCurGameData)
 {
-	float Angle = 0.0f;
 	float Size = 42.0f;
 
 	Graphics()->BlendNormal();
-	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FLAGS].m_Id);
 	Graphics()->QuadsBegin();
 
 	if(pCurrent->m_Team == TEAM_RED)
-		RenderTools()->SelectSprite(SPRITE_FLAG_RED);
+		RenderTools()->SelectSprite(SPRITE_FLAG_RED01);
 	else
-		RenderTools()->SelectSprite(SPRITE_FLAG_BLUE);
-
-	Graphics()->QuadsSetRotation(Angle);
+		RenderTools()->SelectSprite(SPRITE_FLAG_BLUE01);
 
 	vec2 Pos = mix(vec2(pPrev->m_X, pPrev->m_Y), vec2(pCurrent->m_X, pCurrent->m_Y), Client()->IntraGameTick());
 
@@ -190,7 +237,68 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 			Pos = m_pClient->m_LocalCharacterPos;
 	}
 
-	IGraphics::CQuadItem QuadItem(Pos.x, Pos.y-Size*0.75f, Size, Size*2);
+
+	// H-Client
+	static int64 sAnimTime[] = { time_get(), time_get() };
+	static int sAnimState[] = { 2, 2 };
+	static const int sFlagAnim[][6] = {
+			{ SPRITE_FLAG_RED01, SPRITE_FLAG_RED02, SPRITE_FLAG_RED03, SPRITE_FLAG_RED04, SPRITE_FLAG_RED05, SPRITE_FLAG_RED06 },
+			{ SPRITE_FLAG_BLUE01, SPRITE_FLAG_BLUE02, SPRITE_FLAG_BLUE03, SPRITE_FLAG_BLUE04, SPRITE_FLAG_BLUE05, SPRITE_FLAG_BLUE06 }
+	};
+	float rot = 0.0f;
+	int inver = 1;
+	int sprite = -1;
+	CCharacterCore *pCharCore = 0x0;
+	if (pCurrent->m_Team == TEAM_RED && pPrevGameData->m_FlagCarrierRed != -1)
+		pCharCore = &m_pClient->m_aClients[pPrevGameData->m_FlagCarrierRed].m_Predicted;
+	else if (pCurrent->m_Team == TEAM_BLUE && pPrevGameData->m_FlagCarrierBlue != -1)
+		pCharCore = &m_pClient->m_aClients[pPrevGameData->m_FlagCarrierBlue].m_Predicted;
+
+	if (pCharCore)
+	{
+		// Position
+		if (pCharCore->m_Vel.x > 0)
+		{
+			inver = -1;
+			if (pCharCore->m_Input.m_TargetX > 0)
+				Pos.x -= 24.0f;
+		}
+		else if (pCharCore->m_Input.m_TargetX < 0)
+		{
+			Pos.x += 8.0f;
+			if (pCharCore->m_Input.m_TargetX < 0)
+				Pos.x += 16.0f;
+		}
+
+		// Rotation
+		rot = -pCharCore->m_Vel.x / 100.0f;
+
+		// Wind Effect
+		if (abs(pCharCore->m_Vel.x) <= 0.15f)
+			sprite = sFlagAnim[pCurrent->m_Team][0];
+		else if (abs(pCharCore->m_Vel.x) > 0.15f && abs(pCharCore->m_Vel.x) <= 2.0f)
+			sprite = sFlagAnim[pCurrent->m_Team][1];
+		else
+		{
+			float step = max((18.0f-absolute(pCharCore->m_Vel.x))/100.0f, 0.05f);
+			if (time_get()-sAnimTime[pCurrent->m_Team] > step*time_freq())
+			{
+				sAnimTime[pCurrent->m_Team] = time_get();
+				sAnimState[pCurrent->m_Team]++;
+				if (sAnimState[pCurrent->m_Team] > 5)
+					sAnimState[pCurrent->m_Team] = 2;
+			}
+			sprite = sFlagAnim[pCurrent->m_Team][sAnimState[pCurrent->m_Team]];
+		}
+	}
+	else
+		sprite = sFlagAnim[pCurrent->m_Team][0];
+	//
+
+
+	RenderTools()->SelectSprite(sprite);
+	IGraphics::CQuadItem QuadItem(Pos.x, Pos.y-Size*0.75f, Size*inver, Size*2);
+	Graphics()->QuadsSetRotation(rot);
 	Graphics()->QuadsDraw(&QuadItem, 1);
 	Graphics()->QuadsEnd();
 }

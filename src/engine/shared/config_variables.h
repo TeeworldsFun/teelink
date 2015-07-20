@@ -142,6 +142,8 @@ MACRO_CONFIG_INT(hcRaceGhost, hc_race_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAV
 MACRO_CONFIG_INT(hcRaceShowGhost, hc_race_show_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show ghost")
 MACRO_CONFIG_INT(hcRaceSaveGhost, hc_race_save_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Save ghost")
 
+MACRO_CONFIG_INT(AntiPing, anti_ping, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Anti-Ping")
+
 MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")
 MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")
 MACRO_CONFIG_INT(ddrPreventPrediction, ddr_prevent_prediction, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Prevent Predection When Freeze")
