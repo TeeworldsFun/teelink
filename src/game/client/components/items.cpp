@@ -264,11 +264,7 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 				Pos.x -= 24.0f;
 		}
 		else if (pCharCore->m_Input.m_TargetX < 0)
-		{
-			Pos.x += 8.0f;
-			if (pCharCore->m_Input.m_TargetX < 0)
-				Pos.x += 16.0f;
-		}
+			Pos.x += 24.0f;
 
 		// Rotation
 		rot = -pCharCore->m_Vel.x / 100.0f;
