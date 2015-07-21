@@ -383,9 +383,6 @@ container.sprites.Add(Sprite("pickup_armor", set_game, 12,2,2,2))
 container.sprites.Add(Sprite("pickup_weapon", set_game, 3,0,6,2))
 container.sprites.Add(Sprite("pickup_ninja", set_game, 2,10,8,2))
 
-container.sprites.Add(Sprite("flag_blue", set_game, 12,8,4,8))
-container.sprites.Add(Sprite("flag_red", set_game, 16,8,4,8))
-
 container.sprites.Add(Sprite("tee_body", set_tee, 0,0,3,3))
 container.sprites.Add(Sprite("tee_body_outline", set_tee, 3,0,3,3))
 container.sprites.Add(Sprite("tee_foot", set_tee, 6,1,2,1))

@@ -159,9 +159,9 @@ void CHud::RenderScoreHud()
 					{
 						// draw flag
 						Graphics()->BlendNormal();
-						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FLAGS].m_Id);
 						Graphics()->QuadsBegin();
-						RenderTools()->SelectSprite(t==0?SPRITE_FLAG_RED:SPRITE_FLAG_BLUE);
+						RenderTools()->SelectSprite(t==0?SPRITE_FLAG_RED03:SPRITE_FLAG_BLUE03);
 						IGraphics::CQuadItem QuadItem(Whole-ScoreWidthMax-ImageSize, 246.0f+t*20, ImageSize/2, ImageSize);
 						Graphics()->QuadsDrawTL(&QuadItem, 1);
 						Graphics()->QuadsEnd();

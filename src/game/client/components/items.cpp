@@ -209,17 +209,7 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 
 void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent, const CNetObj_GameData *pPrevGameData, const CNetObj_GameData *pCurGameData)
 {
-	float Size = 42.0f;
-
-	Graphics()->BlendNormal();
-	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FLAGS].m_Id);
-	Graphics()->QuadsBegin();
-
-	if(pCurrent->m_Team == TEAM_RED)
-		RenderTools()->SelectSprite(SPRITE_FLAG_RED01);
-	else
-		RenderTools()->SelectSprite(SPRITE_FLAG_BLUE01);
-
+	const float Size = 42.0f;
 	vec2 Pos = mix(vec2(pPrev->m_X, pPrev->m_Y), vec2(pCurrent->m_X, pCurrent->m_Y), Client()->IntraGameTick());
 
 	if(pCurGameData)
@@ -240,14 +230,14 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 
 	// H-Client
 	static int64 sAnimTime[] = { time_get(), time_get() };
-	static int sAnimState[] = { 2, 2 };
-	static const int sFlagAnim[][6] = {
+	static int sAnimIndex[] = { 2, 2 };
+	static const int sAnimIDs[][6] = {
 			{ SPRITE_FLAG_RED01, SPRITE_FLAG_RED02, SPRITE_FLAG_RED03, SPRITE_FLAG_RED04, SPRITE_FLAG_RED05, SPRITE_FLAG_RED06 },
 			{ SPRITE_FLAG_BLUE01, SPRITE_FLAG_BLUE02, SPRITE_FLAG_BLUE03, SPRITE_FLAG_BLUE04, SPRITE_FLAG_BLUE05, SPRITE_FLAG_BLUE06 }
 	};
-	float rot = 0.0f;
-	int inver = 1;
-	int sprite = -1;
+	float Rot = 0.0f;
+	int SpriteFlags = 0;
+	int SpriteID = -1;
 	CCharacterCore *pCharCore = 0x0;
 	if (pCurrent->m_Team == TEAM_RED && pPrevGameData->m_FlagCarrierRed != -1)
 		pCharCore = &m_pClient->m_aClients[pPrevGameData->m_FlagCarrierRed].m_Predicted;
@@ -259,7 +249,7 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 		// Position
 		if (pCharCore->m_Vel.x > 0)
 		{
-			inver = -1;
+			SpriteFlags = SPRITE_FLAG_FLIP_X;
 			if (pCharCore->m_Input.m_TargetX > 0)
 				Pos.x -= 24.0f;
 		}
@@ -267,35 +257,38 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 			Pos.x += 24.0f;
 
 		// Rotation
-		rot = -pCharCore->m_Vel.x / 100.0f;
+		Rot = -pCharCore->m_Vel.x / 100.0f;
 
 		// Wind Effect
 		if (abs(pCharCore->m_Vel.x) <= 0.15f)
-			sprite = sFlagAnim[pCurrent->m_Team][0];
+			SpriteID = sAnimIDs[pCurrent->m_Team][0];
 		else if (abs(pCharCore->m_Vel.x) > 0.15f && abs(pCharCore->m_Vel.x) <= 2.0f)
-			sprite = sFlagAnim[pCurrent->m_Team][1];
+			SpriteID = sAnimIDs[pCurrent->m_Team][1];
 		else
 		{
 			float step = max((18.0f-absolute(pCharCore->m_Vel.x))/100.0f, 0.05f);
 			if (time_get()-sAnimTime[pCurrent->m_Team] > step*time_freq())
 			{
 				sAnimTime[pCurrent->m_Team] = time_get();
-				sAnimState[pCurrent->m_Team]++;
-				if (sAnimState[pCurrent->m_Team] > 5)
-					sAnimState[pCurrent->m_Team] = 2;
+				sAnimIndex[pCurrent->m_Team]++;
+				if (sAnimIndex[pCurrent->m_Team] > 5)
+					sAnimIndex[pCurrent->m_Team] = 2;
 			}
-			sprite = sFlagAnim[pCurrent->m_Team][sAnimState[pCurrent->m_Team]];
+			SpriteID = sAnimIDs[pCurrent->m_Team][sAnimIndex[pCurrent->m_Team]];
 		}
 	}
 	else
-		sprite = sFlagAnim[pCurrent->m_Team][0];
+		SpriteID = sAnimIDs[pCurrent->m_Team][0];
 	//
 
 
-	RenderTools()->SelectSprite(sprite);
-	IGraphics::CQuadItem QuadItem(Pos.x, Pos.y-Size*0.75f, Size*inver, Size*2);
-	Graphics()->QuadsSetRotation(rot);
-	Graphics()->QuadsDraw(&QuadItem, 1);
+	Graphics()->BlendNormal();
+	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FLAGS].m_Id);
+	Graphics()->QuadsBegin();
+		RenderTools()->SelectSprite(SpriteID, SpriteFlags);
+		IGraphics::CQuadItem QuadItem(Pos.x, Pos.y-Size*0.75f, Size, Size*2);
+		Graphics()->QuadsSetRotation(Rot);
+		Graphics()->QuadsDraw(&QuadItem, 1);
 	Graphics()->QuadsEnd();
 }
 

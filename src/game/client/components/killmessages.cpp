@@ -103,18 +103,18 @@ void CKillMessages::OnRender()
 		// render victim tee
 		x -= 24.0f;
 
-		if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS)
+		if(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS))
 		{
 			if(m_aKillmsgs[r].m_ModeSpecial&1)
 			{
 				Graphics()->BlendNormal();
-				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FLAGS].m_Id);
 				Graphics()->QuadsBegin();
 
 				if(m_aKillmsgs[r].m_VictimTeam == TEAM_RED)
-					RenderTools()->SelectSprite(SPRITE_FLAG_BLUE);
+					RenderTools()->SelectSprite(SPRITE_FLAG_BLUE03);
 				else
-					RenderTools()->SelectSprite(SPRITE_FLAG_RED);
+					RenderTools()->SelectSprite(SPRITE_FLAG_RED03);
 
 				float Size = 56.0f;
 				IGraphics::CQuadItem QuadItem(x, y-16, Size/2, Size);
@@ -160,18 +160,18 @@ void CKillMessages::OnRender()
 
 		if(m_aKillmsgs[r].m_VictimID != m_aKillmsgs[r].m_KillerID)
 		{
-			if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS)
+			if(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS))
 			{
 				if(m_aKillmsgs[r].m_ModeSpecial&2)
 				{
 					Graphics()->BlendNormal();
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FLAGS].m_Id);
 					Graphics()->QuadsBegin();
 
 					if(m_aKillmsgs[r].m_KillerTeam == TEAM_RED)
-						RenderTools()->SelectSprite(SPRITE_FLAG_BLUE, SPRITE_FLAG_FLIP_X);
+						RenderTools()->SelectSprite(SPRITE_FLAG_BLUE03, SPRITE_FLAG_FLIP_X);
 					else
-						RenderTools()->SelectSprite(SPRITE_FLAG_RED, SPRITE_FLAG_FLIP_X);
+						RenderTools()->SelectSprite(SPRITE_FLAG_RED03, SPRITE_FLAG_FLIP_X);
 
 					float Size = 56.0f;
 					IGraphics::CQuadItem QuadItem(x-56, y-16, Size/2, Size);

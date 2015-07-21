@@ -2400,7 +2400,7 @@ extern "C" int SDL_main(int argc, char **argv_) // ignore_convention
 {
 	const char **argv = const_cast<const char **>(argv_);
 #else
-int main(int argc, const char **argv) // ignore_convention
+int main(int argc, const char **argv) // ignore_conventi on
 {
 #endif
 #if defined(CONF_FAMILY_WINDOWS)
