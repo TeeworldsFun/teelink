@@ -30,7 +30,8 @@ public:
 
 	void sort_range()
 	{
-		sort(all());
+		if (parent::num_elements > 1)
+			sort(all());
 	}
 
 
