@@ -179,7 +179,7 @@ int CSkins::Find(const char *pName, bool tryDownload)
 			return i;
 	}
 
-    if (g_Config.m_hcAutoDownloadSkins && tryDownload) // H-Client
+    if (g_Config.m_hcAutoDownloadSkins && Client()->State() != IClient::STATE_DEMOPLAYBACK && tryDownload) // H-Client
     {
     	unsigned currentDownloads = 0;
     	for (std::map<std::string, bool>::iterator it = m_DownloadedSkinsSet.begin(); it != m_DownloadedSkinsSet.end(); it++)

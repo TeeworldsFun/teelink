@@ -2207,6 +2207,9 @@ void CClient::Con_RemoveFavorite(IConsole::IResult *pResult, void *pUserData)
 
 const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType)
 {
+	if (!pFilename || pFilename[0] == 0)
+		return 0;
+
 	int Crc;
 	const char *pError;
 	Disconnect();
