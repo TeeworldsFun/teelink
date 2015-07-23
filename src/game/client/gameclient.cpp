@@ -692,7 +692,7 @@ void CGameClient::OnStateChange(int NewState, int OldState)
 		m_All.m_paComponents[i]->OnStateChange(NewState, OldState);
 
 	// H-Client
-	if (NewState != OldState)
+	if (NewState != OldState && OldState != IClient::STATE_DEMOPLAYBACK && NewState != IClient::STATE_DEMOPLAYBACK)
 	{
 		if (NewState == IClient::STATE_ONLINE)
 			m_ConnectedTime = time_get();
