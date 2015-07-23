@@ -1,5 +1,10 @@
+.project
+.cproject
+.pydevproject
+
 *.save
 *.upd
+.*~
 bam
 .bam
 config.lua
