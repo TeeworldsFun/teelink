@@ -30,6 +30,7 @@
 
 #include <list> // H-Client
 #include <cstdio> // H-Client
+#include <ctime> // H-Client
 
 CMenusKeyBinder CMenus::m_Binder;
 
