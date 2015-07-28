@@ -26,6 +26,9 @@ protected:
 	float m_RenderFrameTime;
 
 	int m_GameTickSpeed;
+
+	bool m_VideoEncode;
+	IOHANDLE m_VideoFile;
 public:
 
 	class CSnapItem
@@ -142,6 +145,9 @@ public:
 	virtual bool IsServerType(const char *pServer) = 0;
 	virtual const char* GetCurrentServerAddress() const = 0;
 	virtual int GetCurrentMapCrc() = 0; // Ghost
+	virtual void StartVideoEncode() = 0;
+	virtual void EndVideoEncode() = 0;
+	virtual void AddFrameVideoEncode() = 0;
 	//
 };
 

@@ -238,35 +238,48 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 	float Rot = 0.0f;
 	int SpriteFlags = 0;
 	int SpriteID = -1;
-	CCharacterCore *pCharCore = 0x0;
+	CNetObj_Character *pPrevPlayer = 0x0;
+	CNetObj_Character *pPlayer = 0x0;
 	if (pCurrent->m_Team == TEAM_RED && pPrevGameData->m_FlagCarrierRed != -1)
-		pCharCore = &m_pClient->m_aClients[pPrevGameData->m_FlagCarrierRed].m_Predicted;
-	else if (pCurrent->m_Team == TEAM_BLUE && pPrevGameData->m_FlagCarrierBlue != -1)
-		pCharCore = &m_pClient->m_aClients[pPrevGameData->m_FlagCarrierBlue].m_Predicted;
-
-	if (pCharCore)
 	{
+		pPrevPlayer = &m_pClient->m_Snap.m_aCharacters[pPrevGameData->m_FlagCarrierRed].m_Prev;
+		pPlayer = &m_pClient->m_Snap.m_aCharacters[pPrevGameData->m_FlagCarrierRed].m_Cur;
+	}
+	else if (pCurrent->m_Team == TEAM_BLUE && pPrevGameData->m_FlagCarrierBlue != -1)
+	{
+		pPrevPlayer = &m_pClient->m_Snap.m_aCharacters[pPrevGameData->m_FlagCarrierBlue].m_Prev;
+		pPlayer = &m_pClient->m_Snap.m_aCharacters[pPrevGameData->m_FlagCarrierBlue].m_Cur;
+	}
+
+	if (pPrevPlayer)
+	{
+		float IntraTick = Client()->IntraGameTick();
+		float Angle = mix((float)pPrevPlayer->m_Angle, (float)pPlayer->m_Angle, IntraTick)/256.0f;
+		vec2 Direction = GetDirection((int)(Angle*256.0f));
+		vec2 Vel = mix(vec2(pPrevPlayer->m_VelX/256.0f, pPrevPlayer->m_VelY/256.0f), vec2(pPlayer->m_VelX/256.0f, pPlayer->m_VelY/256.0f), IntraTick);
+
+
 		// Position
-		if (pCharCore->m_Vel.x > 0)
+		if (Vel.x > 0)
 		{
 			SpriteFlags = SPRITE_FLAG_FLIP_X;
-			if (pCharCore->m_Input.m_TargetX > 0)
+			if (Direction.x > 0)
 				Pos.x -= 24.0f;
 		}
-		else if (pCharCore->m_Input.m_TargetX < 0)
+		else if (Direction.x < 0)
 			Pos.x += 24.0f;
 
 		// Rotation
-		Rot = -pCharCore->m_Vel.x / 100.0f;
+		Rot = -Vel.x / 100.0f;
 
 		// Wind Effect
-		if (abs(pCharCore->m_Vel.x) <= 0.15f)
+		if (abs(Vel.x) <= 0.15f)
 			SpriteID = sAnimIDs[pCurrent->m_Team][0];
-		else if (abs(pCharCore->m_Vel.x) > 0.15f && abs(pCharCore->m_Vel.x) <= 2.0f)
+		else if (abs(Vel.x) > 0.15f && abs(Vel.x) <= 2.0f)
 			SpriteID = sAnimIDs[pCurrent->m_Team][1];
 		else
 		{
-			float step = max((18.0f-absolute(pCharCore->m_Vel.x))/100.0f, 0.05f);
+			float step = max((18.0f-absolute(Vel.x))/100.0f, 0.05f);
 			if (time_get()-sAnimTime[pCurrent->m_Team] > step*time_freq())
 			{
 				sAnimTime[pCurrent->m_Team] = time_get();

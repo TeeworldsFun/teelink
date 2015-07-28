@@ -783,7 +783,7 @@ void CGraphics_OpenGL::ShowInfoKills(bool state)
 }
 
 
-// H-Client: .webm
+// H-Client: FFMPEG Encoder
 unsigned char* CGraphics_OpenGL::GetFrameBuffer()
 {
 	unsigned char *pPixelData = (unsigned char *)mem_alloc(m_ScreenWidth*(m_ScreenHeight+1)*3, 1);

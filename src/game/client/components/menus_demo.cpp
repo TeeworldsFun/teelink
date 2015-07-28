@@ -154,6 +154,7 @@ void CMenus::RenderDemoPlayer(CUIRect MainView)
 		m_pClient->OnReset();
 		DemoPlayer()->Pause();
 		DemoPlayer()->SetPos(0);
+		Client()->EndVideoEncode();
 	}
 
 	bool IncreaseDemoSpeed = false, DecreaseDemoSpeed = false;
@@ -651,20 +652,21 @@ void CMenus::RenderDemoList(CUIRect MainView)
 	}
 
 	// H-Client: webm export
-	/*static int s_PlayRecordVideo = 0;
-	if(m_DemolistSelectedIndex >= 0 && !m_DemolistSelectedIsDir && DoButton_Menu(&s_PlayRecordVideo, Localize("Create .webm"), 0, &RecordVideoRect))
+	static int s_PlayRecordVideo = 0;
+	if(m_DemolistSelectedIndex >= 0 && !m_DemolistSelectedIsDir && DoButton_Menu(&s_PlayRecordVideo, Localize("Create .mp4"), 0, &RecordVideoRect))
 	{
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "%s/%s", m_aCurrentDemoFolder, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
-		const char *pError = Client()->DemoPlayer_Play(aBuf, m_lDemos[m_DemolistSelectedIndex].m_StorageType, true);
+		const char *pError = Client()->DemoPlayer_Play(aBuf, m_lDemos[m_DemolistSelectedIndex].m_StorageType);
 		if(pError)
 			PopupMessage(Localize("Error"), str_comp(pError, "error loading demo") ? pError : Localize("Error loading demo"), Localize("Ok"));
 		else
 		{
+			Client()->StartVideoEncode();
 			UI()->SetActiveItem(0);
 			return;
 		}
-	}*/
+	}
 	//
 
 	static int s_PlayButton = 0;

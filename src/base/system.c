@@ -368,6 +368,17 @@ int mem_check_imp()
 	return 1;
 }
 
+// H-Client
+IOHANDLE io_popen(const char *filename, const char *flags)
+{
+	return (IOHANDLE)popen(filename, flags);
+}
+void io_pclose(IOHANDLE io)
+{
+	pclose((FILE*)io);
+}
+//
+
 IOHANDLE io_open(const char *filename, int flags)
 {
 	if(flags == IOFLAG_READ)

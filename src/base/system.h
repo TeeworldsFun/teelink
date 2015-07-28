@@ -191,6 +191,10 @@ enum {
 
 typedef struct IOINTERNAL *IOHANDLE;
 
+
+IOHANDLE io_popen(const char *filename, const char *flags);
+void io_pclose(IOHANDLE file);
+
 /*
 	Function: io_open
 		Opens a file.

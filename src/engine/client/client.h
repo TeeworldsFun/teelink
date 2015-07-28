@@ -322,6 +322,9 @@ public:
 	virtual bool IsServerType(const char *pServer);
 	virtual const char* GetCurrentServerAddress() const { return m_aServerAddressStr; }
 	virtual int GetCurrentMapCrc();
+	virtual void StartVideoEncode();
+	virtual void EndVideoEncode();
+	virtual void AddFrameVideoEncode();
 	//
 };
 
