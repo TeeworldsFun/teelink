@@ -49,6 +49,22 @@ void CMenus::RenderDemoPlayer(CUIRect MainView)
 {
 	const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 
+	// H-Client
+	if (Client()->IsRecordVideo())
+	{
+		int CurrentTick = pInfo->m_CurrentTick - pInfo->m_FirstTick;
+		int TotalTicks = pInfo->m_LastTick - pInfo->m_FirstTick;
+
+		if(CurrentTick == TotalTicks)
+		{
+			Client()->EndRecordVideo();
+			Client()->Disconnect();
+			m_Popup = POPUP_RECORD_SUCCESS;
+		}
+		return;
+	}
+	//
+
 	const float SeekBarHeight = 15.0f;
 	const float ButtonbarHeight = 20.0f;
 	const float NameBarHeight = 20.0f;
@@ -154,7 +170,6 @@ void CMenus::RenderDemoPlayer(CUIRect MainView)
 		m_pClient->OnReset();
 		DemoPlayer()->Pause();
 		DemoPlayer()->SetPos(0);
-		Client()->EndVideoEncode();
 	}
 
 	bool IncreaseDemoSpeed = false, DecreaseDemoSpeed = false;
@@ -651,21 +666,16 @@ void CMenus::RenderDemoList(CUIRect MainView)
 		DemolistOnUpdate(false);
 	}
 
-	// H-Client: webm export
+	// H-Client
 	static int s_PlayRecordVideo = 0;
-	if(m_DemolistSelectedIndex >= 0 && !m_DemolistSelectedIsDir && DoButton_Menu(&s_PlayRecordVideo, Localize("Create .mp4"), 0, &RecordVideoRect))
+	if(m_DemolistSelectedIndex >= 0 && !m_DemolistSelectedIsDir && DoButton_Menu(&s_PlayRecordVideo, Localize("Record to File"), 0, &RecordVideoRect))
 	{
-		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "%s/%s", m_aCurrentDemoFolder, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
-		const char *pError = Client()->DemoPlayer_Play(aBuf, m_lDemos[m_DemolistSelectedIndex].m_StorageType);
-		if(pError)
-			PopupMessage(Localize("Error"), str_comp(pError, "error loading demo") ? pError : Localize("Error loading demo"), Localize("Ok"));
-		else
-		{
-			Client()->StartVideoEncode();
-			UI()->SetActiveItem(0);
-			return;
-		}
+		UI()->SetActiveItem(0);
+		str_copy(Client()->m_aRecordVideoFilename, "nameless.mp4", sizeof(Client()->m_aRecordVideoFilename));
+		str_format(Client()->m_aRecordVideoDimensions[0], sizeof(Client()->m_aRecordVideoDimensions[0]), "%d", Graphics()->ScreenWidth());
+		str_format(Client()->m_aRecordVideoDimensions[1], sizeof(Client()->m_aRecordVideoDimensions[1]), "%d", Graphics()->ScreenHeight());
+		Client()->m_RecordVideoMode = IClient::MODE_RECORD_NORMAL;
+		m_Popup = POPUP_RECORD_SETTINGS;
 	}
 	//
 

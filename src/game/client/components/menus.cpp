@@ -1137,6 +1137,26 @@ int CMenus::Render()
 
             ExtraAlign = -1;
         }
+        else if (m_Popup == POPUP_RECORD_SETTINGS)
+        {
+            pTitle = Localize("Record Settings");
+			pExtraText = "";
+			ExtraAlign = -1;
+        }
+        else if (m_Popup == POPUP_RECORD_SUCCESS)
+        {
+            pTitle = Localize("Record Demo");
+			pExtraText = "Demo recorded successfully :)";
+			pButtonText = Localize("Ok");
+			ExtraAlign = -1;
+        }
+        else if (m_Popup == POPUP_RECORD_STOP)
+        {
+            pTitle = Localize("Record Demo");
+			pExtraText = "Demo recorded stopped!";
+			pButtonText = Localize("Ok");
+			ExtraAlign = -1;
+        }
 
 		CUIRect Box, Part;
 		Box = Screen;
@@ -1312,6 +1332,79 @@ int CMenus::Render()
                 else
                     m_Popup = POPUP_NONE;
             }
+        }
+        else if (m_Popup == POPUP_RECORD_SETTINGS)
+        {
+			CUIRect Yes, No;
+			Box.HSplitBottom(20.f, &Box, &Part);
+			Box.HSplitBottom(24.f, &Box, &Part);
+
+			CUIRect ItemA, ItemB;
+			Box.HSplitTop(10.0f, 0, &Box);
+			Box.VMargin(20.f/UI()->Scale(), &Box);
+
+			Box.HSplitTop(25.0f, &ItemA, &Box);
+			UI()->DoLabel(&ItemA, Localize("Filename:"), 18.0f, -1);
+			Box.HSplitTop(20.0f, &ItemB, &Box);
+			static float OffsetVideoFilename = 0.0f;
+			DoEditBox(&Client()->m_aRecordVideoFilename, &ItemB, Client()->m_aRecordVideoFilename, sizeof(Client()->m_aRecordVideoFilename), 12.0f, &OffsetVideoFilename);
+
+			Box.HSplitTop(10.0f, 0x0, &Box);
+			Box.HSplitTop(25.0f, &ItemA, &Box);
+			UI()->DoLabel(&ItemA, Localize("Record Mode:"), 18.0f, -1);
+			Box.HSplitTop(20.0f, &ItemB, &Box);
+			ItemB.VSplitLeft(90.0f, &ItemA, &ItemB);
+			static int s_RecordVideoModeNormal = 0;
+			if(DoButton_CheckBox(&s_RecordVideoModeNormal, Localize("Normal"), Client()->m_RecordVideoMode == IClient::MODE_RECORD_NORMAL, &ItemA))
+				Client()->m_RecordVideoMode = IClient::MODE_RECORD_NORMAL;
+			ItemB.VSplitLeft(90.0f, &ItemA, &ItemB);
+			static int s_RecordVideoModeFast = 0;
+			if(DoButton_CheckBox(&s_RecordVideoModeFast, Localize("Fast"), Client()->m_RecordVideoMode == IClient::MODE_RECORD_FAST, &ItemA))
+				Client()->m_RecordVideoMode = IClient::MODE_RECORD_FAST;
+
+			Box.HSplitTop(10.0f, 0x0, &Box);
+			Box.HSplitTop(25.0f, &ItemA, &Box);
+			UI()->DoLabel(&ItemA, Localize("Video Size:"), 18.0f, -1);
+			Box.HSplitTop(20.0f, &ItemB, &Box);
+			ItemB.VSplitLeft(50.0f, &ItemA, &ItemB);
+			static float OffsetVideoDimW = 0.0f;
+			DoEditBox(&Client()->m_aRecordVideoDimensions[0], &ItemA, Client()->m_aRecordVideoDimensions[0], sizeof(Client()->m_aRecordVideoDimensions[0]), 12.0f, &OffsetVideoDimW);
+
+			ItemB.VSplitLeft(15.0f, &ItemA, &ItemB);
+			UI()->DoLabel(&ItemA, Localize("X"), 18.0f, -1);
+			ItemB.VSplitLeft(50.0f, &ItemA, &ItemB);
+			static float OffsetVideoDimH = 0.0f;
+			DoEditBox(&Client()->m_aRecordVideoDimensions[1], &ItemA, Client()->m_aRecordVideoDimensions[1], sizeof(Client()->m_aRecordVideoDimensions[1]), 12.0f, &OffsetVideoDimH);
+
+			// buttons
+			Part.VMargin(80.0f, &Part);
+			Part.VSplitMid(&No, &Yes);
+			Yes.VMargin(20.0f, &Yes);
+			No.VMargin(20.0f, &No);
+
+			static int s_ButtonCancel = 0;
+			if(DoButton_Menu(&s_ButtonCancel, Localize("Cancel"), 0, &No) || m_EscapePressed)
+				m_Popup = POPUP_NONE;
+
+			static int s_ButtonStart = 0;
+			if(DoButton_Menu(&s_ButtonStart, Localize("Start"), 0, &Yes) || m_EnterPressed)
+			{
+				char aBuf[512];
+				str_format(aBuf, sizeof(aBuf), "%s/%s", m_aCurrentDemoFolder, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
+				const char *pError = Client()->DemoPlayer_Play(aBuf, m_lDemos[m_DemolistSelectedIndex].m_StorageType);
+				if(pError)
+					PopupMessage(Localize("Error"), str_comp(pError, "error loading demo") ? pError : Localize("Error loading demo"), Localize("Ok"));
+				else
+				{
+					UI()->SetActiveItem(0);
+					Client()->StartRecordVideo();
+
+					if (Client()->m_RecordVideoMode == IClient::MODE_RECORD_FAST)
+						DemoPlayer()->SetSpeed(2.0f);
+
+					m_Popup = POPUP_NONE;
+				}
+			}
         }
 		else if(m_Popup == POPUP_PASSWORD)
 		{
@@ -1722,7 +1815,18 @@ bool CMenus::OnInput(IInput::CEvent e)
 		if(e.m_Key == KEY_ESCAPE)
 		{
 			m_EscapePressed = true;
-			SetActive(!IsActive());
+
+			// H-Client
+			if (Client()->State() == IClient::STATE_DEMOPLAYBACK && Client()->IsRecordVideo())
+			{
+				Client()->EndRecordVideo();
+				Client()->Disconnect();
+				m_Popup = POPUP_RECORD_STOP;
+			}
+			else
+				SetActive(!IsActive());
+			//
+
 			return true;
 		}
 	}

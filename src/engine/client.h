@@ -27,8 +27,8 @@ protected:
 
 	int m_GameTickSpeed;
 
-	bool m_VideoEncode;
-	IOHANDLE m_VideoFile;
+	bool m_RecordVideo;
+	IOHANDLE m_RecordVideoFile;
 public:
 
 	class CSnapItem
@@ -56,6 +56,11 @@ public:
 		STATE_ONLINE,
 		STATE_DEMOPLAYBACK,
 		STATE_QUITING,
+
+		// H-Client
+		MODE_RECORD_NORMAL=0,
+		MODE_RECORD_FAST,
+		//
 	};
 
 	//
@@ -145,9 +150,14 @@ public:
 	virtual bool IsServerType(const char *pServer) = 0;
 	virtual const char* GetCurrentServerAddress() const = 0;
 	virtual int GetCurrentMapCrc() = 0; // Ghost
-	virtual void StartVideoEncode() = 0;
-	virtual void EndVideoEncode() = 0;
-	virtual void AddFrameVideoEncode() = 0;
+	virtual void StartRecordVideo() = 0;
+	virtual void EndRecordVideo() = 0;
+	virtual void AddFrameToRecordVideo() = 0;
+	bool IsRecordVideo() { return m_RecordVideo; }
+
+	int m_RecordVideoMode;
+	char m_aRecordVideoFilename[128];
+	char m_aRecordVideoDimensions[2][5];
 	//
 };
 

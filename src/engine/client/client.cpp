@@ -259,7 +259,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_pConsole = 0;
 	m_pUpdater = 0x0; // H-Client
 	m_TimeoutCodeSent = false; // H-Client
-	m_VideoEncode = false; // H-Client
+	m_RecordVideo = false; // H-Client
 
 	m_RenderFrameTime = 0.0001f;
 	m_RenderFrameTimeLow = 1.0f;
@@ -2103,7 +2103,8 @@ void CClient::Run()
 		m_LocalTime = (time_get()-m_LocalStartTime)/(float)time_freq();
 
 		// H-Client
-		if (m_VideoEncode) AddFrameVideoEncode();
+		if (m_RecordVideo)
+			AddFrameToRecordVideo();
 		//
 	}
 
@@ -2534,34 +2535,38 @@ bool CClient::IsServerType(const char *pServer)
 	return str_find_nocase(m_CurrentServerInfo.m_aGameType, pServer);
 }
 
-void CClient::StartVideoEncode()
+void CClient::StartRecordVideo()
 {
 	char aBuf[1024];
-	snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip output.mp4", Graphics()->ScreenWidth(), Graphics()->ScreenHeight());
 
-	if (m_VideoEncode)
-		EndVideoEncode();
+	if (m_RecordVideoMode == MODE_RECORD_FAST)
+		snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf 'setpts=2.5*PTS,scale=%sx%s,vflip' %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
+	else
+		snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf 'scale=%sx%s,vflip' %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
 
-	m_VideoFile = io_popen(aBuf, "w");
-	m_VideoEncode = (m_VideoFile != 0x0);
+	if (m_RecordVideo)
+		EndRecordVideo();
+
+	m_RecordVideoFile = io_popen(aBuf, "w");
+	m_RecordVideo = (m_RecordVideoFile != 0x0);
 }
 
-void CClient::AddFrameVideoEncode()
+void CClient::AddFrameToRecordVideo()
 {
-	if (!m_VideoEncode)
+	if (!m_RecordVideo)
 		return;
 
 	int* buffer = new int[Graphics()->ScreenWidth()*Graphics()->ScreenHeight()];
 	Graphics()->Swap();
 	glReadPixels(0, 0, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	fwrite(buffer, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_VideoFile);
+	fwrite(buffer, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_RecordVideoFile);
 }
 
-void CClient::EndVideoEncode()
+void CClient::EndRecordVideo()
 {
-	if (!m_VideoEncode)
+	if (!m_RecordVideo)
 		return;
 
-	io_pclose(m_VideoFile);
-	m_VideoEncode = false;
+	io_pclose(m_RecordVideoFile);
+	m_RecordVideo = false;
 }
