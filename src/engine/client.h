@@ -177,6 +177,7 @@ public:
 	virtual void OnStateChange(int NewState, int OldState) = 0;
 	virtual void OnConnected() = 0;
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker) = 0;
+	virtual void OnMessageIrc(const char *pFrom, const char *pUser, const char *pText) = 0; // H-Client
 	virtual void OnPredict() = 0;
 	virtual void OnActivateEditor() = 0;
 

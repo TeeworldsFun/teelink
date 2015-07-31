@@ -1,7 +1,7 @@
 dependencies:
   pre:
     - |
-        sudo apt-get update; sudo apt-get build-dep teeworlds
+        sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get build-dep teeworlds
 
         if [ ! -x ~/bam/bam ]; then
           git clone https://github.com/matricks/bam ~/bam/
@@ -16,5 +16,5 @@ test:
   override:
     - |
         ../bam/bam release
-        mv "./teeworlds" $CIRCLE_ARTIFACTS"/."
-        mv "./teeworlds_srv" $CIRCLE_ARTIFACTS"/."
+        mv "./teeworlds" "$CIRCLE_ARTIFACTS/."
+        mv "./teeworlds_srv" "$CIRCLE_ARTIFACTS/."

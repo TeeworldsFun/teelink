@@ -106,6 +106,7 @@ class CMenus : public CComponent
 		PAGE_LAN,
 		PAGE_FAVORITES,
 		PAGE_HISTORY, // H-Client
+		PAGE_IRC, // H-Client
 		PAGE_DEMOS,
 		PAGE_SETTINGS,
 		PAGE_SYSTEM,
@@ -262,16 +263,19 @@ class CMenus : public CComponent
 	void RenderSettingsSound(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
 
-	void RenderSettingsHClient(CUIRect MainView); // H-Client
-	void RenderSettingsTheme(CUIRect MainView); // H-Client
-	void RenderStatistics(CUIRect MainView); // H-Client
-	void RenderLaser(vec2 From, vec2 Pos); // H-Client
-    void RenderGhost(CUIRect MainView); // H-Client: Ghost
-    static int GhostlistFetchCallback(const char *pName, int IsDir, int StorageType, void *pUser); // H-Client: Ghost
+	// H-Client
+	void RenderSettingsHClient(CUIRect MainView);
+	void RenderSettingsTheme(CUIRect MainView);
+	void RenderStatistics(CUIRect MainView);
+	void RenderIrc(CUIRect MainView);
+	void RenderLaser(vec2 From, vec2 Pos);
+    void RenderGhost(CUIRect MainView); // Ghost
+    static int GhostlistFetchCallback(const char *pName, int IsDir, int StorageType, void *pUser); // Ghost
+    static int DeleteMapPreviewCacheCallback(const char *pName, int IsDir, int StorageType, void *pUser);
+    //
 
 	void SetActive(bool Active);
 
-	static int DeleteMapPreviewCacheCallback(const char *pName, int IsDir, int StorageType, void *pUser); // H-Client
 public:
 	enum
 	{

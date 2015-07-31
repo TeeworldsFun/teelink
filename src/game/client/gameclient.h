@@ -45,9 +45,12 @@ class CGameClient : public IGameClient
 	class IServerBrowser *m_pServerBrowser;
 	class IEditor *m_pEditor;
 	class IFriends *m_pFriends;
-	class IGeoIP *m_pGeoIP; //H-Client
-    class ITexturePack *m_pTexturePack; //H-Client
-    class IUpdater *m_pUpdater; //H-Client
+	// H-Client
+	class IGeoIP *m_pGeoIP;
+    class ITexturePack *m_pTexturePack;
+    class IUpdater *m_pUpdater;
+    class IIrc *m_pIrc;
+    //
 
 	CLayers m_Layers;
 	class CCollision m_Collision;
@@ -86,9 +89,12 @@ public:
 	class CCollision *Collision() { return &m_Collision; };
 	class IEditor *Editor() { return m_pEditor; }
 	class IFriends *Friends() { return m_pFriends; }
-	class IGeoIP *GeoIP() const { return m_pGeoIP; } //H-Client
-	class ITexturePack *TexturePack() const { return m_pTexturePack; } //H-Client
-	class IUpdater *Updater() const { return m_pUpdater; } //H-Client
+	// H-Client
+	class IGeoIP *GeoIP() const { return m_pGeoIP; }
+	class ITexturePack *TexturePack() const { return m_pTexturePack; }
+	class IUpdater *Updater() const { return m_pUpdater; }
+	class IIrc *Irc() const { return m_pIrc; }
+	//
 
 	int NetobjNumCorrections() { return m_NetObjHandler.NumObjCorrections(); }
 	const char *NetobjCorrectedOn() { return m_NetObjHandler.CorrectedObjOn(); }
@@ -229,6 +235,7 @@ public:
 	virtual void OnConsoleInit();
 	virtual void OnStateChange(int NewState, int OldState);
 	virtual void OnMessage(int MsgId, CUnpacker *pUnpacker);
+	virtual void OnMessageIrc(const char *pFrom, const char *pUser, const char *pText); // H-Client
 	virtual void OnNewSnapshot();
 	virtual void OnPredict();
 	virtual void OnActivateEditor();

@@ -17,6 +17,7 @@
 #include <engine/textrender.h>
 #include <engine/shared/config.h>
 #include <engine/updater.h> // H-Client
+#include <engine/irc.h> //H-Client
 
 #include <game/version.h>
 #include <game/generated/protocol.h>
@@ -626,7 +627,7 @@ int CMenus::RenderMenubar(CUIRect r)
         Graphics()->TextureSet(gs_TextureBanner);
         Graphics()->QuadsBegin();
             //Graphics()->SetColor(0,0,0,1.0f);
-            IGraphics::CQuadItem QuadItem = IGraphics::CQuadItem(5, 320.0f, 110, 20);
+            IGraphics::CQuadItem QuadItem = IGraphics::CQuadItem(5, 280.0f, 110, 20);
             Graphics()->QuadsDrawTL(&QuadItem, 1);
         Graphics()->QuadsEnd();
 
@@ -694,6 +695,11 @@ int CMenus::RenderMenubar(CUIRect r)
 			g_Config.m_ClEditor = g_Config.m_ClEditor^1;
 			Input()->MouseModeRelative();
 		}
+
+		Box.HSplitTop(20.0f, &Button, &Box);
+		static int s_Irc=0;
+        if (DoButton_MenuTab(&s_Irc, Localize("Chat IRC"), m_ActivePage==PAGE_IRC, &Button, 0, -1, false))
+        	NewPage = PAGE_IRC;
 
         Box.HSplitTop(20.0f, 0, &Box);
         Box.HSplitTop(20.0f, &Button, &Box);
@@ -975,7 +981,7 @@ int CMenus::Render()
             // do tab bar
             Screen.VSplitLeft(115.0f, &TabBar, &MainView);
             //TabBar.VSplitRight(10.0f, &TabBar, 0x0);
-            TabBar.HSplitBottom(240.0f, 0x0, &TabBar);
+            TabBar.HSplitBottom(280.0f, 0x0, &TabBar);
         }
         else
         {
@@ -1018,6 +1024,8 @@ int CMenus::Render()
                 RenderSettings(MainView);
             else if (g_Config.m_UiPage == PAGE_DEMOS)
             	RenderDemoList(MainView);
+            else if (g_Config.m_UiPage == PAGE_IRC)
+            	RenderIrc(MainView);
 		}
 	}
 	else
@@ -2072,6 +2080,324 @@ float *CMenus::ButtonFade(const void *pID, float Seconds, int Checked)
 }
 
 //H-Client
+void CMenus::RenderIrc(CUIRect MainView)
+{
+    MainView.Margin(5.0f, &MainView);
+    RenderTools()->DrawUIRect(&MainView, vec4(0.2,0.4,0.4,0.5), CUI::CORNER_ALL, 10.0f);
+
+    CUIRect MainIrc, EntryBox, Button;
+    MainView.Margin(10.0f, &MainIrc);
+
+    /*if (m_GamePagePanel != PANEL_CHAT && UI()->MouseInside(&MainView) && Input()->KeyPressed(KEY_MOUSE_1))
+    {
+        m_GamePagePanel = PANEL_CHAT;
+    }*/
+
+    if (m_pClient->Irc()->GetState() == IIrc::STATE_DISCONNECTED)
+    {
+        EntryBox.x = MainIrc.x+(MainIrc.w/2.0f-300.0f/2.0f);
+        EntryBox.w = 300.0f;
+        EntryBox.y = MainIrc.y+(MainIrc.h/2.0f-55.0f/2.0f);
+        EntryBox.h = 55.0f;
+
+        RenderTools()->DrawUIRect(&EntryBox, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+        EntryBox.Margin(5.0f, &EntryBox);
+
+        EntryBox.HSplitTop(18.0f, &Button, &EntryBox);
+        CUIRect Label;
+        Button.VSplitLeft(40.0f, &Label, &Button);
+        UI()->DoLabelScaled(&Label, Localize("Nick:"), 14.0f, -1);
+        static float OffsetNick;
+        if (g_Config.m_IrcNick[0] == 0) {
+            str_copy(g_Config.m_IrcNick, g_Config.m_PlayerName, sizeof(g_Config.m_IrcNick));
+            str_irc_sanitize(g_Config.m_IrcNick);
+        } //TODO_ here?
+        DoEditBox(&g_Config.m_IrcNick, &Button, g_Config.m_IrcNick, sizeof(g_Config.m_IrcNick), 12.0f, &OffsetNick, false, CUI::CORNER_ALL);
+
+        EntryBox.HSplitTop(5.0f, 0x0, &EntryBox);
+        EntryBox.HSplitTop(20.0f, &Button, &EntryBox);
+        static float s_ButtonConnect = 0;
+        if (DoButton_Menu(&s_ButtonConnect, Localize("Connect"), 0, &Button))
+        {
+            m_pClient->Irc()->SetNick(g_Config.m_IrcNick);
+            thread_init(ThreadIrcConnection, m_pClient->Irc());
+        }
+    }
+    else if (m_pClient->Irc()->GetState() == IIrc::STATE_CONNECTING)
+    {
+        EntryBox.x = MainIrc.x+(MainIrc.w/2.0f-300.0f/2.0f);
+        EntryBox.w = 300.0f;
+        EntryBox.y = MainIrc.y+(MainIrc.h/2.0f-25.0f/2.0f);
+        EntryBox.h = 25.0f;
+
+        RenderTools()->DrawUIRect(&EntryBox, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+        EntryBox.Margin(5.0f, &EntryBox);
+        UI()->DoLabelScaled(&EntryBox, Localize("Connecting, please wait..."), 14.0f, -1);
+    }
+    else if (m_pClient->Irc()->GetState() == IIrc::STATE_CONNECTED)
+    {
+        CUIRect ButtonBox, InputBox;
+
+        //Channel List
+        MainIrc.HSplitTop(20.0f, &ButtonBox, &EntryBox);
+        ButtonBox.VSplitRight(80.0f, &ButtonBox, &Button);
+        static float s_ButtonDisc = 0;
+        if (DoButton_Menu(&s_ButtonDisc, Localize("Disconnect"), 0, &Button))
+            m_pClient->Irc()->EndConnection();
+
+        float LW = (ButtonBox.w-ButtonBox.x)/m_pClient->Irc()->GetNumComs();
+        static int s_ButsID[100];
+        for (int i=0; i<m_pClient->Irc()->GetNumComs(); i++)
+        {
+            CIrcCom *pCom = m_pClient->Irc()->GetCom(i);
+
+            if (pCom == m_pClient->Irc()->GetActiveCom())
+                ButtonBox.VSplitLeft(LW-25.0f, &Button, &ButtonBox);
+            else
+            {
+                ButtonBox.VSplitLeft(LW, &Button, &ButtonBox);
+                Button.VSplitRight(2.0f, &Button, 0x0);
+            }
+
+            if (pCom->m_UnreadMsg)
+            {
+                ms_ColorTabbarActive = vec4(0.0f,1.0f,0.0f,1.0f);
+                ms_ColorTabbarInactive = vec4(0.0f,1.0f,0.0f,1.0f);
+            }
+            else
+            {
+                if (pCom == m_pClient->Irc()->GetActiveCom())
+                {
+                    ms_ColorTabbarActive = vec4(0.35f,0.35f,0.35f,1.0f);
+                    ms_ColorTabbarInactive = vec4(0.35f,0.35f,0.35f,1.0f);
+                }
+                else
+                {
+                    ms_ColorTabbarActive = vec4(0.0f,0.0f,0.0f,1.0f);
+                    ms_ColorTabbarInactive = vec4(0.0f,0.0f,0.0f,1.0f);
+                }
+            }
+
+            if (pCom->GetType() == CIrcCom::TYPE_CHANNEL)
+            {
+                CComChan *pChan = static_cast<CComChan*>(pCom);
+                char aTab[255];
+                if (pCom->m_UnreadMsg)
+                    str_format(aTab, sizeof(aTab), "%s [%d]", pChan->m_Channel, pCom->m_NumUnreadMsg);
+                else
+                    str_copy(aTab, pChan->m_Channel, sizeof(aTab));
+
+                if (DoButton_MenuTab(&s_ButsID[i], aTab, 0, &Button, 0))
+                    m_pClient->Irc()->SetActiveCom(i);
+            }
+            else if (pCom->GetType() == CIrcCom::TYPE_QUERY)
+            {
+                CComQuery *pQuery = static_cast<CComQuery*>(pCom);
+                char aTab[255];
+                if (pCom->m_UnreadMsg)
+                    str_format(aTab, sizeof(aTab), "%s [%d]", pQuery->m_User, pCom->m_NumUnreadMsg);
+                else
+                    str_copy(aTab, pQuery->m_User, sizeof(aTab));
+
+                if (DoButton_MenuTab(&s_ButsID[i], aTab, 0, &Button, 0))
+                    m_pClient->Irc()->SetActiveCom(i);
+            }
+
+            if (pCom == m_pClient->Irc()->GetActiveCom())
+            {
+                ButtonBox.VSplitLeft(25.0f, &Button, &ButtonBox);
+                Button.VSplitRight(2.0f, &Button, 0x0);
+                static int sCloseButton=0;
+                if (DoButton_MenuTab(&sCloseButton, "X", 0, &Button, 0))
+                    m_pClient->Irc()->Part();
+            }
+        }
+
+        //Input Box
+        EntryBox.HSplitBottom(20.0f, &EntryBox, &InputBox);
+        InputBox.VSplitRight(50.0f, &InputBox, &Button);
+        Button.VSplitLeft(5.0f, 0x0, &Button);
+        static char EntryText[255];
+        static float Offset;
+        DoEditBox(&EntryText, &InputBox, EntryText, sizeof(EntryText), 12.0f, &Offset, false, CUI::CORNER_L);
+        static float s_ButtonSend = 0;
+        if (DoButton_Menu(&s_ButtonSend, Localize("Send"), 0, &Button) || (Input()->KeyPressed(KEY_RETURN) && g_Config.m_UiPage == PAGE_IRC))
+        {
+            if (EntryText[0] == '/')
+            {
+                std::string aCmdRaw = EntryText;
+                std::string aCmd = aCmdRaw;
+                size_t del;
+                del = aCmdRaw.find_first_of(" ");
+                if (del != std::string::npos)
+                    aCmd = aCmdRaw.substr(0, del);
+
+                if (aCmd.compare("/join") == 0 || aCmd.compare("/j") == 0)
+                {
+                    if (del <= 0)
+                        return;
+
+                    std::string aCmdChan = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                    m_pClient->Irc()->JoinTo(aCmdChan.c_str());
+                }
+                else if (aCmd.compare("/query") == 0 || aCmd.compare("/q") == 0)
+                {
+                    if (del <= 0)
+                        return;
+
+                    std::string aCmdUser = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                    m_pClient->Irc()->OpenQuery(aCmdUser.c_str());
+                }
+                else if (aCmd.compare("/topic") == 0 || aCmd.compare("/t") == 0)
+                {
+                    if (del <= 0)
+                        return;
+
+                    std::string aCmdTopic = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                    m_pClient->Irc()->SetTopic(aCmdTopic.c_str());
+                }
+                else if (aCmd.compare("/part") == 0 || aCmd.compare("/p") == 0)
+                {
+                    //std::string aCmdChan = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                    m_pClient->Irc()->Part();
+                }
+                else if (aCmd.compare("/nick") == 0)
+                {
+                    if (del <= 0)
+                        return;
+
+                    std::string aCmdNewNick = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                    m_pClient->Irc()->SetNick(aCmdNewNick.c_str());
+                }
+                else if (aCmd.compare("/op") == 0)
+                {
+                    if (del > 0)
+                    {
+                        std::string aCmdTo= aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                        m_pClient->Irc()->SetMode("+o", aCmdTo.c_str());
+                    }
+                    else
+                        m_pClient->Irc()->SetMode("+o", 0x0);
+                }
+                else if (aCmd.compare("/deop") == 0)
+                {
+                    if (del > 0)
+                    {
+                        std::string aCmdTo= aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                        m_pClient->Irc()->SetMode("-o", aCmdTo.c_str());
+                    }
+                    else
+                        m_pClient->Irc()->SetMode("-o", 0x0);
+                }
+                else if (aCmd.compare("/voz") == 0)
+                {
+                    if (del > 0)
+                    {
+                        std::string aCmdTo= aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                        m_pClient->Irc()->SetMode("+v", aCmdTo.c_str());
+                    }
+                    else
+                        m_pClient->Irc()->SetMode("+v", 0x0);
+                }
+                else if (aCmd.compare("/devoz") == 0)
+                {
+                    if (del > 0)
+                    {
+                        std::string aCmdTo= aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
+                        m_pClient->Irc()->SetMode("-v", aCmdTo.c_str());
+                    }
+                    else
+                        m_pClient->Irc()->SetMode("-v", 0x0);
+                }
+                else
+                    m_pClient->Irc()->SendRaw(EntryText);
+
+                EntryText[0]=0;
+                return;
+            }
+
+            m_pClient->Irc()->SendMsg(0x0, EntryText);
+            EntryText[0]=0;
+        }
+
+        //Channel/Query
+        CIrcCom *pCom = m_pClient->Irc()->GetActiveCom();
+        if (!pCom)
+            return;
+
+        if (pCom->GetType() == CIrcCom::TYPE_CHANNEL)
+        {
+            CComChan *pChan = static_cast<CComChan*>(pCom);
+
+            CUIRect Chat, UserList;
+            EntryBox.Margin(5.0f, &EntryBox);
+            EntryBox.VSplitRight(150.0f, &Chat, &UserList);
+
+            static int Selected = 0;
+            static int s_UsersList = 0;
+            static float s_UsersScrollValue = 0;
+            char aBuff[50];
+            str_format(aBuff, sizeof(aBuff), "Total: %d", pChan->m_Users.size());
+            UiDoListboxStart(&s_UsersList, &UserList, 18.0f, "Users", aBuff, pChan->m_Users.size(), 1, Selected, s_UsersScrollValue);
+
+            int o=0;
+            std::list<std::string>::iterator it = pChan->m_Users.begin();
+            while (it != pChan->m_Users.end())
+            {
+                CListboxItem Item = UiDoListboxNextItem(&(*it));
+
+                if(Item.m_Visible)
+                {
+                    UI()->DoLabelScaled(&Item.m_Rect, (*it).c_str(), 12.0f, -1);
+                    if (Selected == o)
+                    {
+                        if(UI()->DoButtonLogic(&Item, "", Selected, &Item.m_Rect))
+                        {
+                            std::list<std::string>::iterator it = pChan->m_Users.begin();
+                            std::advance(it, o);
+
+                            m_pClient->Irc()->OpenQuery((*it).c_str());
+                        }
+                    }
+                }
+
+                o++; it++;
+            }
+            Selected = UiDoListboxEnd(&s_UsersScrollValue, 0);
+
+            static int s_Chat = 0;
+            static float s_ChatScrollValue = 100.0f;
+            UiDoListboxStart(&s_Chat, &Chat, 12.0f, pChan->m_Topic.c_str(), "", pChan->m_Buffer.size(), 1, -1, s_ChatScrollValue);
+            for(size_t i = 0; i < pChan->m_Buffer.size(); i++)
+            {
+                CListboxItem Item = UiDoListboxNextItem(&pChan->m_Buffer[i]);
+
+                if(Item.m_Visible)
+                    UI()->DoLabelScaled(&Item.m_Rect, pChan->m_Buffer[i].c_str(), 8.0f, -1);
+            }
+            UiDoListboxEnd(&s_ChatScrollValue, 0);
+        }
+        else if (pCom->GetType() == CIrcCom::TYPE_QUERY)
+        {
+            CComQuery *pQuery = static_cast<CComQuery*>(pCom);
+            CUIRect Chat;
+            EntryBox.Margin(5.0f, &Chat);
+
+            static int s_Chat = 0;
+            static float s_ChatScrollValue = 100.0f;
+            UiDoListboxStart(&s_Chat, &Chat, 12.0f, pQuery->m_User, "", pQuery->m_Buffer.size(), 1, -1, s_ChatScrollValue);
+            for(size_t i = 0; i < pQuery->m_Buffer.size(); i++)
+            {
+                CListboxItem Item = UiDoListboxNextItem(&pQuery->m_Buffer[i]);
+
+                if(Item.m_Visible)
+                    UI()->DoLabelScaled(&Item.m_Rect, pQuery->m_Buffer[i].c_str(), 8.0f, -1);
+            }
+            UiDoListboxEnd(&s_ChatScrollValue, 0);
+        }
+    }
+}
+
 int CMenus::DeleteMapPreviewCacheCallback(const char *pName, int IsDir, int StorageType, void *pUser)
 {
 	CMenus *pSelf = (CMenus *)pUser;

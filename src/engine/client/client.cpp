@@ -24,6 +24,7 @@
 #include <engine/storage.h>
 #include <engine/textrender.h>
 #include <engine/stats.h> // H-Client
+#include <engine/irc.h> //H-Client
 
 #include <engine/shared/config.h>
 #include <engine/shared/compression.h>
@@ -39,6 +40,7 @@
 
 #include <engine/client/updater.h> // H-Client
 #include <engine/client/stats.h> // H-Client
+#include <engine/client/irc.h> // H-Client
 
 #include <game/version.h>
 
@@ -1805,6 +1807,7 @@ void CClient::RegisterInterfaces()
 	Kernel()->RegisterInterface(static_cast<IGeoIP*>(&m_GeoIP)); //H-Client
 	Kernel()->RegisterInterface(static_cast<ITexturePack*>(&m_TexturePack)); //H-Client
 	Kernel()->RegisterInterface(static_cast<IUpdater*>(&m_Updater)); //H-Client
+	Kernel()->RegisterInterface(static_cast<IIrc*>(&m_Irc)); //H-Client
 }
 
 void CClient::InitInterfaces()
@@ -1825,6 +1828,7 @@ void CClient::InitInterfaces()
 	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>();
 	m_pUpdater = Kernel()->RequestInterface<IUpdater>();
 	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>();
+	m_pIrc = Kernel()->RequestInterface<IIrc>();
 	//
 
 	//
@@ -1868,6 +1872,8 @@ void CClient::Run()
 
 	// init sound, allowed to fail
 	m_SoundInitFailed = Sound()->Init() != 0;
+
+	m_pIrc->Init(); // H-Client
 
 	// open socket
 	{

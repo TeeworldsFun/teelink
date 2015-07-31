@@ -64,10 +64,13 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	IConsole *m_pConsole;
 	IStorage *m_pStorage;
 	IEngineMasterServer *m_pMasterServer;
-	IGeoIP *m_pGeoIP; //H-Client
-	ITexturePack *m_pTexturePack; //H-Client
-	IUpdater *m_pUpdater; //H-Client
-	IServerBrowser *m_pServerBrowser; // H-Client
+	// H-Client
+	IGeoIP *m_pGeoIP;
+	ITexturePack *m_pTexturePack;
+	IUpdater *m_pUpdater;
+	IServerBrowser *m_pServerBrowser;
+	IIrc *m_pIrc;
+	//
 
 	enum
 	{
@@ -84,6 +87,7 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	class CGeoIP m_GeoIP; //H-Client
 	class CTexturePack m_TexturePack; //H-Client
 	class CUpdater m_Updater; //H-Client
+	class CIrc m_Irc; // H-Client
 
 	bool m_TimeoutCodeSent; // H-Client
 
@@ -196,10 +200,13 @@ public:
 	IGameClient *GameClient() { return m_pGameClient; }
 	IEngineMasterServer *MasterServer() { return m_pMasterServer; }
 	IStorage *Storage() { return m_pStorage; }
-	IGeoIP *GeoIP() { return m_pGeoIP; } // H-Client
-	ITexturePack *TexturePack() { return m_pTexturePack; } // H-Client
-	IUpdater *Updater() { return m_pUpdater; } // H-Client
-	IServerBrowser *ServerBrowser() { return m_pServerBrowser; } // H-Client
+	// H-Client
+	IGeoIP *GeoIP() { return m_pGeoIP; }
+	ITexturePack *TexturePack() { return m_pTexturePack; }
+	IUpdater *Updater() { return m_pUpdater; }
+	IServerBrowser *ServerBrowser() { return m_pServerBrowser; }
+	IIrc *Irc() { return m_pIrc; }
+	//
 
 	CClient();
 

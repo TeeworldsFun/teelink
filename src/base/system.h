@@ -785,6 +785,8 @@ int str_length(const char *str);
 */
 void str_format(char *buffer, int buffer_size, const char *format, ...);
 
+void str_irc_sanitize(char *str_in); // H-Client
+
 /*
 	Function: str_sanitize_strong
 		Replaces all characters below 32 and above 127 with whitespace.

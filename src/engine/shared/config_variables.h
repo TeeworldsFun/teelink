@@ -151,11 +151,16 @@ MACRO_CONFIG_STR(ddrTimeoutHash, ddrace_timeout_hash, 16, "", CFGFLAG_SAVE|CFGFL
 
 MACRO_CONFIG_INT(UiSubPage, ui_subpage, 13, 0, 13, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Interface Subpage") //H-Client
 
-// Editor Vars
+// Editor
 MACRO_CONFIG_INT(hcEditorDrawRouteAccuracy, hc_editor_draw_route_accuracy, 5, 0, 100, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Editor Draw Route Accuracy")
 
-// Theme Vars
+// Theme
 MACRO_CONFIG_STR(hcTheme, theme, 25, "default", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+// Irc
+MACRO_CONFIG_STR(IrcNick, irc_nick, 15, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Nick")
+MACRO_CONFIG_STR(IrcServer, irc_server, 124, "port80c.se.quakenet.org", CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Server")
+MACRO_CONFIG_INT(IrcPort, irc_port, 6667, 1111, 9999, CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Port")
 
 MACRO_CONFIG_STR(hcListHeaderBackgroundColor, list_header_background_color, 9, "FFFFFF44", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
 MACRO_CONFIG_STR(hcListHeaderTextColor, list_header_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")

@@ -1748,6 +1748,20 @@ void str_format(char *buffer, int buffer_size, const char *format, ...)
 }
 
 
+// H-Client
+/* makes sure that the string only contains the characters between 65-95 & 97-122 */
+void str_irc_sanitize(char *str_in)
+{
+	unsigned char *str = (unsigned char *)str_in;
+	while(*str)
+	{
+	    if (*str == 32) { *str = 95; }
+	    if (!(*str >= 65 && *str <= 95) && !(*str >= 97 && *str <= 122)) { *str = 95; }
+
+		str++;
+	}
+}
+//
 
 /* makes sure that the string only contains the characters between 32 and 127 */
 void str_sanitize_strong(char *str_in)

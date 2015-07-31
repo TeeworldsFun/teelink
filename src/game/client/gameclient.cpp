@@ -18,6 +18,7 @@
 #include <engine/texturepack.h> //H-Client
 #include <engine/updater.h> //H-Client
 #include <engine/client/stats.h> // H-Client
+#include <engine/irc.h> //H-Client
 #include <game/generated/protocol.h>
 #include <game/generated/client_data.h>
 
@@ -114,9 +115,12 @@ void CGameClient::OnConsoleInit()
 	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>();
 	m_pEditor = Kernel()->RequestInterface<IEditor>();
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
-	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>(); //H-Client
-	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>(); //H-Client
-	m_pUpdater = Kernel()->RequestInterface<IUpdater>(); //H-Client
+	// H-Client
+	m_pGeoIP = Kernel()->RequestInterface<IGeoIP>();
+	m_pTexturePack = Kernel()->RequestInterface<ITexturePack>();
+	m_pUpdater = Kernel()->RequestInterface<IUpdater>();
+	m_pIrc = Kernel()->RequestInterface<IIrc>();
+	//
 
 	// setup pointers
 	m_pBinds = &::gs_Binds;
@@ -552,6 +556,15 @@ void CGameClient::OnRelease()
 	for(int i = 0; i < m_All.m_Num; i++)
 		m_All.m_paComponents[i]->OnRelease();
 }
+
+// H-Client
+void CGameClient::OnMessageIrc(const char *pFrom, const char *pUser, const char *pText)
+{
+    // TODO: this should be done smarter
+	for(int i = 0; i < m_All.m_Num; i++)
+		m_All.m_paComponents[i]->OnMessageIrc(pFrom, pUser, pText);
+}
+//
 
 void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 {
