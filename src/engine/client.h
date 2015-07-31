@@ -150,9 +150,9 @@ public:
 	virtual bool IsServerType(const char *pServer) = 0;
 	virtual const char* GetCurrentServerAddress() const = 0;
 	virtual int GetCurrentMapCrc() = 0; // Ghost
-	virtual void StartRecordVideo() = 0;
-	virtual void EndRecordVideo() = 0;
-	virtual void AddFrameToRecordVideo() = 0;
+	virtual bool StartRecordVideo() = 0;
+	virtual bool EndRecordVideo() = 0;
+	virtual bool AddFrameToRecordVideo() = 0;
 	bool IsRecordVideo() { return m_RecordVideo; }
 
 	int m_RecordVideoMode;

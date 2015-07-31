@@ -1143,20 +1143,6 @@ int CMenus::Render()
 			pExtraText = "";
 			ExtraAlign = -1;
         }
-        else if (m_Popup == POPUP_RECORD_SUCCESS)
-        {
-            pTitle = Localize("Record Demo");
-			pExtraText = "Demo recorded successfully :)";
-			pButtonText = Localize("Ok");
-			ExtraAlign = -1;
-        }
-        else if (m_Popup == POPUP_RECORD_STOP)
-        {
-            pTitle = Localize("Record Demo");
-			pExtraText = "Demo recorded stopped!";
-			pButtonText = Localize("Ok");
-			ExtraAlign = -1;
-        }
 
 		CUIRect Box, Part;
 		Box = Screen;
@@ -1397,12 +1383,19 @@ int CMenus::Render()
 				else
 				{
 					UI()->SetActiveItem(0);
-					Client()->StartRecordVideo();
 
-					if (Client()->m_RecordVideoMode == IClient::MODE_RECORD_FAST)
-						DemoPlayer()->SetSpeed(2.0f);
+					if (Client()->StartRecordVideo())
+					{
+						if (Client()->m_RecordVideoMode == IClient::MODE_RECORD_FAST)
+							DemoPlayer()->SetSpeed(2.0f);
 
-					m_Popup = POPUP_NONE;
+						m_Popup = POPUP_NONE;
+					}
+					else
+					{
+						PopupMessage("Record Error", "Can't found ffmpeg program. Please, download it for record videos.", Localize("Ok"));
+						Client()->Disconnect();
+					}
 				}
 			}
         }
@@ -1821,7 +1814,7 @@ bool CMenus::OnInput(IInput::CEvent e)
 			{
 				Client()->EndRecordVideo();
 				Client()->Disconnect();
-				m_Popup = POPUP_RECORD_STOP;
+				PopupMessage("Record Demo", "Demo recorded stopped!", Localize("Ok"));
 			}
 			else
 				SetActive(!IsActive());

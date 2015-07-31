@@ -2535,7 +2535,7 @@ bool CClient::IsServerType(const char *pServer)
 	return str_find_nocase(m_CurrentServerInfo.m_aGameType, pServer);
 }
 
-void CClient::StartRecordVideo()
+bool CClient::StartRecordVideo()
 {
 	char aBuf[1024];
 
@@ -2549,24 +2549,30 @@ void CClient::StartRecordVideo()
 
 	m_RecordVideoFile = io_popen(aBuf, "w");
 	m_RecordVideo = (m_RecordVideoFile != 0x0);
+
+	return m_RecordVideo;
 }
 
-void CClient::AddFrameToRecordVideo()
+bool CClient::AddFrameToRecordVideo()
 {
-	if (!m_RecordVideo)
-		return;
+	if (!m_RecordVideo || !m_RecordVideoFile)
+		return false;
 
 	int* buffer = new int[Graphics()->ScreenWidth()*Graphics()->ScreenHeight()];
 	Graphics()->Swap();
 	glReadPixels(0, 0, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	fwrite(buffer, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_RecordVideoFile);
+
+	return true;
 }
 
-void CClient::EndRecordVideo()
+bool CClient::EndRecordVideo()
 {
-	if (!m_RecordVideo)
-		return;
+	if (!m_RecordVideo || !m_RecordVideoFile)
+		return false;
 
 	io_pclose(m_RecordVideoFile);
 	m_RecordVideo = false;
+
+	return true;
 }

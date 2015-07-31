@@ -59,7 +59,7 @@ void CMenus::RenderDemoPlayer(CUIRect MainView)
 		{
 			Client()->EndRecordVideo();
 			Client()->Disconnect();
-			m_Popup = POPUP_RECORD_SUCCESS;
+			PopupMessage("Record Demo", "Demo recorded successfully :)", Localize("Ok"));
 		}
 		return;
 	}
