@@ -2569,6 +2569,7 @@ bool CClient::AddFrameToRecordVideo()
 	glReadPixels(0, 0, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	fwrite(buffer, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_RecordVideoFile);
 
+	delete [] buffer;
 	return true;
 }
 
