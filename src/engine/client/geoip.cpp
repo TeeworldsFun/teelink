@@ -1,3 +1,5 @@
+/* (c) unsigned char*. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at https://github.com/CytraL/HClient */
 #include <base/math.h>
 #include <base/system.h>
 #include <game/version.h>

@@ -2367,7 +2367,7 @@ void CMenus::RenderIrc(CUIRect MainView)
 
             static int s_Chat = 0;
             static float s_ChatScrollValue = 100.0f;
-            UiDoListboxStart(&s_Chat, &Chat, 12.0f, pChan->m_Topic.c_str(), "", pChan->m_Buffer.size(), 1, -1, s_ChatScrollValue);
+            UiDoListboxStart(&s_Chat, &Chat, 12.0f, pChan->m_Topic.c_str()[0]?pChan->m_Topic.c_str():"-TOPIC UNDEFINED-", "", pChan->m_Buffer.size(), 1, -1, s_ChatScrollValue);
             for(size_t i = 0; i < pChan->m_Buffer.size(); i++)
             {
                 CListboxItem Item = UiDoListboxNextItem(&pChan->m_Buffer[i]);

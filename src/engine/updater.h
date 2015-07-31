@@ -1,6 +1,5 @@
-/*
-    unsigned char*
-*/
+/* (c) unsigned char*. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at https://github.com/CytraL/HClient */
 #ifndef ENGINE_UPDATER_H
 #define ENGINE_UPDATER_H
 

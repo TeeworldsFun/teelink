@@ -1,3 +1,5 @@
+/* (c) unsigned char*. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at https://github.com/CytraL/HClient */
 #include <base/math.h>
 #include <base/system.h>
 #include <engine/storage.h>
@@ -7,40 +9,9 @@
 #include <game/client/components/menus.h>
 
 #if defined(CONF_FAMILY_UNIX)
-	#include <sys/time.h>
-	#include <unistd.h>
-
-	/* unix net includes */
-	#include <sys/stat.h>
-	#include <sys/types.h>
-	#include <sys/socket.h>
-	#include <sys/ioctl.h>
-	#include <errno.h>
-	#include <netdb.h>
-	#include <netinet/in.h>
-	#include <fcntl.h>
-	#include <pthread.h>
-	#include <arpa/inet.h>
-
-	#include <dirent.h>
-
-	#if defined(CONF_PLATFORM_MACOSX)
-		#include <Carbon/Carbon.h>
-	#endif
-
+    #include <unistd.h>
 #elif defined(CONF_FAMILY_WINDOWS)
-	#define WIN32_LEAN_AND_MEAN
-	#define _WIN32_WINNT 0x0501 /* required for mingw to get getaddrinfo to work */
-	#include <windows.h>
-	#include <winsock2.h>
-	#include <ws2tcpip.h>
-	#include <Shellapi.h>
-	#include <shlobj.h>
-	#include <fcntl.h>
-	#include <direct.h>
-	#include <errno.h>
-#else
-	#error NOT IMPLEMENTED
+    #include <windows.h>
 #endif
 
 #include <string.h>
@@ -131,6 +102,9 @@ CIrcCom* CIrc::GetCom(std::string name)
 
 void CIrc::StartConnection()
 {
+	NETADDR BindAddr;
+    mem_zero(&m_HostAddress, sizeof(m_HostAddress));
+    mem_zero(&BindAddr, sizeof(BindAddr));
     char aNetBuff[2048];
 
     m_State = STATE_CONNECTING;
@@ -141,19 +115,11 @@ void CIrc::StartConnection()
         m_State = STATE_DISCONNECTED;
         return;
 	}
+	m_HostAddress.port = g_Config.m_IrcPort;
+
     //Connect
-    int socketID = socket(AF_INET, SOCK_STREAM, 0);
-	if(socketID < 0)
-	{
-        dbg_msg("IRC","ERROR: Can't create socket.");
-        m_State = STATE_DISCONNECTED;
-		return;
-	}
-
-    m_Socket.type = NETTYPE_IPV4;
-    m_Socket.ipv4sock = socketID;
-    m_HostAddress.port = g_Config.m_IrcPort;
-
+    BindAddr.type = NETTYPE_IPV4;
+    m_Socket = net_tcp_create(BindAddr);
 	if(net_tcp_connect(m_Socket, &m_HostAddress) != 0)
 	{
 	    net_tcp_close(m_Socket);

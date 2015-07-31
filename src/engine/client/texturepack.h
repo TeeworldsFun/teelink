@@ -1,5 +1,5 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* (c) unsigned char*. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at https://github.com/CytraL/HClient */
 #ifndef ENGINE_CLIENT_TEXTUREPACK_H
 #define ENGINE_CLIENT_TEXTUREPACK_H
 
