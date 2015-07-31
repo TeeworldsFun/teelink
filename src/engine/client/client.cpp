@@ -2564,12 +2564,12 @@ bool CClient::AddFrameToRecordVideo()
 	if (!m_RecordVideo || !m_RecordVideoFile)
 		return false;
 
-	int* buffer = new int[Graphics()->ScreenWidth()*Graphics()->ScreenHeight()];
+	int *pBuffer = new int[Graphics()->ScreenWidth()*Graphics()->ScreenHeight()];
 	Graphics()->Swap();
-	glReadPixels(0, 0, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-	fwrite(buffer, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_RecordVideoFile);
+	glReadPixels(0, 0, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, pBuffer);
+	fwrite(pBuffer, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_RecordVideoFile);
 
-	delete [] buffer;
+	delete [] pBuffer;
 	return true;
 }
 
