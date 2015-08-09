@@ -1,6 +1,6 @@
 #include <NSString.h>
 #include <NSUserNotification.h>
-
+#include <Cocoa/Cocoa.h>
 #include "notification.h"
 
 void CNotification::notify(const char *pTitle, const char *pMsg)
@@ -14,4 +14,6 @@ void CNotification::notify(const char *pTitle, const char *pMsg)
 	notification.soundName = NSUserNotificationDefaultSoundName;
 
 	[[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+
+	[NSApp requestUserAttention:NSInformationalRequest]; // use NSCriticalRequest to annoy the user (doesn't stop bouncing)
 }
