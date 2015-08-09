@@ -4,6 +4,7 @@
 #include <base/detect.h>
 #include <base/math.h>
 #include <base/tl/threading.h>
+#include <osxlaunch/notification.h>
 
 #include "SDL.h"
 #include "SDL_opengl.h"
@@ -11,7 +12,6 @@
 
 #if defined(CONF_FAMILY_UNIX)
 	#ifdef CONF_PLATFORM_MACOSX
-		#include <Notification.h>
 	#endif
 #elif defined(CONF_FAMILY_WINDOWS)
 	#include <windows.h>
@@ -1021,16 +1021,16 @@ int CGraphics_SDL::WindowOpen()
 // H-Client (Vanilla issue #1305)
 void CGraphics_SDL::NotifyWindow(const char *pTitle, const char *pMsg)
 {
-	// get window handle
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-	if(!SDL_GetWMInfo(&info))
-	{
-		dbg_msg("gfx", "unable to obtain window handle");
-		return;
-	}
-
 	#if defined(CONF_FAMILY_WINDOWS)
+		// get window handle
+		SDL_SysWMinfo info;
+		SDL_VERSION(&info.version);
+		if(!SDL_GetWMInfo(&info))
+		{
+			dbg_msg("gfx", "unable to obtain window handle");
+			return;
+		}
+
 		FLASHWINFO desc;
 		desc.cbSize = sizeof(desc);
 		desc.hwnd = info.window;
@@ -1041,14 +1041,7 @@ void CGraphics_SDL::NotifyWindow(const char *pTitle, const char *pMsg)
 		FlashWindowEx(&desc);
 	#elif defined(CONF_FAMILY_UNIX)
     	#ifdef CONF_PLATFORM_MACOSX
-			NMRecPtr notifRequestData = new NMRecPtr;
-			notifRequestData->nmMark = 1; //Make the app icon bounce
-			notifRequestData->nmIcon = NULL;
-			notifRequestData->nmSound = NULL;
-			notifRequestData->nmStr = NULL;
-			notifRequestData->nmResp = NULL;
-
-			NMInstall( notifRequestData );
+			CNotification::notify(pTitle, pMsg);
 		#else
 			char aBuf[512]={0};
 			str_format(aBuf, sizeof(aBuf), "notify-send '%s' '%s'", pTitle, pMsg);

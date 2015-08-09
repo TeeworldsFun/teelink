@@ -121,7 +121,7 @@ void CCharacterCore::Tick(bool UseInput)
 			a = atanf((float)m_Input.m_TargetY/(float)m_Input.m_TargetX);
 
 		if(m_Input.m_TargetX < 0)
-			a = a+pi;
+			a = a+PI;
 
 		m_Angle = (int)(a*256.0f);
 

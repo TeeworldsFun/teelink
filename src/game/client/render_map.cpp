@@ -127,7 +127,7 @@ void CRenderTools::RenderQuads(CQuad *pQuads, int NumQuads, int RenderFlags, ENV
 			pfnEval(q->m_PosEnvOffset/1000.0f, q->m_PosEnv, aChannels, pUser);
 			OffsetX = aChannels[0];
 			OffsetY = aChannels[1];
-			Rot = aChannels[2]/360.0f*pi*2;
+			Rot = aChannels[2]/360.0f*PI*2;
 		}
 
 		IGraphics::CColorVertex Array[4] = {

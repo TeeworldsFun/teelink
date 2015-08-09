@@ -77,7 +77,7 @@ inline float GetAngle(vec2 Dir)
 		return 0.0f;
 	float a = atanf(Dir.y/Dir.x);
 	if(Dir.x < 0)
-		a = a+pi;
+		a = a+PI;
 	return a;
 }
 

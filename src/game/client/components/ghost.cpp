@@ -190,7 +190,7 @@ void CGhost::RenderGhost(CGhostCharacter Player, CGhostCharacter Prev, CNetObj_C
 	{
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 		Graphics()->QuadsBegin();
-		Graphics()->QuadsSetRotation(State.GetAttach()->m_Angle*pi*2+Angle);
+		Graphics()->QuadsSetRotation(State.GetAttach()->m_Angle*PI*2+Angle);
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.5f);
 
 		// normal weapons
@@ -202,7 +202,7 @@ void CGhost::RenderGhost(CGhostCharacter Player, CGhostCharacter Prev, CNetObj_C
 		// TODO: is this correct?
 		float a = (Client()->PredGameTick()-Player.m_AttackTick+IntraTick)/5.0f;
 		if(a < 1)
-			Recoil = sinf(a*pi);
+			Recoil = sinf(a*PI);
 
 		vec2 p = Position + Dir * g_pData->m_Weapons.m_aId[iw].m_Offsetx - Direction*Recoil*10.0f;
 		p.y += g_pData->m_Weapons.m_aId[iw].m_Offsety;
@@ -229,7 +229,7 @@ void CGhost::RenderGhostHook(CGhostCharacter Player, CGhostCharacter Prev)
 
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 	Graphics()->QuadsBegin();
-	Graphics()->QuadsSetRotation(GetAngle(Dir)+pi);
+	Graphics()->QuadsSetRotation(GetAngle(Dir)+PI);
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.5f);
 
 	// render head

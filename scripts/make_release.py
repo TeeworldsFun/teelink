@@ -59,7 +59,7 @@ shutil.rmtree(package_dir, True)
 os.mkdir(package_dir)
 
 print("adding files")
-shutil.copy("readme.txt", package_dir)
+#shutil.copy("readme.txt", package_dir)
 shutil.copy("license.txt", package_dir)
 shutil.copy("storage.cfg", package_dir)
 
@@ -83,7 +83,7 @@ if include_src:
 	shutil.copy("configure.lua", package_dir)
 
 if use_bundle:
-	bins = [name, name+'_srv', 'serverlaunch']
+        bins = [name+'_srv', 'serverlaunch'] # client is 32bit only
 	platforms = ('x86', 'x86_64', 'ppc')
 	for bin in bins:
 		to_lipo = []
@@ -107,6 +107,7 @@ if use_bundle:
 	os.mkdir(os.path.join(clientbundle_resource_dir, "data"))
 	copydir("data", clientbundle_resource_dir)
 	shutil.copy("other/icons/Teeworlds.icns", clientbundle_resource_dir)
+        os.system("cp "+name+"_x86"+exe_ext+" "+name+exe_ext)
 	shutil.copy(name+exe_ext, clientbundle_bin_dir)
 	os.system("cp -R /Library/Frameworks/SDL.framework " + clientbundle_framework_dir)
 	file(os.path.join(clientbundle_content_dir, "Info.plist"), "w").write("""
@@ -128,6 +129,8 @@ if use_bundle:
         <string>????</string>
         <key>CFBundleVersion</key>
         <string>%s</string>
+        <key>CFBundleIdentifier</key>
+        <string>org.HClient.app</string>
 </dict>
 </plist>
 	""" % (version))

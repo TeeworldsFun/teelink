@@ -1073,7 +1073,7 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		if(DoButton_Ex(&s_CcwButton, "CCW", Enabled, &Button, 0, "[R] Rotates the brush counter clockwise", CUI::CORNER_L) || Input()->KeyDown('r'))
 		{
 			for(int i = 0; i < m_Brush.m_lLayers.size(); i++)
-				m_Brush.m_lLayers[i]->BrushRotate(-s_RotationAmount/360.0f*pi*2);
+				m_Brush.m_lLayers[i]->BrushRotate(-s_RotationAmount/360.0f*PI*2);
 		}
 
 		TB_Top.VSplitLeft(30.0f, &Button, &TB_Top);
@@ -1081,7 +1081,7 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		if(DoButton_Ex(&s_CwButton, "CW", Enabled, &Button, 0, "[T] Rotates the brush clockwise", CUI::CORNER_R) || Input()->KeyDown('t'))
 		{
 			for(int i = 0; i < m_Brush.m_lLayers.size(); i++)
-				m_Brush.m_lLayers[i]->BrushRotate(s_RotationAmount/360.0f*pi*2);
+				m_Brush.m_lLayers[i]->BrushRotate(s_RotationAmount/360.0f*PI*2);
 		}
 	}
 
@@ -1652,7 +1652,7 @@ void CEditor::DoQuadEnvelopes(const array<CQuad> &lQuads, int Texture)
 			//Calc Env Position
 			float OffsetX = fx2f(apEnvelope[j]->m_lPoints[i].m_aValues[0]);
 			float OffsetY = fx2f(apEnvelope[j]->m_lPoints[i].m_aValues[1]);
-			float Rot = fx2f(apEnvelope[j]->m_lPoints[i].m_aValues[2])/360.0f*pi*2;
+			float Rot = fx2f(apEnvelope[j]->m_lPoints[i].m_aValues[2])/360.0f*PI*2;
 
 			//Set Colours
 			float Alpha = (m_SelectedQuadEnvelope == lQuads[j].m_PosEnv && m_SelectedEnvelopePoint == i) ? 0.65f : 0.35f;

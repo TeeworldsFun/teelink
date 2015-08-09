@@ -70,9 +70,9 @@ void CEmoticon::DrawCircle(float x, float y, float r, int Segments)
 	float FSegments = (float)Segments;
 	for(int i = 0; i < Segments; i+=2)
 	{
-		float a1 = i/FSegments * 2*pi;
-		float a2 = (i+1)/FSegments * 2*pi;
-		float a3 = (i+2)/FSegments * 2*pi;
+		float a1 = i/FSegments * 2*PI;
+		float a2 = (i+1)/FSegments * 2*PI;
+		float a3 = (i+2)/FSegments * 2*PI;
 		float Ca1 = cosf(a1);
 		float Ca2 = cosf(a2);
 		float Ca3 = cosf(a3);
@@ -123,19 +123,19 @@ void CEmoticon::OnRender()
 	if (length(m_SelectorMouse) > 170.0f)
 		m_SelectorMouse = normalize(m_SelectorMouse) * 170.0f;
 
-	float SelectedAngle = GetAngle(m_SelectorMouse) + 2*pi/24;
+	float SelectedAngle = GetAngle(m_SelectorMouse) + 2*PI/24;
 	if (SelectedAngle < 0)
-		SelectedAngle += 2*pi;
+		SelectedAngle += 2*PI;
 
     float mouselen = length(m_SelectorMouse);
 	if (mouselen > 110.0f)
 	{
         m_SelectedEyes = -1;
-		m_SelectedEmote = (int)(SelectedAngle / (2*pi) * NUM_EMOTICONS);
+		m_SelectedEmote = (int)(SelectedAngle / (2*PI) * NUM_EMOTICONS);
     } else if (Client()->IsServerType("ddrace") && mouselen > 50.0f && mouselen < 110.0f) // H-Client
     {
         m_SelectedEmote = -1;
-		m_SelectedEyes = (int)(SelectedAngle / (2*pi) * NUM_EMOTES);
+		m_SelectedEyes = (int)(SelectedAngle / (2*PI) * NUM_EMOTES);
     } else
     {
         m_SelectedEyes = -1;
@@ -170,9 +170,9 @@ void CEmoticon::OnRender()
 
 	for (int i = 0; i < NUM_EMOTICONS; i++)
 	{
-		float Angle = 2*pi*i/NUM_EMOTICONS;
-		if (Angle > pi)
-			Angle -= 2*pi;
+		float Angle = 2*PI*i/NUM_EMOTICONS;
+		if (Angle > PI)
+			Angle -= 2*PI;
 
 		bool Selected = m_SelectedEmote == i;
 
@@ -190,9 +190,9 @@ void CEmoticon::OnRender()
     {
         for (int i = 0; i < NUM_EMOTES; i++)
         {
-            float Angle = 2*pi*i/NUM_EMOTES;
-            if (Angle > pi)
-                Angle -= 2*pi;
+            float Angle = 2*PI*i/NUM_EMOTES;
+            if (Angle > PI)
+                Angle -= 2*PI;
 
             bool Selected = m_SelectedEyes == i;
 

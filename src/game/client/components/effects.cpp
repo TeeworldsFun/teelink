@@ -34,8 +34,8 @@ void CEffects::AirJump(vec2 Pos)
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = vec2(48.0f, 48.0f);
 	p.m_EndSize = vec2(0.0f, 0.0f);
-	p.m_Rot = frandom()*pi*2;
-	p.m_Rotspeed = pi*2;
+	p.m_Rot = frandom()*PI*2;
+	p.m_Rotspeed = PI*2;
 	p.m_Gravity = 500;
 	p.m_Friction = 0.7f;
 	p.m_FlowAffected = 0.0f;
@@ -65,8 +65,8 @@ void CEffects::PowerupShine(vec2 Pos, vec2 size)
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = vec2(16.0f, 16.0f);
 	p.m_EndSize = vec2(0.0f, 0.0f);
-	p.m_Rot = frandom()*pi*2;
-	p.m_Rotspeed = pi*2;
+	p.m_Rot = frandom()*PI*2;
+	p.m_Rotspeed = PI*2;
 	p.m_Gravity = 500;
 	p.m_Friction = 0.9f;
 	p.m_FlowAffected = 0.0f;
@@ -146,7 +146,7 @@ void CEffects::PlayerSpawn(vec2 Pos)
 		p.m_LifeSpan = 0.3f + frandom()*0.3f;
 		p.m_StartSize = vec2(StartSize, StartSize);
 		p.m_EndSize = vec2(0.0f, 0.0f);
-		p.m_Rot = frandom()*pi*2;
+		p.m_Rot = frandom()*PI*2;
 		p.m_Rotspeed = frandom();
 		p.m_Gravity = frandom()*-400.0f;
 		p.m_Friction = 0.7f;
@@ -187,8 +187,8 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientID)
             p.m_LifeSpan = 0.3f + frandom()*0.3f;
             p.m_StartSize = vec2(StartSize, StartSize);
             p.m_EndSize = vec2(0.0f, 0.0f);
-            p.m_Rot = frandom()*pi*2;
-            p.m_Rotspeed = (frandom()-0.5f) * pi;
+            p.m_Rot = frandom()*PI*2;
+            p.m_Rotspeed = (frandom()-0.5f) * PI;
             p.m_Gravity = 800.0f;
             p.m_Friction = 0.8f;
             vec3 c = BloodColor * (0.75f + frandom()*0.25f);
@@ -248,7 +248,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p.m_LifeSpan = 1.5f + frandom()*0.3f;
             p.m_StartSize = vec2(StartSize, StartSize);
             p.m_EndSize = vec2(0.0f, 0.0f);
-            p.m_Rot = frandom()*pi*2;
+            p.m_Rot = frandom()*PI*2;
             p.m_Rotspeed = frandom();
             p.m_Gravity = frandom()*400.0f;
             p.m_Friction = 0.7f;
@@ -275,7 +275,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p.m_LifeSpan = 4.0f + frandom()*0.3f;
             p.m_StartSize = vec2(StartSize, StartSize);
             p.m_EndSize = vec2(0.0f, 0.0f);
-            p.m_Rot = frandom()*pi*2;
+            p.m_Rot = frandom()*PI*2;
             p.m_Rotspeed = frandom();
             p.m_Gravity = 3000.0f;
             p.m_Friction = 0.95f;
@@ -296,7 +296,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p_hand.m_LifeSpan = 8.0f + frandom()*0.3f;
             p_hand.m_StartSize = vec2(20.0f, 20.0f);
             p_hand.m_EndSize = vec2(20.0f, 20.0f);
-            p_hand.m_Rot = frandom()*pi*2;
+            p_hand.m_Rot = frandom()*PI*2;
             p_hand.m_Gravity = 3000.0f;
             p_hand.m_Friction = 0.95f;
             p_hand.m_Collide = true;
@@ -314,7 +314,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p_foot.m_LifeSpan = 8.0f + frandom()*0.3f;
             p_foot.m_StartSize = vec2(64.0f, 32.0f);
             p_foot.m_EndSize = vec2(64.0f, 32.0f);
-            p_foot.m_Rot = frandom()*pi*2;
+            p_foot.m_Rot = frandom()*PI*2;
             p_foot.m_Gravity = 3000.0f;
             p_foot.m_Friction = 0.95f;
             p_foot.m_Collide = true;
@@ -337,7 +337,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
             p_body.m_LifeSpan = 8.0f + frandom()*0.3f;
             p_body.m_StartSize = vec2(size, size);
             p_body.m_EndSize = vec2(size, size);
-            p_body.m_Rot = frandom()*pi*2;
+            p_body.m_Rot = frandom()*PI*2;
             p_body.m_Gravity = 3000.0f;
             p_body.m_Friction = 0.95f;
             p_body.m_Collide = true;
@@ -392,7 +392,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
 			p_weapon.m_Pos = Pos;
 			p_weapon.m_Vel = RandomDir() * (powf(frandom(), 3)*1800.0f);
 			p_weapon.m_LifeSpan = 8.0f + frandom()*0.3f;
-			p_weapon.m_Rot = frandom()*pi*2;
+			p_weapon.m_Rot = frandom()*PI*2;
 			p_weapon.m_Gravity = 3000.0f;
 			p_weapon.m_Friction = 0.95f;
 			p_weapon.m_Collide = true;
@@ -425,7 +425,7 @@ void CEffects::Explosion(vec2 Pos)
 	p.m_LifeSpan = 0.4f;
 	p.m_StartSize = vec2(150.0f, 150.0f);
 	p.m_EndSize = vec2(0.0f, 0.0f);
-	p.m_Rot = frandom()*pi*2;
+	p.m_Rot = frandom()*PI*2;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_EXPLOSIONS, &p);
 
 	// add the smoke
@@ -460,7 +460,7 @@ void CEffects::HammerHit(vec2 Pos)
 	p.m_LifeSpan = 0.3f;
 	p.m_StartSize = vec2(120.0f, 120.0f);
 	p.m_EndSize = vec2(0.0f, 0.0f);
-	p.m_Rot = frandom()*pi*2;
+	p.m_Rot = frandom()*PI*2;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_EXPLOSIONS, &p);
 	m_pClient->m_pSounds->PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
 
@@ -527,7 +527,7 @@ void CEffects::Unfreeze(vec2 Pos, vec2 Dir, float alpha)
         p.m_LifeSpan = 2.0f + frandom()*0.3f;
         p.m_StartSize = vec2(StartSize, StartSize);
         p.m_EndSize = vec2(0.0f, 0.0f);
-        p.m_Rot = frandom()*pi*2;
+        p.m_Rot = frandom()*PI*2;
         p.m_Rotspeed = frandom();
         p.m_Gravity = 2500.0f;
         p.m_Friction = 0.95f;

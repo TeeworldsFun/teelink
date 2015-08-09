@@ -172,6 +172,12 @@ function build(settings)
 		if platform == "macosx" then
 			settings.link.frameworks:Add("Carbon")
 			settings.link.frameworks:Add("AppKit")
+
+                        -- ignore WAVEPACK warnings
+                        settings.cc.flags:Add("-Wno-missing-braces")
+
+                        -- yeah X11 is not where you think it is
+                        settings.cc.flags:Add("-I/opt/X11/include")
 		else
 			settings.link.libs:Add("pthread")
 		end
@@ -250,9 +256,14 @@ function build(settings)
 	-- build tools (TODO: fix this so we don't get double _d_d stuff)
 	tools_src = Collect("src/tools/*.cpp", "src/tools/*.c")
 
+        client_notification = {}
 	client_osxlaunch = {}
 	server_osxlaunch = {}
 	if platform == "macosx" then
+                notification_settings = client_settings:Copy()
+                notification_settings.cc.flags:Add("-x objective-c++")
+                notification_settings.cc.flags:Add("-I/System/Library/Frameworks/Foundation.framework/Versions/C/Headers")
+                client_notification = Compile(notification_settings, "src/osxlaunch/notification.m")
 		client_osxlaunch = Compile(client_settings, "src/osxlaunch/client.m")
 		server_osxlaunch = Compile(launcher_settings, "src/osxlaunch/server.m")
 	end
@@ -266,7 +277,7 @@ function build(settings)
 	-- build client, server, version server and master server
 	client_exe = Link(client_settings, "teeworlds", game_shared, game_client,
 		engine, client, game_editor, zlib, pnglite, wavpack, jsonparser,
-		client_link_other, client_osxlaunch)
+                client_link_other, client_osxlaunch, client_notification)
 
 	server_exe = Link(server_settings, "teeworlds_srv", engine, server,
 		game_shared, game_server, zlib, server_link_other)
