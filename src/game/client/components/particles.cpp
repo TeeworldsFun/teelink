@@ -126,7 +126,7 @@ void CParticles::Update(float TimePassed)
                     p.m_LifeSpan = 30.0f + frandom()*0.3f;
                     p.m_StartSize = vec2(startSize, startSize);
                     p.m_EndSize = vec2(endSize, endSize);
-                    p.m_Rot = frandom()*pi*2;
+                    p.m_Rot = frandom()*PI*2;
                     p.m_Rotspeed = 0.0f;
                     p.m_Gravity = 0.0f;
                     p.m_Friction = 0.0f;

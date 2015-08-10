@@ -95,9 +95,9 @@ void CRenderTools::DrawRoundRectExt(float x, float y, float w, float h, float r,
 	int Num = 8;
 	for(int i = 0; i < Num; i+=2)
 	{
-		float a1 = i/(float)Num * pi/2;
-		float a2 = (i+1)/(float)Num * pi/2;
-		float a3 = (i+2)/(float)Num * pi/2;
+		float a1 = i/(float)Num * PI/2;
+		float a2 = (i+1)/(float)Num * PI/2;
+		float a3 = (i+2)/(float)Num * PI/2;
 		float Ca1 = cosf(a1);
 		float Ca2 = cosf(a2);
 		float Ca3 = cosf(a3);
@@ -210,7 +210,7 @@ void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote
 			    Graphics()->TextureSet(pInfo->m_Texture);
 			    Graphics()->QuadsBegin();
 
-				Graphics()->QuadsSetRotation(pAnim->GetBody()->m_Angle*pi*2);
+				Graphics()->QuadsSetRotation(pAnim->GetBody()->m_Angle*PI*2);
 
 				// draw body
 				Graphics()->SetColor(pInfo->m_ColorBody.r, pInfo->m_ColorBody.g, pInfo->m_ColorBody.b, pInfo->m_ColorBody.a);
@@ -287,7 +287,7 @@ void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote
 			float w = BaseSize;
 			float h = BaseSize/2;
 
-			Graphics()->QuadsSetRotation(pFoot->m_Angle*pi*2);
+			Graphics()->QuadsSetRotation(pFoot->m_Angle*PI*2);
 
 			bool Indicate = !pInfo->m_GotAirJump && g_Config.m_ClAirjumpindicator;
 			float cs = 1.0f; // color scale

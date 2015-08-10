@@ -73,7 +73,7 @@ void CPlayers::RenderHand(CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float
 
 inline float NormalizeAngular(float f)
 {
-	return fmod(f+pi*2, pi*2);
+	return fmod(f+PI*2, PI*2);
 }
 
 inline float AngularMixDirection (float Src, float Dst) { return sinf(Dst-Src) >0?1:-1; }
@@ -163,7 +163,7 @@ void CPlayers::RenderHook(
 		float d = distance(Pos, HookPos);
 		vec2 Dir = normalize(Pos-HookPos);
 
-		Graphics()->QuadsSetRotation(GetAngle(Dir)+pi);
+		Graphics()->QuadsSetRotation(GetAngle(Dir)+PI);
 
 		// H-Client
         const float DropHookTime = SERVER_TICK_SPEED+SERVER_TICK_SPEED/5;
@@ -193,7 +193,7 @@ void CPlayers::RenderHook(
 		Graphics()->QuadsSetRotation(0);
 		Graphics()->QuadsEnd();
 
-		RenderHand(&RenderInfo, Position, normalize(HookPos-Pos), -pi/2, vec2(20, 0));
+		RenderHand(&RenderInfo, Position, normalize(HookPos-Pos), -PI/2, vec2(20, 0));
 	}
 }
 
@@ -399,7 +399,7 @@ void CPlayers::RenderPlayer(
 	{
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 		Graphics()->QuadsBegin();
-		Graphics()->QuadsSetRotation(State.GetAttach()->m_Angle*pi*2+Angle);
+		Graphics()->QuadsSetRotation(State.GetAttach()->m_Angle*PI*2+Angle);
 
 		// normal weapons
 		int iw = clamp(Player.m_Weapon, 0, NUM_WEAPONS-1);
@@ -416,12 +416,12 @@ void CPlayers::RenderPlayer(
 			// if attack is under way, bash stuffs
 			if(Direction.x < 0)
 			{
-				Graphics()->QuadsSetRotation(-pi/2-State.GetAttach()->m_Angle*pi*2);
+				Graphics()->QuadsSetRotation(-PI/2-State.GetAttach()->m_Angle*PI*2);
 				p.x -= g_pData->m_Weapons.m_aId[iw].m_Offsetx;
 			}
 			else
 			{
-				Graphics()->QuadsSetRotation(-pi/2+State.GetAttach()->m_Angle*pi*2);
+				Graphics()->QuadsSetRotation(-PI/2+State.GetAttach()->m_Angle*PI*2);
 			}
 			RenderTools()->DrawSprite(p.x, p.y, g_pData->m_Weapons.m_aId[iw].m_VisualSize);
 		}
@@ -432,13 +432,13 @@ void CPlayers::RenderPlayer(
 
 			if(Direction.x < 0)
 			{
-				Graphics()->QuadsSetRotation(-pi/2-State.GetAttach()->m_Angle*pi*2);
+				Graphics()->QuadsSetRotation(-PI/2-State.GetAttach()->m_Angle*PI*2);
 				p.x -= g_pData->m_Weapons.m_aId[iw].m_Offsetx;
 				m_pClient->m_pEffects->PowerupShine(p+vec2(32,0), vec2(32,12));
 			}
 			else
 			{
-				Graphics()->QuadsSetRotation(-pi/2+State.GetAttach()->m_Angle*pi*2);
+				Graphics()->QuadsSetRotation(-PI/2+State.GetAttach()->m_Angle*PI*2);
 				m_pClient->m_pEffects->PowerupShine(p-vec2(32,0), vec2(32,12));
 			}
 			RenderTools()->DrawSprite(p.x, p.y, g_pData->m_Weapons.m_aId[iw].m_VisualSize);
@@ -489,7 +489,7 @@ void CPlayers::RenderPlayer(
 
 			float a = (Client()->GameTick()-Player.m_AttackTick+s_LastIntraTick)/5.0f;
 			if(a < 1)
-				Recoil = sinf(a*pi);
+				Recoil = sinf(a*PI);
 			p = Position + Dir * g_pData->m_Weapons.m_aId[iw].m_Offsetx - Dir*Recoil*10.0f;
 			p.y += g_pData->m_Weapons.m_aId[iw].m_Offsety;
 			RenderTools()->DrawSprite(p.x, p.y, g_pData->m_Weapons.m_aId[iw].m_VisualSize);
@@ -543,9 +543,9 @@ void CPlayers::RenderPlayer(
 
 		switch (Player.m_Weapon)
 		{
-			case WEAPON_GUN: RenderHand(&RenderInfo, p, Direction, -3*pi/4, vec2(-15, 4)); break;
-			case WEAPON_SHOTGUN: RenderHand(&RenderInfo, p, Direction, -pi/2, vec2(-5, 4)); break;
-			case WEAPON_GRENADE: RenderHand(&RenderInfo, p, Direction, -pi/2, vec2(-4, 7)); break;
+			case WEAPON_GUN: RenderHand(&RenderInfo, p, Direction, -3*PI/4, vec2(-15, 4)); break;
+			case WEAPON_SHOTGUN: RenderHand(&RenderInfo, p, Direction, -PI/2, vec2(-5, 4)); break;
+			case WEAPON_GRENADE: RenderHand(&RenderInfo, p, Direction, -PI/2, vec2(-4, 7)); break;
 		}
 
 	}
@@ -585,7 +585,7 @@ void CPlayers::RenderPlayer(
                 Graphics()->QuadsBegin();
                 IGraphics::CQuadItem QuadItem(Position.x-15, Position.y - 70, 22, 22);
                 if (Player.m_Direction == -1)
-                    Graphics()->QuadsSetRotation(GetAngle(vec2(1,0))+pi);
+                    Graphics()->QuadsSetRotation(GetAngle(vec2(1,0))+PI);
                 Graphics()->QuadsDraw(&QuadItem, 1);
                 Graphics()->QuadsEnd();
             }
@@ -594,7 +594,7 @@ void CPlayers::RenderPlayer(
                 Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ARROW].m_Id);
                 Graphics()->QuadsBegin();
                 IGraphics::CQuadItem QuadItem(Position.x+15, Position.y - 70, 22, 22);
-                Graphics()->QuadsSetRotation(GetAngle(vec2(0,1))+pi);
+                Graphics()->QuadsSetRotation(GetAngle(vec2(0,1))+PI);
                 Graphics()->QuadsDraw(&QuadItem, 1);
                 Graphics()->QuadsEnd();
             }
@@ -682,7 +682,7 @@ void CPlayers::RenderPlayer(
 
 		float WiggleAngle = sinf(5*Wiggle);
 
-		Graphics()->QuadsSetRotation(pi/6*WiggleAngle);
+		Graphics()->QuadsSetRotation(PI/6*WiggleAngle);
 
 		Graphics()->SetColor(1.0f,1.0f,1.0f,a);
 		// client_datas::emoticon is an offset from the first emoticon

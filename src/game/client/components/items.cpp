@@ -82,7 +82,7 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 				s_Time += Client()->LocalTime()-s_LastLocalTime;
 		}
 
-		Graphics()->QuadsSetRotation(s_Time*pi*2*2 + ItemID);
+		Graphics()->QuadsSetRotation(s_Time*PI*2*2 + ItemID);
 		s_LastLocalTime = Client()->LocalTime();
 	}
 	else

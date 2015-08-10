@@ -59,7 +59,7 @@ shutil.rmtree(package_dir, True)
 os.mkdir(package_dir)
 
 print("adding files")
-shutil.copy("readme.txt", package_dir)
+#shutil.copy("readme.txt", package_dir)
 shutil.copy("license.txt", package_dir)
 shutil.copy("storage.cfg", package_dir)
 
@@ -83,7 +83,7 @@ if include_src:
 	shutil.copy("configure.lua", package_dir)
 
 if use_bundle:
-	bins = [name, name+'_srv', 'serverlaunch']
+        bins = [name+'_srv', 'serverlaunch'] # client is 32bit only
 	platforms = ('x86', 'x86_64', 'ppc')
 	for bin in bins:
 		to_lipo = []
@@ -107,8 +107,19 @@ if use_bundle:
 	os.mkdir(os.path.join(clientbundle_resource_dir, "data"))
 	copydir("data", clientbundle_resource_dir)
 	shutil.copy("other/icons/Teeworlds.icns", clientbundle_resource_dir)
+        os.system("cp "+name+"_x86"+exe_ext+" "+name+exe_ext)
 	shutil.copy(name+exe_ext, clientbundle_bin_dir)
-	os.system("cp -R /Library/Frameworks/SDL.framework " + clientbundle_framework_dir)
+
+        binary_path = clientbundle_bin_dir + "/" + name+exe_ext
+
+        # corrects the paths to search for dependencies
+        os.system("install_name_tool -change /opt/X11/lib/libfreetype.6.dylib @executable_path/../Frameworks/libfreetype.6.dylib " + binary_path)
+        os.system("install_name_tool -change @rpath/SDL.framework/Versions/A/SDL @executable_path/../Frameworks/SDL.framework/Versions/A/SDL  " + binary_path)
+
+        # copies dependencies into .app folder
+        os.system("cp -R /Library/Frameworks/SDL.framework " + clientbundle_framework_dir)
+        os.system("cp /opt/X11/lib/libfreetype.6.dylib " + clientbundle_framework_dir)
+
 	file(os.path.join(clientbundle_content_dir, "Info.plist"), "w").write("""
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -128,6 +139,8 @@ if use_bundle:
         <string>????</string>
         <key>CFBundleVersion</key>
         <string>%s</string>
+        <key>CFBundleIdentifier</key>
+        <string>org.HClient.app</string>
 </dict>
 </plist>
 	""" % (version))

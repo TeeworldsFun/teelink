@@ -476,8 +476,15 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 	{
 		if(Now-m_aLastSoundPlayed[CHAT_HIGHLIGHT] >= time_freq()*3/10)
 		{
+			char aBuf[1024];
+			str_format(aBuf, sizeof(aBuf), "%s%s", m_aLines[m_CurrentLine].m_aName, m_aLines[m_CurrentLine].m_aText);
+
+		// 	WindowActive() seems to return true on mac always
+		#ifndef CONF_PLATFORM_MACOSX
 			if (!Graphics()->WindowActive()) // H-Client
-				Graphics()->NotifyWindow("Teeworlds - Chat", m_aLines[m_CurrentLine].m_aText+2);
+		#endif
+				Graphics()->NotifyWindow("Teeworlds - Chat", aBuf); // however, Apples notificationcenter is clever enough to show popups only when required
+
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_CHAT_HIGHLIGHT, 0);
 			m_aLastSoundPlayed[CHAT_HIGHLIGHT] = Now;
 		}
