@@ -2454,7 +2454,7 @@ int main(int argc, const char **argv) // ignore_conventi on
 			FreeConsole();
 			break;
 		}
-	}aa
+	}
 #endif
 
 	CClient *pClient = CreateClient();
