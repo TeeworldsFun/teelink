@@ -387,8 +387,8 @@ CHttpDownloader::NETURL CHttpDownloader::CreateUrl(std::string url)
     if (re.m_aSlug[0] != 0)
     {
     	url = re.m_aSlug;
-		charpos = url.find_last_of("/\\");
-		str_copy(re.m_aFile, charpos == std::string::npos?"\0":url.substr(charpos+1).c_str(), sizeof(re.m_aFile));
+    	charpos = url.find_last_of("/\\");
+    	str_copy(re.m_aFile, charpos == std::string::npos?"\0":url.substr(charpos+1).c_str(), sizeof(re.m_aFile));
     }
 
     return re;
