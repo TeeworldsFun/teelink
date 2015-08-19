@@ -48,18 +48,17 @@ GeoInfo CGeoIP::GetInfo(std::string ip)
     str_format(aUrl, sizeof(aUrl), "http://www.telize.com/geoip/%s", ip.c_str());
 
     //read data
-    unsigned fileSize = CHttpDownloader::GetFileSize(aUrl);
-    char *pHttpData = (char*)mem_alloc(fileSize, 1);
-    mem_zero(pHttpData, fileSize);
-    bool errors = !CHttpDownloader::GetToMemory(aUrl, pHttpData, fileSize, 1);
+    unsigned FileSize = CHttpDownloader::GetFileSize(aUrl);
+    char *pHttpData = (char*)mem_alloc(FileSize, 1);
+    bool errors = !CHttpDownloader::GetToMemory(aUrl, pHttpData, FileSize, 1);
 
-    if (!errors)
+    if (!errors && FileSize > 0)
     {
 		// parse json data
 		json_settings JsonSettings;
 		mem_zero(&JsonSettings, sizeof(JsonSettings));
 		char aError[256];
-		json_value *pJsonData = json_parse_ex(&JsonSettings, pHttpData, fileSize, aError);
+		json_value *pJsonData = json_parse_ex(&JsonSettings, pHttpData, FileSize, aError);
 		if (pJsonData == 0)
 		{
 			dbg_msg("GeoIP", "Error: %s", aError);

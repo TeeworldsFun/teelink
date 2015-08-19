@@ -1049,6 +1049,7 @@ void CGraphics_SDL::NotifyWindow(const char *pTitle, const char *pMsg)
     	#ifdef CONF_PLATFORM_MACOSX
 			CNotification::notify(pTitle, pMsg);
 		#else
+			// TODO: Create a pool of messages and only use one NotifyNotification?
 			char category[30] = "Chat Notification";
 			NotifyNotification *pNotif = notify_notification_new(pTitle, pMsg, NULL);
 
