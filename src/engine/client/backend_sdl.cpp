@@ -11,7 +11,9 @@
 #include "backend_sdl.h"
 
 #if defined(CONF_FAMILY_UNIX)
-	#ifdef CONF_PLATFORM_MACOSX
+	#if defined(CONF_PLATFORM_LINUX)
+		#include <libnotify/notify.h> // H-Client
+		#include <glib.h>
 	#endif
 #elif defined(CONF_FAMILY_WINDOWS)
 	#include <windows.h>
@@ -669,9 +671,15 @@ void CGraphicsBackend_SDL_OpenGL::NotifyWindow(const char *pTitle, const char *p
     	#ifdef CONF_PLATFORM_MACOSX
 			CNotification::notify(pTitle, pMsg);
 		#else
-			char aBuf[512]={0};
-			str_format(aBuf, sizeof(aBuf), "notify-send '%s' '%s'", pTitle, pMsg);
-			system(aBuf);
+			GError *error = NULL;
+			char category[30] = "Chat Notification";
+			NotifyNotification *pNotif = notify_notification_new(pTitle, pMsg, NULL);
+
+			// TODO: Add icon (uff i need sleep... :B)
+			notify_notification_set_timeout(pNotif, 5000);
+			notify_notification_set_category(pNotif, category);
+			notify_notification_set_urgency (pNotif, NOTIFY_URGENCY_NORMAL);
+			notify_notification_show(pNotif, &error);
 		#endif
 	#endif
 }
