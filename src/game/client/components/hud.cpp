@@ -479,9 +479,9 @@ void CHud::RenderVoting()
 
         char aYesKey[8], aNoKey[8];
         str_copy(aYesKey, m_pClient->m_pBinds->GetKey("vote yes"), sizeof(aYesKey));
-        str_to_upper(aYesKey, str_length(aYesKey));
+        str_to_upper(aYesKey);
         str_copy(aNoKey, m_pClient->m_pBinds->GetKey("vote no"), sizeof(aNoKey));
-        str_to_upper(aNoKey, str_length(aYesKey));
+        str_to_upper(aNoKey);
 
         if (m_pClient->m_pVoting->GetLastVote() == 1)
             TextRender()->TextColor(0.5f, 1.0f, 0.5f, 1.0f);

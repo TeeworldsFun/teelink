@@ -26,8 +26,6 @@
 void CMenus::RenderServerbrowserServerList(CUIRect View)
 {
     static char selectedServIP[64]={0};
-    static IGeoIP::GeoInfo geoInfo;
-    static IGeoIP::InfoGeoIPThread infoGeoThread;
 	CUIRect Headers;
 	CUIRect Status;
 
@@ -246,7 +244,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 	for (int i = 0; i < NumServers; i++)
 	{
 		int ItemIndex = i;
-		const CServerInfo *pItem = ServerBrowser()->SortedGet(ItemIndex);
+		CServerInfo *pItem = ServerBrowser()->SortedGet(ItemIndex);
 		NumPlayers += pItem->m_NumPlayers;
 		CUIRect Row;
 		CUIRect SelectHitBox;
@@ -428,32 +426,28 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
                 {
                 	if (!pServerInfo || pServerInfo->m_aCountryCode[0] == 0)
                 	{
-						str_copy(infoGeoThread.m_aIpAddress, pItem->m_aAddress, sizeof(infoGeoThread.m_aIpAddress));
-						str_copy(geoInfo.m_aCountryCode, "_P_", sizeof(geoInfo.m_aCountryCode));
-						infoGeoThread.m_pGeoInfo = &geoInfo;
-						infoGeoThread.m_pServerInfoReg = pServerInfo;
-						infoGeoThread.m_pGeoIP = GeoIP();
-						m_pClient->GeoIP()->Search(&infoGeoThread);
+                		if (pItem->m_aCountryName[0] == 0)
+                			m_pClient->GeoIP()->Search(pItem, pServerInfo);
                 	}
                 	else
                 	{
-                		str_copy(geoInfo.m_aCountryCode, pServerInfo->m_aCountryCode, sizeof(geoInfo.m_aCountryCode));
-                		str_copy(geoInfo.m_aCountryName, pServerInfo->m_aCountryName, sizeof(geoInfo.m_aCountryName));
+                		str_copy(pItem->m_aCountryCode, pServerInfo->m_aCountryCode, sizeof(pItem->m_aCountryCode));
+                		str_copy(pItem->m_aCountryName, pServerInfo->m_aCountryName, sizeof(pItem->m_aCountryName));
                 	}
 
 				    str_copy(selectedServIP, pItem->m_aAddress, sizeof(selectedServIP));
                 }
 
-                if (str_comp(geoInfo.m_aCountryCode, "_P_") == 0)
+                if (pItem->m_aCountryCode[0] == 0)
                     str_format(aBuf, sizeof(aBuf), "Country: Searching...");
-                else if (str_comp(geoInfo.m_aCountryCode, "NULL") == 0)
+                else if (str_comp(pItem->m_aCountryCode, "NULL") == 0)
                    str_format(aBuf, sizeof(aBuf), "Country: Unknown");
                 else
-                    str_format(aBuf, sizeof(aBuf), "Country: %s", geoInfo.m_aCountryName);
+                    str_format(aBuf, sizeof(aBuf), "Country: %s", pItem->m_aCountryName);
                 UI()->DoLabel(&LabelB, aBuf, 12.0f, -1);
                 LabelB.y+=20.0f;
 
-                const CCountryFlags::CCountryFlag *pFlag = m_pClient->m_pCountryFlags->GetByCountryCodeName(geoInfo.m_aCountryCode);
+                const CCountryFlags::CCountryFlag *pFlag = m_pClient->m_pCountryFlags->GetByCountryCodeName(pItem->m_aCountryCode);
                 if (pFlag)
                 {
                     Graphics()->TextureSet(pFlag->m_Texture);

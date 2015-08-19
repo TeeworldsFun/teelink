@@ -50,5 +50,6 @@ public:
 
 	int Init(int NumThreads);
 	int Add(CJob *pJob, JOBFUNC pfnFunc, void *pData);
+	int Remove(CJob *pJob);
 };
 #endif

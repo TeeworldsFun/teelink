@@ -4,8 +4,31 @@
 #define ENGINE_SERVERBROWSER_H
 
 #include <engine/shared/protocol.h>
+#include <engine/geoip.h>
 
 #include "kernel.h"
+
+//H-Client
+struct CServerInfoRegOld
+{
+    char m_Address[64];
+    char m_LastEntry[20];
+    int m_NumEntry;
+};
+struct CServerInfoReg
+{
+    char m_Address[64];
+    char m_LastEntry[20];
+    int m_NumEntry;
+    int m_Wins;
+    int m_Losts;
+};
+struct CServerInfoRegv2 : public CServerInfoReg
+{
+    char m_aCountryCode[8];
+    char m_aCountryName[32];
+};
+//
 
 /*
 	Structure: CServerInfo
@@ -49,29 +72,12 @@ public:
 	char m_aVersion[32];
 	char m_aAddress[NETADDR_MAXSTRSIZE];
 	CClient m_aClients[MAX_CLIENTS];
-};
 
-//H-Client
-struct CServerInfoRegOld
-{
-    char m_Address[64];
-    char m_LastEntry[20];
-    int m_NumEntry;
-};
-struct CServerInfoReg
-{
-    char m_Address[64];
-    char m_LastEntry[20];
-    int m_NumEntry;
-    int m_Wins;
-    int m_Losts;
-};
-struct CServerInfoRegv2 : public CServerInfoReg
-{
+	// H-Client
     char m_aCountryCode[8];
     char m_aCountryName[32];
+    //
 };
-//
 
 class IServerBrowser : public IInterface
 {
@@ -115,7 +121,7 @@ public:
 	virtual int NumServers() const = 0;
 
 	virtual int NumSortedServers() const = 0;
-	virtual const CServerInfo *SortedGet(int Index) const = 0;
+	virtual CServerInfo *SortedGet(int Index) const = 0;
 
 	virtual bool IsFavorite(const NETADDR &Addr) const = 0;
 	virtual void AddFavorite(const NETADDR &Addr) = 0;

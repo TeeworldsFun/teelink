@@ -5,6 +5,7 @@
 #include <base/vmath.h>
 #include <base/tl/sorted_array.h>
 #include <game/client/component.h>
+#include <engine/shared/jobs.h> // H-Client
 #include <map>
 #include <string>
 
@@ -48,8 +49,17 @@ public:
 	//
 
 private:
+	enum {
+		MAX_DOWNLOADS = 3
+	};
+
+	class CJobPool m_JobPool;
+	class CJob m_Jobs[MAX_DOWNLOADS];
+
+	InfoDownloadSkinThread m_InfoThreads[MAX_DOWNLOADS];
 	sorted_array<CSkin> m_aSkins;
 	std::map<std::string, bool> m_DownloadedSkinsSet;
+
+	void AddDownloadJob(const char *name);
 };
-void ThreadDownloadSkin(void *params);
 #endif

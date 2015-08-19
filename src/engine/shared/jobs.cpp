@@ -73,3 +73,12 @@ int CJobPool::Add(CJob *pJob, JOBFUNC pfnFunc, void *pData)
 	return 0;
 }
 
+int CJobPool::Remove(CJob *pJob)
+{
+	lock_wait(m_Lock);
+
+	pJob->m_pPrev = pJob->m_pNext;
+
+	lock_unlock(m_Lock);
+	return 0;
+}

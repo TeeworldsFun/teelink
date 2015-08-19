@@ -10,13 +10,15 @@
 #include "SDL_opengl.h"
 #include "SDL_syswm.h"
 
-#if defined(CONF_FAMILY_UNIX)
-	#ifdef CONF_PLATFORM_MACOSX
-	#endif
-#elif defined(CONF_FAMILY_WINDOWS)
+#if defined(CONF_FAMILY_WINDOWS)
 	#include <windows.h>
 	#if !defined(FLASHW_TRAY)
 		#define FLASHW_TRAY 2
+	#endif
+#elif defined(CONF_FAMILY_UNIX)
+	#if defined(CONF_PLATFORM_LINUX)
+		#include <libnotify/notify.h> // H-Client
+		#include <glib.h>
 	#endif
 #endif
 
@@ -1043,9 +1045,15 @@ void CGraphics_SDL::NotifyWindow(const char *pTitle, const char *pMsg)
     	#ifdef CONF_PLATFORM_MACOSX
 			CNotification::notify(pTitle, pMsg);
 		#else
-			char aBuf[512]={0};
-			str_format(aBuf, sizeof(aBuf), "notify-send '%s' '%s'", pTitle, pMsg);
-			system(aBuf);
+			GError *error = NULL;
+			char category[30] = "Chat Notification";
+			NotifyNotification *pNotif = notify_notification_new(pTitle, pMsg, NULL);
+
+			// TODO: Add icon (uff i need sleep... :B)
+			notify_notification_set_timeout(pNotif, 5000);
+			notify_notification_set_category(pNotif, category);
+			notify_notification_set_urgency (pNotif, NOTIFY_URGENCY_NORMAL);
+			notify_notification_show(pNotif, &error);
 		#endif
 	#endif
 }

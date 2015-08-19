@@ -3,23 +3,22 @@
 #include <base/math.h>
 #include <base/system.h>
 #include <game/version.h>
-#include <cstring>
-#include <cstdio>
-#include <algorithm>
+#include <game/client/components/menus.h>
+#include <engine/external/json-parser/json.h>
+#include <engine/shared/http_downloader.h>
+#include <engine/client/updater.h>
 #if defined(CONF_FAMILY_UNIX)
     #include <unistd.h>
 #elif defined(CONF_FAMILY_WINDOWS)
     #include <windows.h>
 #endif
-#include <engine/external/json-parser/json.h>
-#include <game/client/components/menus.h>
-#include <engine/client/updater.h>
+#include <cstring>
+#include <cstdio>
 
 #define UPDATES_HOST            "hclient-updater.redneboa.es"
 #define UPDATES_BASE_PATH       "/"
 #define UPDATES_MANIFEST_FILE   "updates.json"
 
-static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
 static LOCK m_UpdatesLock = 0;
 
 CUpdater::CUpdater()
@@ -101,7 +100,7 @@ void CUpdater::ExecuteExit()
 void CUpdater::CheckUpdates(CMenus *pMenus)
 {
 	dbg_msg("autoupdate", "Checking for updates...");
-	if (!GetFile(UPDATES_MANIFEST_FILE, UPDATES_MANIFEST_FILE))
+	if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH UPDATES_MANIFEST_FILE, UPDATES_MANIFEST_FILE))
 	{
 		dbg_msg("autoupdate", "Error downloading updates manifest :/");
 		return;
@@ -180,24 +179,24 @@ void CUpdater::DoUpdates(CMenus *pMenus)
 
     // Download Files
     for (int i=0; i<m_vToDownload.size(); i++)
-        if (!GetFile(m_vToDownload[i].c_str(), m_vToDownload[i].c_str())) noErrors = false;
+        if (!CHttpDownloader::GetToFile(m_vToDownload[i].c_str(), m_vToDownload[i].c_str())) noErrors = false;
     m_vToDownload.clear();
 
     if (m_NeedUpdateClient)
     {
         #ifdef CONF_FAMILY_WINDOWS
             #ifdef CONF_PLATFORM_WIN64
-                if (!GetFile("teeworlds64.exe", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds64.exe", "tw_tmp"))
             #else
-                if (!GetFile("teeworlds.exe", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds.exe", "tw_tmp"))
             #endif
         #elif defined(CONF_FAMILY_UNIX)
             #ifdef CONF_PLATFORM_MACOSX
-                if (!GetFile("teeworlds_mac", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_mac", "tw_tmp"))
             #elif defined(CONF_ARCH_IA64) || defined(CONF_ARCH_AMD64)
-                if (!GetFile("teeworlds64", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds64", "tw_tmp"))
             #else
-                if (!GetFile("teeworlds", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds", "tw_tmp"))
             #endif
         #endif
         {
@@ -209,17 +208,17 @@ void CUpdater::DoUpdates(CMenus *pMenus)
     {
         #ifdef CONF_FAMILY_WINDOWS
             #ifdef CONF_PLATFORM_WIN64
-                if (!GetFile("teeworlds_srv64.exe", "teeworlds_srv.exe"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv64.exe", "teeworlds_srv.exe"))
             #else
-                if (!GetFile("teeworlds_srv.exe", "teeworlds_srv.exe"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv.exe", "teeworlds_srv.exe"))
             #endif
         #elif defined(CONF_FAMILY_UNIX)
             #ifdef CONF_PLATFORM_MACOSX
-                if (!GetFile("teeworlds_srv_mac", "teeworlds_srv"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv_mac", "teeworlds_srv"))
             #elif defined(CONF_ARCH_IA64) || defined(CONF_ARCH_AMD64)
-                if (!GetFile("teeworlds_srv64", "teeworlds_srv"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv64", "teeworlds_srv"))
             #else
-                if (!GetFile("teeworlds_srv", "teeworlds_srv"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv", "teeworlds_srv"))
             #endif
         #endif
         {
@@ -231,126 +230,6 @@ void CUpdater::DoUpdates(CMenus *pMenus)
         m_Updated = true;
 
     pMenus->SetPopup(CMenus::POPUP_UPDATER_RESULT);
-}
-
-// TODO: Ugly but works
-bool CUpdater::GetFile(const char *url, const char *path)
-{
-	NETSOCKET Socket = invalid_socket;
-	NETADDR HostAddress, BindAddr;
-    mem_zero(&HostAddress, sizeof(HostAddress));
-    mem_zero(&BindAddr, sizeof(BindAddr));
-	char aNetBuff[1024];
-
-	//Lookup
-	if(net_host_lookup(UPDATES_HOST, &HostAddress, NETTYPE_IPV4) != 0)
-	{
-		dbg_msg("autoupdate", "Error running host lookup");
-		return false;
-	}
-	HostAddress.port = 80;
-
-	//Connect
-    BindAddr.type = NETTYPE_IPV4;
-	Socket = net_tcp_create(BindAddr);
-	if(net_tcp_connect(Socket, &HostAddress) != 0)
-	{
-		net_tcp_close(Socket);
-		dbg_msg("autoupdate","Error connecting to host");
-		return false;
-	}
-
-	//Send request
-	str_format(aNetBuff, sizeof(aNetBuff), "GET "UPDATES_BASE_PATH"%s HTTP/1.0\r\nHost: "UPDATES_HOST"\r\n\r\n", url);
-	net_tcp_send(Socket, aNetBuff, str_length(aNetBuff));
-
-	//read data
-	IOHANDLE dstFile = 0;
-
-	std::string NetData;
-	int TotalRecv = 0, TotalBytes = 0, CurrentRecv = 0, enterCtrl = 0;
-	bool isHead = true, isStatusLine = true;
-	while ((CurrentRecv = net_tcp_recv(Socket, aNetBuff, sizeof(aNetBuff))) > 0)
-	{
-		for (int i=0; i<CurrentRecv ; i++)
-		{
-			if (isHead)
-			{
-				if (aNetBuff[i]=='\n')
-				{
-					if (++enterCtrl == 2) // Go To Body Part
-					{
-                        dstFile = io_open(path, IOFLAG_WRITE);
-                        if (!dstFile)
-                        {
-                            net_tcp_close(Socket);
-                            dbg_msg("autoupdate","Error writing to disk");
-                            return false;
-                        }
-
-                        str_copy(m_CurrentDownloadFileName, url, sizeof(m_CurrentDownloadFileName));
-
-						isHead = false;
-						NetData.clear();
-						continue;
-					}
-
-                    std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
-
-                    // Check Status
-                    if (isStatusLine)
-                    {
-                        bool isCodeOk = NetData.find("200") != std::string::npos;
-                        bool isStatusOk = NetData.find("ok") != std::string::npos;
-
-                        if (!isCodeOk || !isStatusOk)
-                        {
-                            net_tcp_close(Socket);
-                            dbg_msg("autoupdate","Server Host returns error code");
-                            return false;
-                        }
-                    }
-                    isStatusLine = false;
-
-                    // Get File Size
-                    std::size_t fpos = std::string::npos;
-					if ((fpos=NetData.find("content-length:")) != std::string::npos)
-                        sscanf(NetData.substr(fpos+15).c_str(), "%d", &TotalBytes);
-
-					NetData.clear();
-					continue;
-				}
-				else if (aNetBuff[i]!='\r')
-					enterCtrl=0;
-
-				NetData+=aNetBuff[i];
-			}
-			else // Body Part
-			{
-				if (TotalBytes <= 0)
-				{
-					io_close(dstFile);
-					net_tcp_close(Socket);
-					dbg_msg("autoupdate","Error receiving file");
-					return false;
-				}
-
-                m_CurrentDownloadProgress = (float)TotalRecv/(float)TotalBytes;
-
-				io_write(dstFile, &aNetBuff[i], 1);
-
-				TotalRecv++;
-				if (TotalRecv == TotalBytes)
-					break;
-			}
-		}
-	}
-
-	//Finish
-	io_close(dstFile);
-	net_tcp_close(Socket);
-
-	return true;
 }
 
 bool CUpdater::SelfDelete()

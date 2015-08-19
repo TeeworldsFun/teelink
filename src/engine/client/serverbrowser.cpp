@@ -80,7 +80,7 @@ void CServerBrowser::SetBaseInfo(class CNetClient *pClient, const char *pNetVers
 	LoadServerInfo(); //H-Client
 }
 
-const CServerInfo *CServerBrowser::SortedGet(int Index) const
+CServerInfo *CServerBrowser::SortedGet(int Index) const // H-Client: Removed const, need edit geoInfo of the entry
 {
 	if(Index < 0 || Index >= m_NumSortedServers)
 		return 0;

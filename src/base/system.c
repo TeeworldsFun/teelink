@@ -2190,11 +2190,36 @@ unsigned str_quickhash(const char *str)
 }
 
 //H-Client
-void str_to_upper(char *a, int length)
+void str_trim(char *str_in)
 {
-    int i;
-    for (i=0; i<length; i++)
-        a[i] = str_uppercase(a[i]);
+	unsigned len = str_length(str_in);
+	unsigned i,o,e,u,s=0;
+	for (i=0, o=0; i<len; i++)
+	{
+		if (str_in[i] == 32)
+		{
+			for (e=i+1, u=o; e<len; e++)
+			{
+				if (str_in[e] != 32)
+					str_in[u++] = str_in[e];
+			}
+
+			++s;
+			str_in[len-s] = 0;
+		}
+
+		str_in[o++] = str_in[i];
+	}
+}
+
+void str_to_upper(char *str_in)
+{
+	unsigned char *str = (unsigned char *)str_in;
+    while (*str)
+    {
+        *str = str_uppercase(*str);
+        str++;
+    }
 }
 
 void open_default_browser(const char *url)
@@ -2215,6 +2240,35 @@ void open_default_browser(const char *url)
 		str_format(aBuf, sizeof(aBuf), "xdg-open %s", url);
 		system(aBuf);
 	#endif
+}
+
+int net_socket_rcv_timeout(NETSOCKET sock, int time)
+{
+	struct timeval timeout;
+	timeout.tv_sec = time;
+	timeout.tv_usec = 0;
+
+	int err = -1;
+	if(sock.ipv4sock >= 0)
+		err = setsockopt(sock.ipv4sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
+	if(sock.ipv6sock >= 0)
+		err = setsockopt(sock.ipv6sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout));
+
+	return err;
+}
+int net_socket_snd_timeout(NETSOCKET sock, int time)
+{
+	struct timeval timeout;
+	timeout.tv_sec = time;
+	timeout.tv_usec = 0;
+
+	int err = -1;
+	if(sock.ipv4sock >= 0)
+		err = setsockopt(sock.ipv4sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout));
+	if(sock.ipv6sock >= 0)
+		err = setsockopt(sock.ipv6sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout));
+
+	return err;
 }
 //
 #if defined(__cplusplus)

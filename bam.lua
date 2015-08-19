@@ -181,6 +181,12 @@ function build(settings)
 		else
 			settings.link.libs:Add("pthread")
 		end
+
+        if platform == "linux" then
+            -- H-Client: libnotify includes
+            settings.cc.flags:Add("`pkg-config --cflags libnotify`")
+            settings.link.libs:Add("notify")
+        end
 		
 		if platform == "solaris" then
 		    settings.link.flags:Add("-lsocket")
@@ -210,7 +216,6 @@ function build(settings)
 	wavpack = Compile(settings, Collect("src/engine/external/wavpack/*.c"))
 	pnglite = Compile(settings, Collect("src/engine/external/pnglite/*.c"))
 	jsonparser = Compile(settings, Collect("src/engine/external/json-parser/*.c"))
-	-- libvpx = Compile(settings, CollectRecursive("src/engine/external/libvpx/*.c"))
 
 	-- build game components
 	engine_settings = settings:Copy()

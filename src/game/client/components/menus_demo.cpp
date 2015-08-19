@@ -55,7 +55,7 @@ void CMenus::RenderDemoPlayer(CUIRect MainView)
 		int CurrentTick = pInfo->m_CurrentTick - pInfo->m_FirstTick;
 		int TotalTicks = pInfo->m_LastTick - pInfo->m_FirstTick;
 
-		if(CurrentTick == TotalTicks)
+		if(CurrentTick >= TotalTicks)
 		{
 			Client()->EndRecordVideo();
 			Client()->Disconnect();

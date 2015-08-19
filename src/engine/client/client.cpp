@@ -57,6 +57,11 @@
 	#define _WIN32_WINNT 0x0501
 	#define WIN32_LEAN_AND_MEAN
 	#include <windows.h>
+#elif defined(CONF_FAMILY_UNIX)
+	#if defined(CONF_PLATFORM_LINUX)
+		#include <libnotify/notify.h> // H-Client
+		#include <glib.h>
+	#endif
 #endif
 
 #include "SDL.h"
@@ -492,7 +497,23 @@ void CClient::SetState(int s)
 	}
 	m_State = s;
 	if(Old != s)
+	{
 		GameClient()->OnStateChange(m_State, Old);
+
+		// H-Client
+		if (Irc()->GetState() == IIrc::STATE_CONNECTED)
+		{
+			if (m_State == IClient::STATE_ONLINE)
+			{
+				char aBuf[128];
+				str_format(aBuf, sizeof(aBuf), "I'm playing on %s", GetCurrentServerAddress());
+				Irc()->SetAway(true, aBuf);
+			}
+			else if (m_State == IClient::STATE_OFFLINE)
+				Irc()->SetAway(false);
+		}
+		//
+	}
 }
 
 // called when the map is loaded and we should init for a new round
@@ -2037,8 +2058,6 @@ void CClient::Run()
 					m_RenderFrameTimeHigh = m_RenderFrameTime;
 				m_FpsGraph.Add(1.0f/m_RenderFrameTime, 1,1,1);
 
-				m_LastRenderTime = Now;
-
 				if(g_Config.m_DbgStress)
 				{
 					if((m_RenderFrames%10) == 0)
@@ -2064,6 +2083,19 @@ void CClient::Run()
 					}
 					m_pGraphics->Swap();
 				}
+
+				// H-Client
+				if (m_RecordVideo && State() == STATE_DEMOPLAYBACK)
+					AddFrameToRecordVideo();
+				//
+
+				// H-Client: Limit ~60fps
+				long TimeElapsed = Now - m_LastRenderTime;
+				if(m_RecordVideo && State() == STATE_DEMOPLAYBACK && TimeElapsed < 1000 / 60)
+					thread_sleep((1000 / 60) - TimeElapsed);
+				//
+
+				m_LastRenderTime = Now;
 			}
 		}
 
@@ -2107,15 +2139,11 @@ void CClient::Run()
 
 		// update local time
 		m_LocalTime = (time_get()-m_LocalStartTime)/(float)time_freq();
-
-		// H-Client
-		if (m_RecordVideo)
-			AddFrameToRecordVideo();
-		//
 	}
 
 	GameClient()->OnShutdown();
 	Disconnect();
+	Irc()->EndConnection(); // H-Client
 
 	m_pGraphics->Shutdown();
 	m_pSound->Shutdown();
@@ -2412,7 +2440,7 @@ static CClient *CreateClient()
 
 #if defined(CONF_PLATFORM_MACOSX)
 extern "C" int SDL_main(int argc, char **argv_) // ignore_convention
-{
+{9
 	const char **argv = const_cast<const char **>(argv_);
 #else
 int main(int argc, const char **argv) // ignore_conventi on
@@ -2426,7 +2454,7 @@ int main(int argc, const char **argv) // ignore_conventi on
 			FreeConsole();
 			break;
 		}
-	}
+	}aa
 #endif
 
 	CClient *pClient = CreateClient();
@@ -2477,6 +2505,10 @@ int main(int argc, const char **argv) // ignore_conventi on
 		if(RegisterFail)
 			return -1;
 	}
+
+#if defined(CONF_PLATFORM_LINUX)
+	notify_init("H-Client Notification"); // H-Client
+#endif
 
 	pEngine->Init();
 	pConfig->Init();
@@ -2545,10 +2577,11 @@ bool CClient::StartRecordVideo()
 {
 	char aBuf[1024];
 
+	// Audio: -f alsa -ac 2 -i default
 	if (m_RecordVideoMode == MODE_RECORD_FAST)
-		snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf 'setpts=2.5*PTS,scale=%sx%s,vflip' %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
+		snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf 'setpts=2.5*PTS,scale=%sx%s,vflip' -strict -2 %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
 	else
-		snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf 'scale=%sx%s,vflip' %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
+		snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf 'scale=%sx%s,vflip' -strict -2 %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
 
 	if (m_RecordVideo)
 		EndRecordVideo();
@@ -2565,18 +2598,20 @@ bool CClient::AddFrameToRecordVideo()
 		return false;
 
 	int *pBuffer = new int[Graphics()->ScreenWidth()*Graphics()->ScreenHeight()];
-	Graphics()->Swap();
 	glReadPixels(0, 0, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, pBuffer);
 	fwrite(pBuffer, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_RecordVideoFile);
-
 	delete [] pBuffer;
+
 	return true;
 }
 
 bool CClient::EndRecordVideo()
 {
 	if (!m_RecordVideo || !m_RecordVideoFile)
+	{
+		m_RecordVideo = false;
 		return false;
+	}
 
 	io_pclose(m_RecordVideoFile);
 	m_RecordVideo = false;

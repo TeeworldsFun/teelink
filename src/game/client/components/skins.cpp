@@ -8,11 +8,24 @@
 #include <engine/graphics.h>
 #include <engine/storage.h>
 #include <engine/shared/config.h>
+#include <engine/shared/http_downloader.h> // H-Client
 
 #include "skins.h"
 #include <string> // H-Client
 #include <algorithm> // H-Client
 #include <cstdio> // H-Client
+
+// H-Client
+static int ThreadDownloadSkin(void *params)
+{
+    CSkins::InfoDownloadSkinThread *pInfoThread = static_cast<CSkins::InfoDownloadSkinThread*>(params);
+    if (!pInfoThread || !pInfoThread->m_pSkins || pInfoThread->m_SkinName[0] == 0)
+    	return -1;
+
+    pInfoThread->m_pSkins->DownloadSkin(pInfoThread->m_SkinName);
+    return 0;
+}
+//
 
 int CSkins::SkinScan(const char *pName, int IsDir, int DirType, void *pUser)
 {
@@ -132,6 +145,8 @@ int CSkins::LoadSkinFromFile(const char *pPath, const char *pName, int DirType)
 
 void CSkins::OnInit()
 {
+	m_JobPool.Init(3);
+
 	// load skins
 	m_aSkins.clear();
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "skins", SkinScan, this);
@@ -181,24 +196,10 @@ int CSkins::Find(const char *pName, bool tryDownload)
 
     if (g_Config.m_hcAutoDownloadSkins && Client()->State() != IClient::STATE_DEMOPLAYBACK && tryDownload) // H-Client
     {
-    	unsigned currentDownloads = 0;
-    	for (std::map<std::string, bool>::iterator it = m_DownloadedSkinsSet.begin(); it != m_DownloadedSkinsSet.end(); it++)
-    	{
-    		if (!it->second)
-    			currentDownloads++;
-    	}
-
-    	if (currentDownloads < 3) // Limit to 3 simultaneously downloads
-    	{
-    		char aSanitizeSkinName[64];
-    		str_copy(aSanitizeSkinName, pName, sizeof(aSanitizeSkinName));
-    		str_sanitize_cc(aSanitizeSkinName);
-
-			InfoDownloadSkinThread *pInfoDownloadSkinThread = new InfoDownloadSkinThread;
-			pInfoDownloadSkinThread->m_pSkins = this;
-			str_copy(pInfoDownloadSkinThread->m_SkinName, aSanitizeSkinName, sizeof(pInfoDownloadSkinThread->m_SkinName));
-			thread_init(ThreadDownloadSkin, pInfoDownloadSkinThread);
-    	}
+		char aSanitizeSkinName[64];
+		str_copy(aSanitizeSkinName, pName, sizeof(aSanitizeSkinName));
+		str_sanitize_cc(aSanitizeSkinName);
+		AddDownloadJob(aSanitizeSkinName);
     }
 
     return -1;
@@ -218,164 +219,48 @@ vec4 CSkins::GetColorV4(int v)
 // H-Client
 void CSkins::DownloadSkin(const char *pName)
 {
-	int64 downloadTime = time_get();
-	unsigned chunkBytes = 0;
-
-    // Check if skins are in processing state
+	// Check if skins are in processing state
     std::string sName(pName);
-    if (m_DownloadedSkinsSet.find(sName) != m_DownloadedSkinsSet.end())
+    if (m_DownloadedSkinsSet.size() > 0 && m_DownloadedSkinsSet.find(sName) != m_DownloadedSkinsSet.end())
         return;
+    dbg_msg("skins", "INiciando: %s", sName.c_str());
     m_DownloadedSkinsSet.insert(std::pair<std::string,bool>(sName, false));
 
-    dbg_msg("skins", "Try download '%s'...", pName);
-    NETSOCKET sockDDNet;
-    NETADDR naddDDNet, bindAddr;
-    mem_zero(&naddDDNet, sizeof(naddDDNet));
-    mem_zero(&bindAddr, sizeof(bindAddr));
-    bindAddr.type = NETTYPE_IPV4;
+    const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 0, 2048) * 1024;
+    char aUrl[255];
+    str_format(aUrl, sizeof(aUrl), "http://ddnet.tw/skins/skin/%s.png", pName);
+    char aDest[255], aCompleteFilename[512];
+    str_format(aDest, sizeof(aDest), "skins/%s.png", pName);
+    Storage()->GetPath(IStorage::TYPE_SAVE+1, aDest, aCompleteFilename, sizeof(aCompleteFilename));
 
-    if (net_host_lookup("ddnet.tw", &naddDDNet, NETTYPE_IPV4) != 0)
+    if (CHttpDownloader::GetToFile(aUrl, aCompleteFilename, 3, downloadSpeed))
     {
-        m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
-        dbg_msg("skins", "Error can't found DDNet DataBase :(");
-        return;
+    	m_DownloadedSkinsSet.find(sName)->second = true;
+    	dbg_msg("skins", "'%s' downloaded successfully :)", pName);
     }
-    naddDDNet.port = 80;
-
-    sockDDNet = net_tcp_create(bindAddr);
-    if (net_tcp_connect(sockDDNet, &naddDDNet) != 0)
+    else
     {
-        m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
-        dbg_msg("skins", "Error can't connect with DDNet DataBase :(");
-        net_tcp_close(sockDDNet);
-        return;
-    }
-
-    IOHANDLE dstFile = NULL;
-    char fullName[255] = {0};
-    str_format(fullName, sizeof(fullName), "skins/%s.png", pName);
-
-    char aBuff[512] = {0};
-    str_format(aBuff, sizeof(aBuff), "GET /skins/skin/%s.png HTTP/1.0\r\nHost: ddnet.tw\r\n\r\n", pName);
-	net_tcp_send(sockDDNet, aBuff, str_length(aBuff));
-
-	std::string NetData;
-	int TotalRecv = 0;
-	int TotalBytes = 0;
-	int CurrentRecv = 0;
-	int nlCount = 0;
-	const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 0, 2048) * 1024;
-	char aNetBuff[1024] = {0};
-	do
-	{
-		// Limit Speed
-		if (downloadSpeed > 0)
-		{
-			int64 ctime = time_get();
-			if (ctime - downloadTime <= time_freq())
-			{
-				if (chunkBytes >= downloadSpeed)
-				{
-					int tdff = (time_freq() - (ctime - downloadTime)) / 1000;
-					thread_sleep(tdff);
-					continue;
-				}
-			}
-			else
-			{
-				chunkBytes = 0;
-				downloadTime = time_get();
-			}
-		}
-		//
-
-		CurrentRecv = net_tcp_recv(sockDDNet, aNetBuff, sizeof(aNetBuff));
-		chunkBytes += CurrentRecv;
-		for (int i=0; i<CurrentRecv ; i++)
-		{
-			if (nlCount < 2)
-			{
-				if (aNetBuff[i] == '\r' || aNetBuff[i] == '\n')
-				{
-				    ++nlCount;
-					if (NetData.size() > 0)
-					{
-                        std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
-                        if (NetData.find("404 not found") != std::string::npos)
-                        {
-                            m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
-                            dbg_msg("skins", "Can't found '%s' on DDNet DataBase...", pName);
-                            net_tcp_close(sockDDNet);
-                            return;
-                        }
-                        else if (NetData.find("content-length:") != std::string::npos)
-                        {
-                            sscanf(NetData.c_str(), "content-length:%d", &TotalBytes);
-                            if (TotalBytes == 0)
-                                sscanf(NetData.c_str(), "content-length: %d", &TotalBytes);
-                        }
-
-                        NetData.clear();
-					}
-
-					if (aNetBuff[i] == '\r') ++i;
-					continue;
-				}
-
-                nlCount = 0;
-                NetData += aNetBuff[i];
-			}
-			else
-			{
-			    if (nlCount == 2)
-                {
-                    if (TotalBytes <= 0)
-                    {
-                        dbg_msg("skins", "Error downloading '%s'...", pName);
-                        break;
-                    }
-
-                    char aCompleteFilename[512];
-                    Storage()->GetPath(IStorage::TYPE_SAVE+1, fullName, aCompleteFilename, sizeof(aCompleteFilename));
-                    dstFile = io_open(aCompleteFilename, IOFLAG_WRITE);
-                    if(!dstFile)
-                    {
-                        m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
-                        dbg_msg("skins", "Error creating '%s'...", aCompleteFilename);
-                        net_tcp_close(sockDDNet);
-                        return;
-                    }
-
-                    ++nlCount;
-                }
-
-				io_write(dstFile, &aNetBuff[i], 1);
-
-				TotalRecv++;
-				if (TotalRecv == TotalBytes)
-					break;
-			}
-		}
-	} while (CurrentRecv > 0);
-
-	net_tcp_close(sockDDNet);
-
-    if (dstFile)
-    {
-        io_close(dstFile);
-        str_format(fullName, sizeof(fullName), "%s.png", pName);
-        dbg_msg("skins", "'%s' downloaded successfully :)", pName);
-        m_DownloadedSkinsSet.find(sName)->second = true;
-
+    	m_DownloadedSkinsSet.erase(m_DownloadedSkinsSet.find(sName));
+    	dbg_msg("skins", "Can't download '%s' from DDNet DataBase :(", pName);
     }
 }
 
-void ThreadDownloadSkin(void *params)
+void CSkins::AddDownloadJob(const char *name)
 {
-    CSkins::InfoDownloadSkinThread *pInfoThread = static_cast<CSkins::InfoDownloadSkinThread*>(params);
-    if (!pInfoThread || !pInfoThread->m_pSkins || pInfoThread->m_SkinName[0] == 0)
-    	return;
+	int UsableIndex = -1;
 
-    pInfoThread->m_pSkins->DownloadSkin(pInfoThread->m_SkinName);
-    delete pInfoThread;
+	for (unsigned i=0; i<MAX_DOWNLOADS; i++)
+	{
+		if (m_Jobs[i].Status() == CJob::STATE_DONE)
+			UsableIndex = i;
+		else if (str_comp(m_InfoThreads[i].m_SkinName, name) == 0)
+			return;
+	}
+
+	if (UsableIndex >= 0)
+	{
+		m_InfoThreads[UsableIndex].m_pSkins = this;
+		str_copy(m_InfoThreads[UsableIndex].m_SkinName, name, sizeof(m_InfoThreads[UsableIndex].m_SkinName));
+		m_JobPool.Add(&m_Jobs[UsableIndex], ThreadDownloadSkin, &m_InfoThreads[UsableIndex]);
+	}
 }

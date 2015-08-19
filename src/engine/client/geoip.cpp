@@ -7,149 +7,51 @@
 #include <algorithm>
 #include <stdio.h>
 #include <engine/shared/config.h>
+#include <engine/shared/http_downloader.h>
 #include <engine/external/json-parser/json.h>
 #include "geoip.h"
 
-static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
-
-static LOCK m_GeoIPLock = 0;
-NETADDR CGeoIP::m_HostAddress;
-NETSOCKET CGeoIP::m_Socket = invalid_socket;
-
-#ifndef EINPROGRESS
-	#define EINPROGRESS     115
-#endif
-
-CGeoIP::CGeoIP()
-{
-    m_GeoIPLock = lock_create();
-    m_pGeoIPThread = 0x0;
-    m_Active = true;
-}
 
 void CGeoIP::Init()
 {
-    mem_zero(&m_HostAddress, sizeof(m_HostAddress));
-
-    //Lookup
-    if(net_host_lookup("www.telize.com", &m_HostAddress, NETTYPE_IPV4) != 0)
-    {
-        dbg_msg("GeoIP","ERROR: Can't run host lookup.");
-        m_Active = false;
-        return;
-    }
-    m_HostAddress.port = 80;
+	m_JobPool.Init(1);
 }
 
-void CGeoIP::Search(InfoGeoIPThread *pGeoInfo)
+void CGeoIP::Search(CServerInfo *pServerInfo, CServerInfoRegv2 *pServerReg)
 {
-	if (!m_Active)
-		return;
+	for (unsigned i = 0; i<3; i++)
+	{
+		if (m_aGeoJobs[i].Status() != CJob::STATE_RUNNING)
+		{
+			InfoGeoIPThread *pGeoThread = &m_aInfoThreads[i];
+			str_copy(pGeoThread->m_aIpAddress, pServerInfo->m_aAddress, sizeof(pGeoThread->m_aIpAddress));
+			pGeoThread->m_pGeoIP = this;
+			pGeoThread->m_pServerInfo = pServerInfo;
+			pGeoThread->m_pServerInfoReg = pServerReg;
 
-    if (m_pGeoIPThread)
-    {
-    	net_tcp_close(m_Socket);
-        thread_destroy(m_pGeoIPThread);
-        m_pGeoIPThread = 0x0;
-    }
+			m_JobPool.Remove(&m_aGeoJobs[i]);
+			m_JobPool.Add(&m_aGeoJobs[i], ThreadGeoIP, pGeoThread);
+			break;
+		}
 
-    m_pGeoIPThread = thread_init(ThreadGeoIP, pGeoInfo);
+	}
 }
 
-IGeoIP::GeoInfo CGeoIP::GetInfo(std::string ip)
+GeoInfo CGeoIP::GetInfo(std::string ip)
 {
+    GeoInfo rInfo;
+    char aUrl[128];
+
     dbg_msg("GeoIP", "Searching geolocation of '%s'...", ip.c_str());
 
-    NETADDR bindAddr;
-    mem_zero(&bindAddr, sizeof(bindAddr));
-    char aNetBuff[1024];
-    std::string jsonData;
-    IGeoIP::GeoInfo rInfo;
-
-    //Connect
-    bindAddr.type = NETTYPE_IPV4;
-    m_Socket = net_tcp_create(bindAddr);
-    net_set_non_blocking(m_Socket);
-    if(net_tcp_connect(m_Socket, &m_HostAddress) < 0)
-    {
-    	if (net_errno() != EINPROGRESS)
-    	{
-    		dbg_msg("GeoIP","ERROR: Can't connect.");
-    		net_tcp_close(m_Socket);
-    		return rInfo;
-    	}
-    }
-
-    net_socket_read_wait(m_Socket, 1);
-    net_set_blocking(m_Socket);
-
-    //Send request
-    str_format(aNetBuff, sizeof(aNetBuff), "GET /geoip/%s HTTP/1.0\r\nHost: www.telize.com\r\n\r\n", ip.c_str());
-    net_tcp_send(m_Socket, aNetBuff, strlen(aNetBuff));
+    //Format URL
+    str_format(aUrl, sizeof(aUrl), "http://www.telize.com/geoip/%s", ip.c_str());
 
     //read data
-    bool errors = true;
-    std::string NetData;
-    int TotalRecv = 0;
-    int TotalBytes = 0;
-    int CurrentRecv = 0;
-    bool isHead = true;
-    int enterCtrl = 0;
-    while ((CurrentRecv = net_tcp_recv(m_Socket, aNetBuff, sizeof(aNetBuff))) > 0)
-    {
-        for (int i=0; i<CurrentRecv ; i++)
-        {
-            if (isHead)
-            {
-                if (aNetBuff[i]=='\n')
-                {
-                    enterCtrl++;
-                    if (enterCtrl == 2)
-                    {
-                        isHead = false;
-                        NetData.clear();
-                        continue;
-                    }
-
-                    std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
-					if (NetData.find("content-length:") != std::string::npos)
-                    {
-                        sscanf(NetData.c_str(), "content-length:%d", &TotalBytes);
-                        if (TotalBytes == 0)
-                            sscanf(NetData.c_str(), "content-length: %d", &TotalBytes);
-                    }
-
-                    NetData.clear();
-                    continue;
-                }
-                else if (aNetBuff[i]!='\r')
-                    enterCtrl=0;
-
-                NetData+=aNetBuff[i];
-            }
-            else
-            {
-                if (TotalBytes == 0)
-                {
-                    net_tcp_close(m_Socket);
-                    dbg_msg("GeoIP","ERROR: Error with size received data.");
-                    break;
-                }
-
-                jsonData += aNetBuff[i];
-
-                TotalRecv++;
-                if (TotalRecv == TotalBytes)
-                {
-                	errors = false;
-                    break;
-                }
-            }
-        }
-    }
-
-    //Finish
-    net_tcp_close(m_Socket);
+    unsigned fileSize = CHttpDownloader::GetFileSize(aUrl);
+    char *pHttpData = (char*)mem_alloc(fileSize, 1);
+    mem_zero(pHttpData, fileSize);
+    bool errors = !CHttpDownloader::GetToMemory(aUrl, pHttpData, fileSize, 1);
 
     if (!errors)
     {
@@ -157,7 +59,7 @@ IGeoIP::GeoInfo CGeoIP::GetInfo(std::string ip)
 		json_settings JsonSettings;
 		mem_zero(&JsonSettings, sizeof(JsonSettings));
 		char aError[256];
-		json_value *pJsonData = json_parse_ex(&JsonSettings, jsonData.c_str(), jsonData.length(), aError);
+		json_value *pJsonData = json_parse_ex(&JsonSettings, pHttpData, fileSize, aError);
 		if (pJsonData == 0)
 		{
 			dbg_msg("GeoIP", "Error: %s", aError);
@@ -171,24 +73,28 @@ IGeoIP::GeoInfo CGeoIP::GetInfo(std::string ip)
 		if (countryName.type == json_string) str_copy(rInfo.m_aCountryName, (const char *)countryName, sizeof(rInfo.m_aCountryName));
 		//const json_value &isp = (*pJsonData)["isp"];
 		//if (isp.type == json_string) geoInfo->m_Isp = (const char *)isp;
+		json_value_free(pJsonData);
     }
 
+    mem_free(pHttpData);
 	return rInfo;
 }
 
-void CGeoIP::ThreadGeoIP(void *params)
+int CGeoIP::ThreadGeoIP(void *params)
 {
     InfoGeoIPThread *pInfoThread = static_cast<InfoGeoIPThread*>(params);
     std::string host = pInfoThread->m_aIpAddress;
-    IGeoIP::GeoInfo info = GetInfo(host.substr(0, host.find_first_of(":")).c_str());
+    GeoInfo info = GetInfo(host.substr(0, host.find_first_of(":")).c_str());
 
-    lock_wait(m_GeoIPLock);
     if (pInfoThread->m_pServerInfoReg)
     {
     	str_copy(pInfoThread->m_pServerInfoReg->m_aCountryCode, info.m_aCountryCode, sizeof(pInfoThread->m_pServerInfoReg->m_aCountryCode));
     	str_copy(pInfoThread->m_pServerInfoReg->m_aCountryName, info.m_aCountryName, sizeof(pInfoThread->m_pServerInfoReg->m_aCountryName));
     }
-    *pInfoThread->m_pGeoInfo = info;
-    lock_unlock(m_GeoIPLock);
+
+	str_copy(pInfoThread->m_pServerInfo->m_aCountryCode, info.m_aCountryCode, sizeof(pInfoThread->m_pServerInfo->m_aCountryCode));
+	str_copy(pInfoThread->m_pServerInfo->m_aCountryName, info.m_aCountryName[0]!=0?info.m_aCountryName:"NULL", sizeof(pInfoThread->m_pServerInfo->m_aCountryName));
+
+    return 0;
 }
 

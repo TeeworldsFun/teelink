@@ -1322,7 +1322,21 @@ int str_utf8_check(const char *str);
 		a - Pointer to a buffer that shall receive the text string.
 		length - Size of the buffer.
 */
-void str_to_upper(char *a, int length);
+void str_to_upper(char *str_in);
+
+/*
+    H-Client
+	Function: str_trim
+		Remove all spaces
+
+	Parameters:
+		src - Pointer to a buffer that shall receive the text string.
+		length - Size of the buffer.
+*/
+void str_trim(char *str_in); // H-Client
+
+int net_socket_rcv_timeout(NETSOCKET sock, int time);
+int net_socket_snd_timeout(NETSOCKET sock, int time);
 
 void open_default_browser(const char *url);
 #ifdef __cplusplus

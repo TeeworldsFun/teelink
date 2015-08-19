@@ -50,7 +50,12 @@ public:
         STATE_DISCONNECTED=0,
         STATE_CONNECTED,
         STATE_CONNECTING,
-        STATE_AWAY
+        STATE_AWAY,
+
+		MSG_TYPE_NORMAL = 0,
+		MSG_TYPE_ACTION,
+		MSG_TYPE_TWSERVER,
+		MSG_TYPE_GET_TWSERVER,
     };
 
 
@@ -74,11 +79,13 @@ public:
     virtual void SetNick(const char *nick) = 0;
     virtual const char* GetNick() = 0;
 
-    virtual void SendMsg(const char *to, const char *msg) = 0;
-    virtual void SendRaw(const char *rawmsg) = 0;
+    virtual void SendMsg(const char *to, const char *msg, int type = MSG_TYPE_NORMAL) = 0;
+    virtual void SendRaw(const char *fmt, ...) = 0;
 
     virtual void StartConnection() = 0;
     virtual void EndConnection() = 0;
+
+    virtual void SetAway(bool state, const char *msg = 0x0) = 0;
 
 };
 

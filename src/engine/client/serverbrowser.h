@@ -40,7 +40,7 @@ public:
 	int NumServers() const { return m_NumServers; }
 
 	int NumSortedServers() const { return m_NumSortedServers; }
-	const CServerInfo *SortedGet(int Index) const;
+	CServerInfo *SortedGet(int Index) const;
 
 	bool IsFavorite(const NETADDR &Addr) const;
 	void AddFavorite(const NETADDR &Addr);

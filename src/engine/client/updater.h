@@ -42,7 +42,6 @@ private:
 
 protected:
 	bool SelfDelete();
-	bool GetFile(const char *url, const char *path);
 	bool CanUpdate(const char *pFile);
 	void AddFileToDownload(const char *pFile);
 	void AddFileToRemove(const char *pFile);

@@ -5,27 +5,33 @@
 
 #include <base/system.h>
 #include <engine/geoip.h>
+#include <engine/shared/jobs.h>
 #include <string>
 #include <list>
 
 class CGeoIP : public IGeoIP
 {
 public:
-    CGeoIP();
+    void Search(CServerInfo *pServerInfo, CServerInfoRegv2 *pServer);
+    bool IsActive() const {
+    	for (unsigned i = 0; i<3; i++)
+    	{
+    	 if (m_aGeoJobs[i].Status() != CJob::STATE_DONE)
+    		 return true;
+    	}
 
-    void Search(InfoGeoIPThread *pGeoInfo);
-    bool IsActive() const { return m_Active; }
+    	return false;
+    }
     void Init();
 
 protected:
-    void *m_pGeoIPThread;
-    static NETADDR m_HostAddress;
-    static NETSOCKET m_Socket;
-    bool m_Active;
+    InfoGeoIPThread m_aInfoThreads[3];
+    class CJob m_aGeoJobs[3];
+    class CJobPool m_JobPool;
 
 private:
-    static IGeoIP::GeoInfo GetInfo(std::string ip);
-    static void ThreadGeoIP(void *params);
+    static GeoInfo GetInfo(std::string ip);
+    static int ThreadGeoIP(void *params);
 };
 
 #endif
