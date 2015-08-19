@@ -18,7 +18,6 @@
 #elif defined(CONF_FAMILY_UNIX)
 	#if defined(CONF_PLATFORM_LINUX)
 		#include <libnotify/notify.h> // H-Client
-		#include <glib.h>
 	#endif
 #endif
 
@@ -987,6 +986,10 @@ int CGraphics_SDL::Init()
 
 	SDL_ShowCursor(0);
 
+	#ifdef CONF_PLATFORM_LINUX
+		m_pPixBufNotifIcon = gdk_pixbuf_new_from_file("data/teeworlds.png", 0x0); // H-Client
+	#endif
+
 	CGraphics_OpenGL::Init();
 
 	MapScreen(0,0,g_Config.m_GfxScreenWidth, g_Config.m_GfxScreenHeight);
@@ -995,6 +998,7 @@ int CGraphics_SDL::Init()
 
 void CGraphics_SDL::Shutdown()
 {
+	//g_object_unref(G_OBJECT(m_pPixBufNotifIcon));
 	// TODO: SDL, is this correct?
 	SDL_Quit();
 }
@@ -1045,15 +1049,17 @@ void CGraphics_SDL::NotifyWindow(const char *pTitle, const char *pMsg)
     	#ifdef CONF_PLATFORM_MACOSX
 			CNotification::notify(pTitle, pMsg);
 		#else
-			GError *error = NULL;
 			char category[30] = "Chat Notification";
 			NotifyNotification *pNotif = notify_notification_new(pTitle, pMsg, NULL);
 
-			// TODO: Add icon (uff i need sleep... :B)
-			notify_notification_set_timeout(pNotif, 5000);
+			notify_notification_set_icon_from_pixbuf(pNotif, m_pPixBufNotifIcon);
+			notify_notification_set_timeout(pNotif, g_Config.m_hcNotificationTime);
 			notify_notification_set_category(pNotif, category);
-			notify_notification_set_urgency (pNotif, NOTIFY_URGENCY_NORMAL);
-			notify_notification_show(pNotif, &error);
+			notify_notification_set_urgency (pNotif, NOTIFY_URGENCY_CRITICAL);
+			//notify_notification_set_icon_from_pixbuf();
+			if (!notify_notification_show(pNotif, 0x0))
+				dbg_msg("gfx", "Unable to show notification bubble");
+			//g_object_unref(G_OBJECT(pNotif));
 		#endif
 	#endif
 }

@@ -90,4 +90,114 @@ MACRO_CONFIG_INT(SvVoteKickBantime, sv_vote_kick_bantime, 5, 0, 1440, CFGFLAG_SE
 
 MACRO_CONFIG_INT(DbgFocus, dbg_focus, 0, 0, 1, CFGFLAG_CLIENT, "")
 MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")
+
+/** H-Client **/
+//MACRO_CONFIG_INT(hc3DRender, hc_3d_render, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enables/Disable 3D Render")
+MACRO_CONFIG_INT(hcAutoUpdate, hc_auto_update, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update")
+MACRO_CONFIG_INT(hcAutoDownloadSkins, hc_auto_download_skins, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins from DDNet Database")
+MACRO_CONFIG_STR(hcAutoDownloadSkinsSpeed, hc_auto_download_skins_speed, 5, "1", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins Speed (KiBps)")
+MACRO_CONFIG_INT(hcUseHUD, hc_use_hud, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Uses H-Client HUD")
+MACRO_CONFIG_INT(hcColorClan, hc_color_clan, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "HighLight Clan Members")
+MACRO_CONFIG_INT(hcChatEmoticons, hc_chat_emoticons, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat emoticons")
+MACRO_CONFIG_INT(hcChatColours, hc_chat_colours, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat colours")
+MACRO_CONFIG_INT(hcChatTeamColors, hc_chat_team_colors, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat team colours")
+MACRO_CONFIG_INT(hcGoreStyle, hc_gore_style, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Gore Style!")
+MACRO_CONFIG_INT(hcGoreStyleTeeColors, hc_gore_style_tee_colors, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Tee Colors in Gore Style!")
+MACRO_CONFIG_INT(hcGoreStyleDropWeapons, hc_gore_style_drop_weapons, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Drop Weapons in Gore Style!")
+
+MACRO_CONFIG_INT(hcLaserCustomColor, hc_laser_custom_color, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Custom Lase Color")
+MACRO_CONFIG_INT(hcLaserColorHue, hc_laser_color_hue, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color hue")
+MACRO_CONFIG_INT(hcLaserColorSat, hc_laser_color_sat, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color saturation")
+MACRO_CONFIG_INT(hcLaserColorLht, hc_laser_color_lht, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color lightness")
+MACRO_CONFIG_INT(hcLaserColorAlpha, hc_laser_color_alpha, 190, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser alpha")
+
+MACRO_CONFIG_INT(hcDisableChatSoundNotification, hc_disable_chat_sound_notification, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Disable Chat Sound Notification")
+MACRO_CONFIG_INT(hcPlayerInfo, hc_player_info, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Player Info")
+MACRO_CONFIG_INT(hcShowPreviewMap, hc_show_preview_map, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Preview Map")
+MACRO_CONFIG_INT(hcPreviewMapMaxWidth, hc_preview_map_max_width, 600, 1, 999999, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Preview Map Max Width")
+MACRO_CONFIG_INT(hcPreviewMapMaxHeight, hc_preview_map_max_height, 600, 1, 999999, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Preview Map Max Height")
+
+MACRO_CONFIG_STR(hcEyesSelectorTime, hc_eyes_selector_time, 4, "3", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Eyes Selector Time")
+
+MACRO_CONFIG_INT(hcRaceGhost, hc_race_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Enable ghost")
+MACRO_CONFIG_INT(hcRaceShowGhost, hc_race_show_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show ghost")
+MACRO_CONFIG_INT(hcRaceSaveGhost, hc_race_save_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Save ghost")
+
+MACRO_CONFIG_INT(AntiPing, anti_ping, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Anti-Ping")
+
+MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")
+MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")
+MACRO_CONFIG_INT(ddrPreventPrediction, ddr_prevent_prediction, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Prevent Predection When Freeze")
+MACRO_CONFIG_STR(ddrTimeoutHash, ddrace_timeout_hash, 16, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "DDRace Timeout Hash")
+
+MACRO_CONFIG_INT(UiSubPage, ui_subpage, 13, 0, 13, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Interface Subpage") //H-Client
+
+MACRO_CONFIG_INT(hcNotificationTime, hc_notification_time, 5000, 0, 99999, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Notification Time")
+
+// Editor
+MACRO_CONFIG_INT(hcEditorDrawRouteAccuracy, hc_editor_draw_route_accuracy, 5, 0, 100, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Editor Draw Route Accuracy")
+
+// Theme
+MACRO_CONFIG_STR(hcTheme, theme, 25, "default", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+// Irc
+MACRO_CONFIG_STR(IrcNick, irc_nick, 15, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Nick")
+MACRO_CONFIG_STR(IrcServer, irc_server, 124, "port80c.se.quakenet.org", CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Server")
+MACRO_CONFIG_INT(IrcPort, irc_port, 6667, 1111, 9999, CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Port")
+
+MACRO_CONFIG_STR(hcListHeaderBackgroundColor, list_header_background_color, 9, "FFFFFF44", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcListHeaderTextColor, list_header_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcListFooterBackgroundColor, list_footer_background_color, 9, "FFFFFF44", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcListFooterTextColor, list_footer_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcListBackgroundColor, list_background_color, 9, "00000099", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcListTextColor, list_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcListItemSelectedColor, list_item_selected_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcListItemOddColor, list_item_odd_color, 9, "FFFFFF33", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcListColumnSelectedColor, list_column_selected_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcServerbrowserListGroupHeaderBackgroundColor, serverbrowser_list_group_header_background_color, 9, "0078FAA6", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcServerbrowserListGroupHeaderTextColor, serverbrowser_list_group_header_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcServerbrowserListExtraInfoBackgroundColor, serverbrowser_list_extra_info_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcServerbrowserListExtraInfoTextColor, serverbrowser_list_extra_info_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcContainerHeaderBackgroundColor, container_header_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcContainerHeaderTextColor, container_header_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcContainerBackgroundColor, container_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcContainerTextColor, container_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcSubcontainerHeaderBackgroundColor, subcontainer_header_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcSubcontainerHeaderTextColor, subcontainer_header_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcSubcontainerBackgroundColor, subcontainer_background_color, 9, "FFFFFF33", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcSubcontainerTextColor, subcontainer_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcPopupHeaderBackgroundColor, popup_header_background_color, 9, "FFFFFF55", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcPopupHeaderTextColor, popup_header_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcPopupBackgroundColor, popup_background_color, 9, "00000055", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcPopupTextColor, popup_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcEditboxBackgroundColor, editbox_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcEditboxTextColor, editbox_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcButtonBackgroundColor, button_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcButtonTextColor, button_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcTrackbarBackgroundColor, trackbar_background_color, 9, "99999999", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcTrackbarSliderBackgroundColor, trackbar_slider_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcProgressbarBackgroundColor, progressbar_background_color, 9, "00000099", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcProgressbarSliderBackgroundColor, progressbar_slider_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcMainmenuTextColor, mainmenu_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcMainmenuBackgroundTopColor, mainmenu_background_top_color, 9, "3360A7FF", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcMainmenuBackgroundBottomColor, mainmenu_background_bottom_color, 9, "B8D8F0FF", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcPaneltabSelectedBackgroundColor, paneltab_selected_background_color, 9, "00000099", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcPaneltabSelectedTextColor, paneltab_selected_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcPaneltabBackgroundColor, paneltab_background_color, 9, "00000044", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcPaneltabTextColor, paneltab_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(hcSettingsPaneltabSelectedBackgroundColor, settings_paneltab_selected_background_color, 9, "FFFFFF99", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcSettingsPaneltabSelectedTextColor, settings_paneltab_selected_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcSettingsPaneltabBackgroundColor, settings_paneltab_background_color, 9, "FFFFFF44", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(hcSettingsPaneltabTextColor, settings_paneltab_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
 #endif

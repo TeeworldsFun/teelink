@@ -3,6 +3,10 @@
 #ifndef ENGINE_CLIENT_GRAPHICS_H
 #define ENGINE_CLIENT_GRAPHICS_H
 
+#if defined(CONF_PLATFORM_LINUX)
+	#include <gdk-pixbuf/gdk-pixbuf.h> // H-Client
+#endif
+
 class CGraphics_OpenGL : public IEngineGraphics
 {
 protected:
@@ -64,6 +68,10 @@ protected:
 
 	bool m_DoScreenshotTumbtail; //H-Client
 	bool m_DoScreenShowInfoKills; //H-Client
+
+#ifdef CONF_PLATFORM_LINUX
+	GdkPixbuf *m_pPixBufNotifIcon; // H-Client
+#endif
 
 	void Flush();
 	void AddVertices(int Count);

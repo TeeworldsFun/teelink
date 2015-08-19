@@ -2548,6 +2548,10 @@ int main(int argc, const char **argv) // ignore_conventi on
 	pConfig->Save();
 
 	// H-Client
+#if defined(CONF_PLATFORM_LINUX)
+	notify_uninit();
+#endif
+
 	pClient->ServerBrowser()->SaveServerInfo();
 	pStats->Save();
 

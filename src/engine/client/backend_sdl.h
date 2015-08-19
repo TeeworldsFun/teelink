@@ -4,6 +4,10 @@
 
 #include "graphics_threaded.h"
 
+#if defined(CONF_PLATFORM_LINUX)
+	#include <gdk-pixbuf/gdk-pixbuf.h> // H-Client
+#endif
+
 
 
 // platform dependent implementations for transfering render context from the main thread to the graphics thread
@@ -139,6 +143,10 @@ public:
 	virtual void RunBuffer(CCommandBuffer *pBuffer);
 	virtual bool IsIdle() const;
 	virtual void WaitForIdle();
+
+#ifdef CONF_PLATFORM_LINUX
+	GdkPixbuf *m_pPixBufNotifIcon; // H-Client
+#endif
 		
 protected:
 	void StartProcessor(ICommandProcessor *pProcessor);
