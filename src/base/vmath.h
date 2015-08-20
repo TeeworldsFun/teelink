@@ -124,6 +124,7 @@ public:
 	const vector3_base &operator /=(const vector3_base &v) { x /= v.x; y /= v.y; z /= v.z; return *this; }
 
 	bool operator ==(const vector3_base &v) const { return x == v.x && y == v.y && z == v.z; } //TODO: do this with an eps instead
+	bool operator !=(const vector3_base &v) const { return x != v.x || y != v.y || z != v.z; } // H-Client
 
 	operator const T* () { return &x; }
 };
@@ -204,6 +205,7 @@ public:
 	const vector4_base &operator /=(const vector4_base &v) { x /= v.x; y /= v.y; z /= v.z; w /= v.w; return *this; }
 
 	bool operator ==(const vector4_base &v) const { return x == v.x && y == v.y && z == v.z && w == v.w; } //TODO: do this with an eps instead
+	bool operator !=(const vector4_base &v) const { return x != v.x || y != v.y || z != v.z || w != v.w; } // H-Client
 
 	operator const T* () { return &x; }
 };

@@ -902,16 +902,12 @@ void CServerBrowser::ConfigSaveCallback(IConfig *pConfig, void *pUserData)
 }
 
 //H-Client
+static const char gs_Versions[2][6] = { { 'H', 'C', '3', '8', '0', 0 }, { 'H', 'C', '1', '0', '4', 0 } };
 bool CServerBrowser::SaveServerInfo()
 {
     IOHANDLE File = Storage()->OpenFile("history_servers.dat", IOFLAG_WRITE, IStorage::TYPE_SAVE);
 	if(!File)
 		return false;
-
-    //H-Client 1.0.4
-    char version[] = { 'H', 'C', '3', '8', '0', 0 };
-    io_write(File, version, sizeof(version));
-    //
 
     unsigned long TotalSize = m_lServInfo.size() * sizeof(CServerInfoRegv2);
 	unsigned long s = compressBound(TotalSize);
@@ -920,10 +916,12 @@ bool CServerBrowser::SaveServerInfo()
 	int Result = compress((Bytef*)pCompData, &s, (Bytef*)m_lServInfo.base_ptr(), TotalSize); // ignore_convention
 	if(Result != Z_OK)
 	{
+		io_close(File);
 		dbg_msg("datafile", "compression error %d", Result);
 		dbg_assert(0, "zlib error");
 	}
 
+	io_write(File, gs_Versions[0], sizeof(gs_Versions[0]));
 	io_write(File, &TotalSize, sizeof(TotalSize));
 	io_write(File, pCompData, (int)s);
 	io_close(File);
@@ -947,11 +945,11 @@ bool CServerBrowser::LoadServerInfo()
 		oldName = true;
 
     //Verify Version
-    char version[] = { 'H', 'C', '3', '8', '0', 0 };
+    char version[6] = { 0 };
     io_read(File, version, sizeof(version));
-    if (str_comp(version, "HC380") == 0)
+    if (mem_comp(version, gs_Versions[0], sizeof(version)) == 0)
     {
-    	unsigned long UncompressedSize, UncompressedSizeCalc;
+    	unsigned long UncompressedSize=0L, UncompressedSizeCalc=0L;
     	io_read(File, &UncompressedSize, sizeof(UncompressedSize));
     	unsigned char *pUncompressedData = (unsigned char*)mem_alloc(UncompressedSize, 1);
     	UncompressedSizeCalc = UncompressedSize;
@@ -969,24 +967,23 @@ bool CServerBrowser::LoadServerInfo()
     	if (UncompressedSizeCalc != UncompressedSize || UncompressedSize < sizeof(CServerInfoRegv2))
     	{
     		dbg_msg("serverinfo", "Error loading server info!");
-    		io_close(File);
-            mem_free(pUncompressedData);
-            mem_free(pData);
-    		return false;
     	}
+    	else
+    	{
+			CServerInfoRegv2 ServReg;
+			for (std::size_t cursor = 0; cursor<=UncompressedSizeCalc-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
+			{
+				mem_copy(&ServReg, pUncompressedData+cursor, sizeof(CServerInfoRegv2));
+				m_lServInfo.add(ServReg);
+			}
 
-		CServerInfoRegv2 ServReg;
-		for (std::size_t cursor = 0; cursor<=UncompressedSizeCalc-sizeof(CServerInfoRegv2); cursor+=sizeof(CServerInfoRegv2))
-		{
-			mem_copy(&ServReg, pUncompressedData+cursor, sizeof(CServerInfoRegv2));
-			m_lServInfo.add(ServReg);
-		}
+			dbg_msg("serverinfo", "Loaded %d servers from file..", m_lServInfo.size());
+    	}
 
         mem_free(pUncompressedData);
         mem_free(pData);
-        dbg_msg("serverinfo", "Loaded %d servers from file..", m_lServInfo.size());
     }
-    else if (str_comp(version, "HC104") == 0)
+    else if (mem_comp(version, gs_Versions[1], sizeof(version)) == 0)
     {
         //Load Num Of Regs
     	int numServInfoRegs = 0;
@@ -1032,7 +1029,6 @@ bool CServerBrowser::LoadServerInfo()
 	if (oldName)
 		Storage()->RemoveFile("serverinfo.tw", IStorage::TYPE_SAVE);
 
-	dbg_msg("server browser", "Loaded servers sucesfully");
 	return true;
 }
 

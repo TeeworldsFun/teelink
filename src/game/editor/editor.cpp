@@ -642,9 +642,9 @@ int CEditor::DoButton_Tab(const void *pID, const char *pText, int Checked, const
 	return DoButton_Editor_Common(pID, pText, Checked, pRect, Flags, pToolTip);
 }
 
-int CEditor::DoButton_Ex(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, int Corners, float FontSize)
+int CEditor::DoButton_Ex(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, int Corners, float FontSize, vec4 BkgColor) // H-Client
 {
-	RenderTools()->DrawUIRect(pRect, GetButtonColor(pID, Checked), Corners, 3.0f);
+	RenderTools()->DrawUIRect(pRect, (!Checked&&BkgColor!=NOCOLOR)?BkgColor:GetButtonColor(pID, Checked), Corners, 3.0f);
 	CUIRect NewRect = *pRect;
 	NewRect.HMargin(NewRect.h/2.0f-FontSize/2.0f-1.0f, &NewRect);
 	UI()->DoLabel(&NewRect, pText, FontSize, 0, -1);
@@ -2709,8 +2709,11 @@ void CEditor::RenderLayers(CUIRect ToolBox, CUIRect ToolBar, CUIRect View)
 				float FontSize = 10.0f;
 				while(TextRender()->TextWidth(0, FontSize, aBuf, -1) > Button.w)
 					FontSize--;
+
+				bool IsGameLayer = (m_Map.m_pGameLayer == m_Map.m_lGroups[g]->m_lLayers[i]);
+
 				if(int Result = DoButton_Ex(m_Map.m_lGroups[g]->m_lLayers[i], aBuf, g==m_SelectedGroup&&i==m_SelectedLayer, &Button,
-					BUTTON_CONTEXT, "Select layer.", 0, FontSize))
+					BUTTON_CONTEXT, "Select layer.", 0, FontSize, IsGameLayer?vec4(0.78f, 0.62f, 0.01f, 1.0f):NOCOLOR))
 				{
 					m_SelectedLayer = i;
 					m_SelectedGroup = g;
@@ -2754,7 +2757,7 @@ void CEditor::RenderLayers(CUIRect ToolBox, CUIRect ToolBar, CUIRect View)
 
                         LayerCur += 44.0f;
                 }
-                else if(m_Map.m_pGameLayer != m_Map.m_lGroups[g]->m_lLayers[i] && m_Map.m_lGroups[g]->m_lLayers[i]->m_Type == LAYERTYPE_TILES)
+                else if(!IsGameLayer && m_Map.m_lGroups[g]->m_lLayers[i]->m_Type == LAYERTYPE_TILES)
                 {
 						CLayerTiles *pLayer = (CLayerTiles *)m_Map.m_lGroups[g]->m_lLayers[i];
 

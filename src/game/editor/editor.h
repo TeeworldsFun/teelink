@@ -26,6 +26,7 @@
 #include "particle_generator.h" // H-Client
 
 typedef void (*INDEX_MODIFY_FUNC)(int *pIndex);
+static const vec4 NOCOLOR = vec4(-1, -1, -1, -1); // H-Client
 
 //CRenderTools m_RenderTools;
 
@@ -737,7 +738,7 @@ public:
 	int DoButton_Editor(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, vec4 color); // H-Client
 
 	int DoButton_Tab(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
-	int DoButton_Ex(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, int Corners, float FontSize=10.0f);
+	int DoButton_Ex(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, int Corners, float FontSize=10.0f, vec4 BkgColor = NOCOLOR); // H-Client
 	int DoButton_ButtonDec(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
 	int DoButton_ButtonInc(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip);
 
