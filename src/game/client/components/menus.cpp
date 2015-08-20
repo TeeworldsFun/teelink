@@ -1114,6 +1114,10 @@ int CMenus::Render()
 			pButtonText = Localize("Ok");
 			ExtraAlign = -1;
 		}
+		else if(m_Popup == POPUP_LANGUAGE) // H-Client
+		{
+			pTitle = Localize("Welcome to Teeworlds");
+		}
         else if(m_Popup == POPUP_UPDATER)
         {
             pTitle = Localize("Auto-Update");
@@ -1381,7 +1385,7 @@ int CMenus::Render()
 				m_Popup = POPUP_NONE;
 
 			static int s_ButtonStart = 0;
-			if(DoButton_Menu(&s_ButtonStart, Localize("Start"), 0, &Yes) || m_EnterPressed)
+			if((DoButton_Menu(&s_ButtonStart, Localize("Start"), 0, &Yes) || m_EnterPressed) && m_lDemos[m_DemolistSelectedIndex].m_Info.m_Version <= 4) // H-Client
 			{
 				char aBuf[512];
 				str_format(aBuf, sizeof(aBuf), "%s/%s", m_aCurrentDemoFolder, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
@@ -1530,7 +1534,7 @@ int CMenus::Render()
 		{
 			Box = Screen;
 			Box.VMargin(150.0f, &Box);
-			Box.HMargin(150.0f, &Box);
+			Box.HMargin(170.0f, &Box);
 			Box.HSplitTop(20.f, &Part, &Box);
 			Box.HSplitBottom(20.f, &Box, &Part);
 			Box.HSplitBottom(24.f, &Box, &Part);

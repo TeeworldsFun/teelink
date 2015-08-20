@@ -565,8 +565,8 @@ void CMenus::RenderDemoList(CUIRect MainView)
 	MainView.HSplitBottom(ms_ButtonHeight+5.0f, &MainView, &ButtonBar);
 	ButtonBar.HSplitTop(5.0f, 0, &ButtonBar);
 	ButtonBar.VSplitRight(130.0f, &ButtonBar, &PlayRect);
-	ButtonBar.VSplitRight(5.0f, &ButtonBar, 0x0); // H-Client: .webm
-	ButtonBar.VSplitRight(130.0f, &ButtonBar, &RecordVideoRect); // H-Client: .webm
+	ButtonBar.VSplitRight(5.0f, &ButtonBar, 0x0); // H-Client
+	ButtonBar.VSplitRight(130.0f, &ButtonBar, &RecordVideoRect); // H-Client
 	ButtonBar.VSplitLeft(130.0f, &RefreshRect, &ButtonBar);
 	ButtonBar.VSplitLeft(10.0f, 0, &ButtonBar);
 	ButtonBar.VSplitLeft(120.0f, &DeleteRect, &ButtonBar);
@@ -667,51 +667,63 @@ void CMenus::RenderDemoList(CUIRect MainView)
 	}
 
 	// H-Client
-	static int s_PlayRecordVideo = 0;
-	if(m_DemolistSelectedIndex >= 0 && !m_DemolistSelectedIsDir && DoButton_Menu(&s_PlayRecordVideo, Localize("Record to File"), 0, &RecordVideoRect))
+	if (m_lDemos[m_DemolistSelectedIndex].m_Info.m_Version <= 4)
 	{
-		UI()->SetActiveItem(0);
-		str_copy(Client()->m_aRecordVideoFilename, "nameless.mp4", sizeof(Client()->m_aRecordVideoFilename));
-		str_format(Client()->m_aRecordVideoDimensions[0], sizeof(Client()->m_aRecordVideoDimensions[0]), "%d", Graphics()->ScreenWidth());
-		str_format(Client()->m_aRecordVideoDimensions[1], sizeof(Client()->m_aRecordVideoDimensions[1]), "%d", Graphics()->ScreenHeight());
-		Client()->m_RecordVideoMode = IClient::MODE_RECORD_NORMAL;
-		m_Popup = POPUP_RECORD_SETTINGS;
-	}
-	//
-
-	static int s_PlayButton = 0;
-	if(DoButton_Menu(&s_PlayButton, m_DemolistSelectedIsDir?Localize("Open"):Localize("Play"), 0, &PlayRect) || Activated)
-	{
-		if(m_DemolistSelectedIndex >= 0)
+		static int s_PlayRecordVideo = 0;
+		if(m_DemolistSelectedIndex >= 0 && !m_DemolistSelectedIsDir && DoButton_Menu(&s_PlayRecordVideo, Localize("Record to File"), 0, &RecordVideoRect))
 		{
-			if(m_DemolistSelectedIsDir)	// folder
+			UI()->SetActiveItem(0);
+			str_copy(Client()->m_aRecordVideoFilename, "nameless.mp4", sizeof(Client()->m_aRecordVideoFilename));
+			str_format(Client()->m_aRecordVideoDimensions[0], sizeof(Client()->m_aRecordVideoDimensions[0]), "%d", Graphics()->ScreenWidth());
+			str_format(Client()->m_aRecordVideoDimensions[1], sizeof(Client()->m_aRecordVideoDimensions[1]), "%d", Graphics()->ScreenHeight());
+			Client()->m_RecordVideoMode = IClient::MODE_RECORD_NORMAL;
+			m_Popup = POPUP_RECORD_SETTINGS;
+		}
+	}
+
+	if (m_DemolistSelectedIsDir || (!m_DemolistSelectedIsDir && m_lDemos[m_DemolistSelectedIndex].m_Info.m_Version <= 4))
+	{
+		static int s_PlayButton = 0;
+		if(DoButton_Menu(&s_PlayButton, m_DemolistSelectedIsDir?Localize("Open"):Localize("Play"), 0, &PlayRect) || Activated)
+		{
+			if(m_DemolistSelectedIndex >= 0)
 			{
-				if(str_comp(m_lDemos[m_DemolistSelectedIndex].m_aFilename, "..") == 0)	// parent folder
-					fs_parent_dir(m_aCurrentDemoFolder);
-				else	// sub folder
+				if(m_DemolistSelectedIsDir)	// folder
 				{
-					char aTemp[256];
-					str_copy(aTemp, m_aCurrentDemoFolder, sizeof(aTemp));
-					str_format(m_aCurrentDemoFolder, sizeof(m_aCurrentDemoFolder), "%s/%s", aTemp, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
-					m_DemolistStorageType = m_lDemos[m_DemolistSelectedIndex].m_StorageType;
+					if(str_comp(m_lDemos[m_DemolistSelectedIndex].m_aFilename, "..") == 0)	// parent folder
+						fs_parent_dir(m_aCurrentDemoFolder);
+					else	// sub folder
+					{
+						char aTemp[256];
+						str_copy(aTemp, m_aCurrentDemoFolder, sizeof(aTemp));
+						str_format(m_aCurrentDemoFolder, sizeof(m_aCurrentDemoFolder), "%s/%s", aTemp, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
+						m_DemolistStorageType = m_lDemos[m_DemolistSelectedIndex].m_StorageType;
+					}
+					DemolistPopulate();
+					DemolistOnUpdate(true);
 				}
-				DemolistPopulate();
-				DemolistOnUpdate(true);
-			}
-			else // file
-			{
-				char aBuf[512];
-				str_format(aBuf, sizeof(aBuf), "%s/%s", m_aCurrentDemoFolder, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
-				const char *pError = Client()->DemoPlayer_Play(aBuf, m_lDemos[m_DemolistSelectedIndex].m_StorageType);
-				if(pError)
-					PopupMessage(Localize("Error"), str_comp(pError, "error loading demo") ? pError : Localize("Error loading demo"), Localize("Ok"));
-				else
+				else // file
 				{
-					UI()->SetActiveItem(0);
-					return;
+					char aBuf[512];
+					str_format(aBuf, sizeof(aBuf), "%s/%s", m_aCurrentDemoFolder, m_lDemos[m_DemolistSelectedIndex].m_aFilename);
+					const char *pError = Client()->DemoPlayer_Play(aBuf, m_lDemos[m_DemolistSelectedIndex].m_StorageType);
+					if(pError)
+						PopupMessage(Localize("Error"), str_comp(pError, "error loading demo") ? pError : Localize("Error loading demo"), Localize("Ok"));
+					else
+					{
+						UI()->SetActiveItem(0);
+						return;
+					}
 				}
 			}
 		}
+	}
+	else
+	{
+		CUIRect warnMsg = PlayRect;
+		const char *text = "Unofficial demo version. Can't play it! :(";
+		warnMsg.x = (MainView.x+MainView.w) - TextRender()->TextWidth(0, 14.0f, Localize(text), -1);
+		UI()->DoLabelScaled(&warnMsg, Localize(text), 14.0f, -1);
 	}
 
 	if(!m_DemolistSelectedIsDir)
