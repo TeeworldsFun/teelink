@@ -5,6 +5,10 @@ H-Client its a mod for the game Teeworlds created and maintained by unsigned cha
 Please visit http://hclient.wordpress.com for up-to-date information about 
 the mod.
 
+Extra libraries used (Linux):
+- libnotify
+- gdk_pixbuf-2.0
+
 
 
 + TEEWORLDS README
