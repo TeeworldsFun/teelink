@@ -126,7 +126,7 @@ void CIrc::StartConnection()
 	if(net_tcp_connect(m_Socket, &m_HostAddress) != 0)
 	{
 	    net_tcp_close(m_Socket);
-	    dbg_msg("IRC","ERROR: Can't connect with 'quakenet'...");
+	    dbg_msg("IRC","ERROR: Can't connect with '%s:%d'...", g_Config.m_IrcServer, g_Config.m_IrcPort);
 	    m_State = STATE_DISCONNECTED;
 		return;
 	}
@@ -134,7 +134,7 @@ void CIrc::StartConnection()
     //Send request
 	SendRaw("CAP LS");
 	SendRaw("NICK %s", m_Nick.c_str());
-	SendRaw("USER HClient 0 * :HClient", m_Nick.c_str());
+	SendRaw("USER HClient 0 * :HClient");
 
     //Status Tab
     CComQuery *pStatus = new CComQuery();
@@ -166,11 +166,11 @@ void CIrc::StartConnection()
                     std::string aMsgText = NetData.substr(del+1, NetData.length()-del-1);
                     if (aMsgID.compare("PING") == 0)
                     {
-                        //char aBuff[255];
-                    	SendRaw("PONG %s :%s", LastPong, aMsgText.c_str());
-                        /*CIrcCom *pCom = GetCom("@Status");
+                        /*char aBuff[255];
+                        CIrcCom *pCom = GetCom("@Status");
                         str_format(aBuff, sizeof(aBuff), "PING [%s]", aMsgText.c_str());
                         pCom->m_Buffer.push_back(aBuff);*/
+                    	SendRaw("PONG %s :%s", LastPong, aMsgText.c_str());
                         LastPong[0]=0;
                     }
                     else if (aMsgID.compare("PONG") == 0)
@@ -413,14 +413,30 @@ void CIrc::StartConnection()
 									long Token = 0;
 									char aAddr[32];
 									mem_zero(aAddr, sizeof(aAddr));
-									std::string CleanMsg = aMsgText.substr(10, aMsgText.length()-1);
-									sscanf(CleanMsg.c_str(), "%ld %s", &Token, aAddr);
-									if (m_CmdToken != -1 && Token == m_CmdToken && aAddr[0] != 0)
+									std::string CleanMsg = aMsgText.substr(10);
+									CleanMsg = CleanMsg.substr(0, CleanMsg.length()-1);
+									size_t pc = CleanMsg.find_first_of(" ");
+									if (pc != std::string::npos)
 									{
-										if (str_comp_nocase(aAddr, "NONE") != 0)
-										 m_pClient->Connect(aAddr);
+										Token = atol(CleanMsg.substr(0, pc).c_str());
+										str_copy(aAddr, CleanMsg.substr(pc+1).c_str(), sizeof(aAddr));
+										if (m_CmdToken != -1 && Token == m_CmdToken && aAddr[0] != 0)
+										{
+											if (aAddr[0] != 0 && str_comp_nocase(aAddr, "NONE") != 0)
+												m_pClient->Connect(aAddr);
+											else
+											{
+												CIrcCom *pCom = GetActiveCom();
+												if (pCom)
+												{
+													char aBuf[128];
+													str_format(aBuf, sizeof(aBuf), "*** '%s' isn't playing on a server!", aMsgFrom.c_str());
+													pCom->m_Buffer.push_back(aBuf);
+												}
+											}
 
-										m_CmdToken = -1;
+											m_CmdToken = -1;
+										}
 									}
 								}
                         	}
@@ -430,7 +446,8 @@ void CIrc::StartConnection()
                         	if (aMsgChan == m_Nick)
                         	{
 								long Token = 0;
-								std::string CleanMsg = aMsgText.substr(13, aMsgText.length()-1);
+								std::string CleanMsg = aMsgText.substr(13);
+								CleanMsg = CleanMsg.substr(0, CleanMsg.length()-1);
 								sscanf(CleanMsg.c_str(), "%ld", &Token);
 
 								if (Token > 0)
@@ -523,6 +540,7 @@ void CIrc::StartConnection()
                                 CComQuery *pQuery = static_cast<CComQuery*>((*it));
                                 if (str_comp_nocase(pQuery->m_User, aMsgOldNick.c_str()) == 0)
                                 {
+                                	str_copy(pQuery->m_User, aMsgNewNick.c_str(), sizeof(pQuery->m_User));
                                     str_format(aBuff, sizeof(aBuff), "*** '%s' has changed nick to '%s'", aMsgOldNick.c_str(), aMsgNewNick.c_str());
                                     pQuery->m_Buffer.push_back(aBuff);
                                 }
@@ -728,9 +746,9 @@ void CIrc::OpenQuery(const char *to)
     SetActiveCom(m_IrcComs.size()-1);
 }
 
-void CIrc::JoinTo(const char *to)
+void CIrc::JoinTo(const char *to, const char *pass)
 {
-	SendRaw("JOIN %s", to);
+	SendRaw("JOIN %s %s", to, pass);
 }
 
 void CIrc::SetMode(const char *mode, const char *to)
@@ -922,7 +940,8 @@ int CIrc::GetMsgType(const char *msg)
 
 void CIrc::SendServer(const char *to, long Token)
 {
-	SendRaw("PRIVMSG %s :TWSERVER %ld %s", to, Token, m_pClient->GetCurrentServerAddress());
+	const char *curAddr = m_pClient->GetCurrentServerAddress();
+	SendRaw("PRIVMSG %s :TWSERVER %ld %s", to, Token, (curAddr&&curAddr[0]!=0)?curAddr:"NONE");
 }
 
 void CIrc::SendGetServer(const char *to)
@@ -936,4 +955,87 @@ void ThreadIrcConnection(void *params)
     CIrc *pIrc = static_cast<CIrc*>(params);
 
     pIrc->StartConnection();
+}
+
+void CIrc::ExecuteCommand(const char *cmd, char *params)
+{
+	array<std::string> CmdListParams;
+	for (char *p = strtok(params, " "); p != NULL; p = strtok(NULL, " "))
+		CmdListParams.add(p);
+
+    if (str_comp_nocase(cmd, "join") == 0 || str_comp_nocase(cmd, "j") == 0)
+    {
+        if (CmdListParams.size() == 0)
+            return;
+
+        JoinTo(CmdListParams[0].c_str(), (CmdListParams.size() > 1)?CmdListParams[1].c_str():"");
+    }
+    else if (str_comp_nocase(cmd, "query") == 0 || str_comp_nocase(cmd, "q") == 0)
+    {
+    	if (CmdListParams.size() == 0)
+            return;
+
+        OpenQuery(CmdListParams[0].c_str());
+    }
+    else if (str_comp_nocase(cmd, "squery") == 0 || str_comp_nocase(cmd, "sq") == 0)
+    {
+    	if (CmdListParams.size() == 0)
+            return;
+
+        SendGetServer(CmdListParams[0].c_str());
+    }
+    else if (str_comp_nocase(cmd, "topic") == 0 || str_comp_nocase(cmd, "t") == 0)
+    {
+    	if (CmdListParams.size() == 0)
+            return;
+
+        SetTopic(params);
+    }
+    else if (str_comp_nocase(cmd, "part") == 0 || str_comp_nocase(cmd, "p") == 0)
+    {
+        Part();
+    }
+    else if (str_comp_nocase(cmd, "nick") == 0)
+    {
+    	if (CmdListParams.size() == 0)
+            return;
+
+        SetNick(CmdListParams[0].c_str());
+    }
+    else if (str_comp_nocase(cmd, "op") == 0)
+    {
+    	if (CmdListParams.size() > 0)
+            SetMode("+o", CmdListParams[0].c_str());
+        else
+            SetMode("+o", 0x0);
+    }
+    else if (str_comp_nocase(cmd, "deop") == 0)
+    {
+    	if (CmdListParams.size() > 0)
+            SetMode("-o", CmdListParams[0].c_str());
+        else
+            SetMode("-o", 0x0);
+    }
+    else if (str_comp_nocase(cmd, "voz") == 0)
+    {
+    	if (CmdListParams.size() > 0)
+            SetMode("+v", CmdListParams[0].c_str());
+        else
+            SetMode("+v", 0x0);
+    }
+    else if (str_comp_nocase(cmd, "devoz") == 0)
+    {
+    	if (CmdListParams.size() > 0)
+            SetMode("-v", CmdListParams[0].c_str());
+        else
+            SetMode("-v", 0x0);
+    }
+    else if (str_comp_nocase(cmd, "clear") == 0)
+    {
+    	CIrcCom *pCom = GetActiveCom();
+    	if (pCom)
+    		pCom->m_Buffer.clear();
+    }
+    else
+        SendRaw("%s %s", cmd, params);
 }

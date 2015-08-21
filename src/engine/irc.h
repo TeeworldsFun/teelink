@@ -71,7 +71,7 @@ public:
     virtual int GetNumComs() = 0;
 
     virtual void OpenQuery(const char *to) = 0;
-    virtual void JoinTo(const char *to) = 0;
+    virtual void JoinTo(const char *to, const char *pass = "") = 0;
     virtual void SetTopic(const char *topic) = 0;
     virtual void Part() = 0;
 
@@ -81,12 +81,14 @@ public:
 
     virtual void SendMsg(const char *to, const char *msg, int type = MSG_TYPE_NORMAL) = 0;
     virtual void SendRaw(const char *fmt, ...) = 0;
+    virtual void SendGetServer(const char *to) = 0;
 
     virtual void StartConnection() = 0;
     virtual void EndConnection() = 0;
 
     virtual void SetAway(bool state, const char *msg = 0x0) = 0;
 
+    virtual void ExecuteCommand(const char *cmd, char *params) = 0;
 };
 
 void ThreadIrcConnection(void *params);

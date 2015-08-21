@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <math.h>
+#include <cstring> // H-Client: strtok
 
 #include <base/system.h>
 #include <base/math.h>
@@ -85,11 +86,12 @@ vec4 CMenus::ButtonColorMul(const void *pID)
 	return vec4(1,1,1,1);
 }
 
-int CMenus::DoButton_Icon(int ImageId, int SpriteId, const CUIRect *pRect)
+int CMenus::DoButton_Icon(int ImageId, int SpriteId, const CUIRect *pRect, vec4 Color)
 {
 	Graphics()->TextureSet(g_pData->m_aImages[ImageId].m_Id);
 
 	Graphics()->QuadsBegin();
+	Graphics()->SetColor(Color);
 	RenderTools()->SelectSprite(SpriteId);
 	IGraphics::CQuadItem QuadItem(pRect->x, pRect->y, pRect->w, pRect->h);
 	Graphics()->QuadsDrawTL(&QuadItem, 1);
@@ -2172,13 +2174,13 @@ void CMenus::RenderIrc(CUIRect MainView)
             {
                 if (pCom == m_pClient->Irc()->GetActiveCom())
                 {
-                    ms_ColorTabbarActive = vec4(0.35f,0.35f,0.35f,1.0f);
-                    ms_ColorTabbarInactive = vec4(0.35f,0.35f,0.35f,1.0f);
+                    ms_ColorTabbarActive = vec4(0.0f,0.0f,0.0f,1.0f);
+                    ms_ColorTabbarInactive = vec4(0.0f,0.0f,0.0f,1.0f);
                 }
                 else
                 {
-                    ms_ColorTabbarActive = vec4(0.0f,0.0f,0.0f,1.0f);
-                    ms_ColorTabbarInactive = vec4(0.0f,0.0f,0.0f,1.0f);
+                    ms_ColorTabbarActive = vec4(0.35f,0.35f,0.35f,1.0f);
+                    ms_ColorTabbarInactive = vec4(0.35f,0.35f,0.35f,1.0f);
                 }
             }
 
@@ -2221,107 +2223,32 @@ void CMenus::RenderIrc(CUIRect MainView)
         EntryBox.HSplitBottom(20.0f, &EntryBox, &InputBox);
         InputBox.VSplitRight(50.0f, &InputBox, &Button);
         Button.VSplitLeft(5.0f, 0x0, &Button);
-        static char EntryText[255];
+        static char aEntryText[255];
         static float Offset;
-        DoEditBox(&EntryText, &InputBox, EntryText, sizeof(EntryText), 12.0f, &Offset, false, CUI::CORNER_L);
+        DoEditBox(&aEntryText, &InputBox, aEntryText, sizeof(aEntryText), 12.0f, &Offset, false, CUI::CORNER_L);
         static float s_ButtonSend = 0;
         if (DoButton_Menu(&s_ButtonSend, Localize("Send"), 0, &Button) || (Input()->KeyPressed(KEY_RETURN) && g_Config.m_UiPage == PAGE_IRC))
         {
-            if (EntryText[0] == '/')
+            if (aEntryText[0] == '/')
             {
-                std::string aCmdRaw = EntryText;
-                std::string aCmd = aCmdRaw;
-                size_t del;
-                del = aCmdRaw.find_first_of(" ");
+                std::string strCmdRaw = aEntryText+1;
+                char aCmd[32]={0}, aCmdParams[255]={0};
+                size_t del = strCmdRaw.find_first_of(" ");
                 if (del != std::string::npos)
-                    aCmd = aCmdRaw.substr(0, del);
-
-                if (aCmd.compare("/join") == 0 || aCmd.compare("/j") == 0)
                 {
-                    if (del <= 0)
-                        return;
-
-                    std::string aCmdChan = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                    m_pClient->Irc()->JoinTo(aCmdChan.c_str());
-                }
-                else if (aCmd.compare("/query") == 0 || aCmd.compare("/q") == 0)
-                {
-                    if (del <= 0)
-                        return;
-
-                    std::string aCmdUser = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                    m_pClient->Irc()->OpenQuery(aCmdUser.c_str());
-                }
-                else if (aCmd.compare("/topic") == 0 || aCmd.compare("/t") == 0)
-                {
-                    if (del <= 0)
-                        return;
-
-                    std::string aCmdTopic = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                    m_pClient->Irc()->SetTopic(aCmdTopic.c_str());
-                }
-                else if (aCmd.compare("/part") == 0 || aCmd.compare("/p") == 0)
-                {
-                    //std::string aCmdChan = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                    m_pClient->Irc()->Part();
-                }
-                else if (aCmd.compare("/nick") == 0)
-                {
-                    if (del <= 0)
-                        return;
-
-                    std::string aCmdNewNick = aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                    m_pClient->Irc()->SetNick(aCmdNewNick.c_str());
-                }
-                else if (aCmd.compare("/op") == 0)
-                {
-                    if (del > 0)
-                    {
-                        std::string aCmdTo= aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                        m_pClient->Irc()->SetMode("+o", aCmdTo.c_str());
-                    }
-                    else
-                        m_pClient->Irc()->SetMode("+o", 0x0);
-                }
-                else if (aCmd.compare("/deop") == 0)
-                {
-                    if (del > 0)
-                    {
-                        std::string aCmdTo= aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                        m_pClient->Irc()->SetMode("-o", aCmdTo.c_str());
-                    }
-                    else
-                        m_pClient->Irc()->SetMode("-o", 0x0);
-                }
-                else if (aCmd.compare("/voz") == 0)
-                {
-                    if (del > 0)
-                    {
-                        std::string aCmdTo= aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                        m_pClient->Irc()->SetMode("+v", aCmdTo.c_str());
-                    }
-                    else
-                        m_pClient->Irc()->SetMode("+v", 0x0);
-                }
-                else if (aCmd.compare("/devoz") == 0)
-                {
-                    if (del > 0)
-                    {
-                        std::string aCmdTo= aCmdRaw.substr(del+1, aCmdRaw.length()-del-1);
-                        m_pClient->Irc()->SetMode("-v", aCmdTo.c_str());
-                    }
-                    else
-                        m_pClient->Irc()->SetMode("-v", 0x0);
+                    str_copy(aCmd, strCmdRaw.substr(0, del).c_str(), sizeof(aCmd));
+                    str_copy(aCmdParams, strCmdRaw.substr(del+1).c_str(), sizeof(aCmdParams));
                 }
                 else
-                    m_pClient->Irc()->SendRaw(EntryText);
+                	str_copy(aCmd, strCmdRaw.c_str(), sizeof(aCmd));
 
-                EntryText[0]=0;
-                return;
+                if (aCmd[0] != 0)
+                	m_pClient->Irc()->ExecuteCommand(aCmd, aCmdParams);
             }
+            else
+            	m_pClient->Irc()->SendMsg(0x0, aEntryText);
 
-            m_pClient->Irc()->SendMsg(0x0, EntryText);
-            EntryText[0]=0;
+            aEntryText[0]=0;
         }
 
         //Channel/Query
@@ -2352,17 +2279,30 @@ void CMenus::RenderIrc(CUIRect MainView)
 
                 if(Item.m_Visible)
                 {
-                    UI()->DoLabelScaled(&Item.m_Rect, (*it).c_str(), 12.0f, -1);
                     if (Selected == o)
                     {
-                        if(UI()->DoButtonLogic(&Item, "", Selected, &Item.m_Rect))
+                    	CUIRect Label, ButtonQS;
+                    	Item.m_Rect.VSplitRight(Item.m_Rect.h, &Label, &ButtonQS);
+                    	UI()->DoLabelScaled(&Label, (*it).c_str(), 12.0f, -1);
+                        if(UI()->DoButtonLogic(&Item.m_Selected, "", Selected, &Label))
                         {
                             std::list<std::string>::iterator it = pChan->m_Users.begin();
                             std::advance(it, o);
 
                             m_pClient->Irc()->OpenQuery((*it).c_str());
                         }
+
+                        DoButton_Icon(IMAGE_BROWSEICONS, SPRITE_BROWSE_CONNECT, &ButtonQS, vec4(0.79f, 0.89f, 0.90f, 1.0f));
+                        if(UI()->DoButtonLogic(&Item.m_Visible, "", Selected, &ButtonQS))
+                        {
+                            std::list<std::string>::iterator it = pChan->m_Users.begin();
+                            std::advance(it, o);
+
+                            m_pClient->Irc()->SendGetServer((*it).c_str());
+                        }
                     }
+                    else
+                    	UI()->DoLabelScaled(&Item.m_Rect, (*it).c_str(), 12.0f, -1);
                 }
 
                 o++; it++;

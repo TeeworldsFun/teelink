@@ -25,7 +25,7 @@ public:
     int GetNumComs() { return m_IrcComs.size(); }
 
     void OpenQuery(const char *to);
-    void JoinTo(const char *to);
+    void JoinTo(const char *to, const char *pass = "");
     void SetTopic(const char *topic);
     void Part();
 
@@ -35,11 +35,14 @@ public:
 
     void SendMsg(const char *to, const char *msg, int type = MSG_TYPE_NORMAL);
     void SendRaw(const char *fmt, ...);
+    void SendGetServer(const char *to);
 
     void StartConnection();
     void EndConnection();
 
     void SetAway(bool state, const char *msg = 0x0);
+
+    void ExecuteCommand(const char *cmd, char *params);
 
     std::string m_Nick;
 
@@ -61,6 +64,5 @@ protected:
 private:
     int GetMsgType(const char *msg);
     void SendServer(const char *to, long Token);
-    void SendGetServer(const char *to);
 };
 #endif
