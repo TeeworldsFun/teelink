@@ -2292,7 +2292,7 @@ void CMenus::RenderIrc(CUIRect MainView)
                             m_pClient->Irc()->OpenQuery((*it).c_str());
                         }
 
-                        DoButton_Icon(IMAGE_BROWSEICONS, SPRITE_BROWSE_CONNECT, &ButtonQS, vec4(0.79f, 0.89f, 0.90f, 1.0f));
+                        DoButton_Icon(IMAGE_BROWSEICONS, SPRITE_BROWSE_CONNECT, &ButtonQS, vec4(0.47f, 0.58f, 0.72f, 1.0f));
                         if(UI()->DoButtonLogic(&Item.m_Visible, "", Selected, &ButtonQS))
                         {
                             std::list<std::string>::iterator it = pChan->m_Users.begin();
@@ -2338,6 +2338,22 @@ void CMenus::RenderIrc(CUIRect MainView)
                     UI()->DoLabelScaled(&Item.m_Rect, pQuery->m_Buffer[i].c_str(), 8.0f, -1);
             }
             UiDoListboxEnd(&s_ChatScrollValue, 0);
+
+            if (str_comp_nocase(pQuery->m_User, "@status") != 0)
+            {
+				CUIRect ButtonQS;
+				Chat.VSplitRight(32.0f, 0x0, &ButtonQS);
+				ButtonQS.h = 32.0f;
+				ButtonQS.x -= 20.0f;
+				ButtonQS.y += 25.0f;
+				RenderTools()->DrawUIRect(&ButtonQS, vec4(0.2f, 0.4f, 0.4f, UI()->MouseInside(&ButtonQS)?1.0f:0.5f), CUI::CORNER_ALL, 10.0f);
+				DoButton_Icon(IMAGE_BROWSEICONS, SPRITE_BROWSE_CONNECT, &ButtonQS, vec4(0.47f, 0.58f, 0.72f, 1.0f));
+				static int s_ButtonQSLog = 0;
+				if(UI()->DoButtonLogic(&s_ButtonQSLog, "", 0, &ButtonQS))
+				{
+					m_pClient->Irc()->SendGetServer(pQuery->m_User);
+				}
+            }
         }
     }
 }
