@@ -1119,18 +1119,6 @@ void CEditor::DoToolbar(CUIRect ToolBar)
 		}
 	}
 
-	// H-Client: Particle Generator
-	{
-		TB_Top.VSplitLeft(10.0f, &Button, &TB_Top);
-		TB_Top.VSplitLeft(60.0f, &Button, &TB_Top);
-		static int s_ParticleGenerator = 0;
-		CLayerQuads *pQLayer = (CLayerQuads *)GetSelectedLayerType(0, LAYERTYPE_QUADS);
-
-		if(DoButton_Editor(&s_ParticleGenerator, "Particle Generator", pQLayer?0:-1, &Button, 0, "", m_Mode!=MODE_PARTICLE_GENERATOR?vec4(0.5f, 0.5f, 0.5f, 1.0f):vec4(0.3f, 0.23f, 0.7f, 1.0f)))
-			m_Mode = (m_Mode == MODE_PARTICLE_GENERATOR)?MODE_LAYERS:MODE_PARTICLE_GENERATOR;
-		//
-	}
-
 	// tile manipulation
 	{
 		TB_Bottom.VSplitLeft(40.0f, &Button, &TB_Bottom);
@@ -4704,8 +4692,6 @@ void CEditor::Render()
 		RenderLayers(ToolBox, ToolBar, View);
 	else if(m_Mode == MODE_IMAGES)
 		RenderImages(ToolBox, ToolBar, View);
-	else if (m_Mode == MODE_PARTICLE_GENERATOR)
-		m_ParticleGenerator.Tick(ToolBox, ToolBar, View);
 
 	Graphics()->MapScreen(UI()->Screen()->x, UI()->Screen()->y, UI()->Screen()->w, UI()->Screen()->h);
 
