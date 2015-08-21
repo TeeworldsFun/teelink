@@ -42,6 +42,7 @@
 	#include <fcntl.h>
 	#include <direct.h>
 	#include <errno.h>
+	#include <Shellapi.h> // H-Client: ShellExecuteA
 #else
 	#error NOT IMPLEMENTED
 #endif

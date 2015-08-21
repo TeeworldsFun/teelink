@@ -18,7 +18,8 @@ public:
     int GetState() { return m_State; }
     void NextRoom();
 
-    void SetActiveCom(size_t index);
+    void SetActiveCom(int index);
+	void SetActiveCom(CIrcCom *pCom);
     CIrcCom* GetActiveCom();
     CIrcCom* GetCom(size_t index);
     CIrcCom* GetCom(std::string name);
@@ -47,7 +48,6 @@ public:
     std::string m_Nick;
 
 protected:
-    class IStorage *m_pStorage;
     class IGraphics *m_pGraphics;
     class IGameClient *m_pGameClient;
     class IClient *m_pClient;
@@ -57,12 +57,12 @@ protected:
     NETSOCKET m_Socket;
     NETADDR m_HostAddress;
 
-    long m_CmdToken;
+    char m_CmdToken[12];
 
     std::list<CIrcCom*> m_IrcComs;
 
 private:
     int GetMsgType(const char *msg);
-    void SendServer(const char *to, long Token);
+    void SendServer(const char *to, const char *Token);
 };
 #endif

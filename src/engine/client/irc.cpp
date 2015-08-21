@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at https://github.com/CytraL/HClient */
 #include <base/math.h>
 #include <base/system.h>
-#include <engine/storage.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <game/version.h>
@@ -18,6 +17,7 @@
 #include <ctime>
 #include <cstdio> // vsnprintf
 #include <cstdarg>
+#include <algorithm>
 
 #include "irc.h"
 
@@ -26,28 +26,26 @@ static NETSOCKET invalid_socket = {NETTYPE_INVALID, -1, -1};
 CIrc::CIrc()
 {
     m_IrcComs.clear();
-    m_pStorage = 0x0;
     m_pGraphics = 0x0;
     m_State = STATE_DISCONNECTED;
     m_Socket = invalid_socket;
     char tmpNick[25]={0};
     str_format(tmpNick, sizeof(tmpNick), "HC-%d", time(NULL));
     m_Nick = tmpNick;
-    m_CmdToken = -1;
+    mem_zero(m_CmdToken, sizeof(m_CmdToken));
     SetActiveCom(-1);
 }
 
 void CIrc::Init()
 {
-    m_pStorage = Kernel()->RequestInterface<IStorage>();
     m_pGraphics = Kernel()->RequestInterface<IGraphics>();
     m_pGameClient = Kernel()->RequestInterface<IGameClient>();
     m_pClient = Kernel()->RequestInterface<IClient>();
 }
 
-void CIrc::SetActiveCom(size_t index)
+void CIrc::SetActiveCom(int index)
 {
-    if (index < 0 || index >= m_IrcComs.size())
+    if (index < 0 || index >= (int)m_IrcComs.size())
         index = 0;
 
     m_ActiveCom = index;
@@ -57,6 +55,21 @@ void CIrc::SetActiveCom(size_t index)
         pCom->m_UnreadMsg = false;
         pCom->m_NumUnreadMsg = 0;
     }
+}
+
+void CIrc::SetActiveCom(CIrcCom *pCom)
+{
+    if (!pCom)
+		return;
+	
+	std::list<CIrcCom*>::iterator it = std::find(m_IrcComs.begin(), m_IrcComs.end(), pCom);
+	if (it != m_IrcComs.end())
+	{
+		pCom->m_UnreadMsg = false;
+        pCom->m_NumUnreadMsg = 0;
+		
+		m_ActiveCom = std::distance(m_IrcComs.begin(), it);
+	}
 }
 
 CIrcCom* CIrc::GetActiveCom()
@@ -140,7 +153,7 @@ void CIrc::StartConnection()
     CComQuery *pStatus = new CComQuery();
     str_copy(pStatus->m_User, "@Status", sizeof(pStatus->m_User));
     m_IrcComs.push_back(pStatus);
-    SetActiveCom(0);
+    SetActiveCom(-1);
 
     m_State = STATE_CONNECTED;
 
@@ -410,7 +423,6 @@ void CIrc::StartConnection()
 								ldel = aMsgText.find_last_of(" ");
 								if (del != std::string::npos && del != ldel)
 								{
-									long Token = 0;
 									char aAddr[32];
 									mem_zero(aAddr, sizeof(aAddr));
 									std::string CleanMsg = aMsgText.substr(10);
@@ -418,9 +430,8 @@ void CIrc::StartConnection()
 									size_t pc = CleanMsg.find_first_of(" ");
 									if (pc != std::string::npos)
 									{
-										Token = atol(CleanMsg.substr(0, pc).c_str());
 										str_copy(aAddr, CleanMsg.substr(pc+1).c_str(), sizeof(aAddr));
-										if (m_CmdToken != -1 && Token == m_CmdToken && aAddr[0] != 0)
+										if (m_CmdToken[0] != 0 && str_comp(CleanMsg.substr(0, pc).c_str(), m_CmdToken) == 0 && aAddr[0] != 0)
 										{
 											if (aAddr[0] != 0 && str_comp_nocase(aAddr, "NONE") != 0)
 												m_pClient->Connect(aAddr);
@@ -435,7 +446,7 @@ void CIrc::StartConnection()
 												}
 											}
 
-											m_CmdToken = -1;
+											mem_zero(m_CmdToken, sizeof(m_CmdToken));
 										}
 									}
 								}
@@ -445,13 +456,11 @@ void CIrc::StartConnection()
                         {
                         	if (aMsgChan == m_Nick)
                         	{
-								long Token = 0;
 								std::string CleanMsg = aMsgText.substr(13);
 								CleanMsg = CleanMsg.substr(0, CleanMsg.length()-1);
-								sscanf(CleanMsg.c_str(), "%ld", &Token);
 
-								if (Token > 0)
-									SendServer(aMsgFrom.c_str(), Token);
+								if (!CleanMsg.empty())
+									SendServer(aMsgFrom.c_str(), CleanMsg.c_str());
                         	}
                         }
                         else
@@ -737,13 +746,19 @@ void CIrc::NextRoom()
 
 void CIrc::OpenQuery(const char *to)
 {
-    CComQuery *pQuery = new CComQuery();
-    if (to[0] == '@' || to[0] == '+')
-        str_copy(pQuery->m_User, to+1, sizeof(pQuery->m_User));
-    else
-        str_copy(pQuery->m_User, to, sizeof(pQuery->m_User));
-    m_IrcComs.push_back(pQuery);
-    SetActiveCom(m_IrcComs.size()-1);
+    char SanNick[25] = {0};
+    str_copy(SanNick, (to[0] == '@' || to[0] == '+')?to+1:to, sizeof(SanNick));
+	
+	CIrcCom *pCom = GetCom(SanNick);
+	if (pCom)
+		SetActiveCom(pCom);
+	else
+	{
+		CComQuery *pQuery = new CComQuery();
+		str_copy(pQuery->m_User, (to[0] == '@' || to[0] == '+')?to+1:to, sizeof(pQuery->m_User));
+		m_IrcComs.push_back(pQuery);
+		SetActiveCom(m_IrcComs.size()-1);
+	}
 }
 
 void CIrc::JoinTo(const char *to, const char *pass)
@@ -821,7 +836,7 @@ void CIrc::EndConnection()
         it = m_IrcComs.erase(it);
     }
 
-    m_CmdToken = -1;
+    mem_zero(m_CmdToken, sizeof(m_CmdToken));
 }
 
 void CIrc::SendMsg(const char *to, const char *msg, int type)
@@ -938,16 +953,16 @@ int CIrc::GetMsgType(const char *msg)
 	return MSG_TYPE_NORMAL;
 }
 
-void CIrc::SendServer(const char *to, long Token)
+void CIrc::SendServer(const char *to, const char *Token)
 {
 	const char *curAddr = m_pClient->GetCurrentServerAddress();
-	SendRaw("PRIVMSG %s :TWSERVER %ld %s", to, Token, (curAddr&&curAddr[0]!=0)?curAddr:"NONE");
+	SendRaw("PRIVMSG %s :TWSERVER %s %s", to, Token, (curAddr&&curAddr[0]!=0)?curAddr:"NONE");
 }
 
 void CIrc::SendGetServer(const char *to)
 {
-	m_CmdToken = time_get();
-	SendRaw("PRIVMSG %s :GETTWSERVER %ld", to, m_CmdToken);
+	str_format(m_CmdToken, sizeof(m_CmdToken), "%ld", time_get());
+	SendRaw("PRIVMSG %s :GETTWSERVER %s", to, m_CmdToken);
 }
 
 void ThreadIrcConnection(void *params)

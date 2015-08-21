@@ -901,7 +901,9 @@ int CGraphics_SDL::TryInit()
 	SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, g_Config.m_GfxVsync);
 
 	// set caption
-	SDL_WM_SetCaption("Teeworlds [H-Client MoD v"HCLIENT_VERSION"]", "Teeworlds [H-Client MoD v"HCLIENT_VERSION"]"); //H-Client
+	char aTitle[64] = {0};
+	str_format(aTitle, sizeof(aTitle), "Teeworlds [H-Client MoD v%s]", HCLIENT_VERSION);
+	SDL_WM_SetCaption(aTitle, aTitle); //H-Client
 
 	// create window
 	m_pScreenSurface = SDL_SetVideoMode(m_ScreenWidth, m_ScreenHeight, 0, Flags);

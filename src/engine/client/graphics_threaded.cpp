@@ -719,7 +719,9 @@ int CGraphics_Threaded::IssueInit()
 	if(g_Config.m_GfxVsync) Flags |= IGraphicsBackend::INITFLAG_VSYNC;
 	if(g_Config.m_DbgResizable) Flags |= IGraphicsBackend::INITFLAG_RESIZABLE;
 
-	return m_pBackend->Init("Teeworlds [H-Client MoD v"HCLIENT_VERSION"]", &g_Config.m_GfxScreenWidth, &g_Config.m_GfxScreenHeight, g_Config.m_GfxFsaaSamples, Flags);
+	char aTitle[64] = {0};
+	str_format(aTitle, sizeof(aTitle), "Teeworlds [H-Client MoD v%s]", HCLIENT_VERSION);
+	return m_pBackend->Init(aTitle, &g_Config.m_GfxScreenWidth, &g_Config.m_GfxScreenHeight, g_Config.m_GfxFsaaSamples, Flags);
 }
 
 int CGraphics_Threaded::InitWindow()

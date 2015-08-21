@@ -64,7 +64,8 @@ public:
     virtual int GetState() = 0;
     virtual void NextRoom() = 0;
 
-    virtual void SetActiveCom(size_t index) = 0;
+    virtual void SetActiveCom(int index) = 0;
+	virtual void SetActiveCom(CIrcCom *pCom) = 0;
     virtual CIrcCom* GetActiveCom() = 0;
     virtual CIrcCom* GetCom(size_t index) = 0;
     virtual CIrcCom* GetCom(std::string name) = 0;
