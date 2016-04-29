@@ -31,7 +31,7 @@ CIrc::CIrc()
     m_Socket = invalid_socket;
     char tmpNick[25]={0};
     str_format(tmpNick, sizeof(tmpNick), "HC-%d", time(NULL));
-    m_Nick = tmpNick;
+    m_Nick = std::string(tmpNick);
     mem_zero(m_CmdToken, sizeof(m_CmdToken));
     SetActiveCom(-1);
 }

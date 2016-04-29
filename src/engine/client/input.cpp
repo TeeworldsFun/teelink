@@ -147,7 +147,6 @@ int CInput::Update()
 
 	{
 		SDL_Event Event;
-
 		while(SDL_PollEvent(&Event))
 		{
 			int Key = -1;

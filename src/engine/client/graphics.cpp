@@ -186,6 +186,12 @@ CGraphics_OpenGL::CGraphics_OpenGL()
 
 	m_RenderEnable = true;
 	m_DoScreenshot = false;
+	m_DoScreenshotTumbtail = false;
+	m_DoScreenShowInfoKills = false;
+	m_pStorage = 0x0;
+	m_pConsole = 0x0;
+	m_FirstFreeTexture = 0;
+	m_pPixBufNotifIcon = 0x0;
 }
 
 void CGraphics_OpenGL::ClipEnable(int x, int y, int w, int h)
@@ -989,7 +995,8 @@ int CGraphics_SDL::Init()
 	SDL_ShowCursor(0);
 
 	#ifdef CONF_PLATFORM_LINUX
-		m_pPixBufNotifIcon = gdk_pixbuf_new_from_file("data/teeworlds.png", 0x0); // H-Client
+		if (!m_pPixBufNotifIcon)
+			m_pPixBufNotifIcon = gdk_pixbuf_new_from_file("data/teeworlds.png", 0x0); // H-Client
 	#endif
 
 	CGraphics_OpenGL::Init();
@@ -1000,7 +1007,11 @@ int CGraphics_SDL::Init()
 
 void CGraphics_SDL::Shutdown()
 {
-	//g_object_unref(G_OBJECT(m_pPixBufNotifIcon));
+	#ifdef CONF_PLATFORM_LINUX
+		if (m_pPixBufNotifIcon)
+			g_object_unref(G_OBJECT(m_pPixBufNotifIcon));
+		m_pPixBufNotifIcon = 0x0;
+	#endif
 	// TODO: SDL, is this correct?
 	SDL_Quit();
 }
@@ -1052,17 +1063,15 @@ void CGraphics_SDL::NotifyWindow(const char *pTitle, const char *pMsg)
 			CNotification::notify(pTitle, pMsg);
 		#else
 			// TODO: Create a pool of messages and only use one NotifyNotification?
-			char category[30] = "Chat Notification";
 			NotifyNotification *pNotif = notify_notification_new(pTitle, pMsg, NULL);
 
 			notify_notification_set_icon_from_pixbuf(pNotif, m_pPixBufNotifIcon);
 			notify_notification_set_timeout(pNotif, g_Config.m_hcNotificationTime);
-			notify_notification_set_category(pNotif, category);
+			notify_notification_set_category(pNotif, "Chat Notification");
 			notify_notification_set_urgency (pNotif, NOTIFY_URGENCY_CRITICAL);
-			//notify_notification_set_icon_from_pixbuf();
 			if (!notify_notification_show(pNotif, 0x0))
 				dbg_msg("gfx", "Unable to show notification bubble");
-			//g_object_unref(G_OBJECT(pNotif));
+			g_object_unref(G_OBJECT(pNotif));
 		#endif
 	#endif
 }

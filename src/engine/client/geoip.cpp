@@ -45,7 +45,7 @@ GeoInfo CGeoIP::GetInfo(std::string ip)
     dbg_msg("GeoIP", "Searching geolocation of '%s'...", ip.c_str());
 
     //Format URL
-    str_format(aUrl, sizeof(aUrl), "http://www.telize.com/geoip/%s", ip.c_str());
+    str_format(aUrl, sizeof(aUrl), "http://ip-api.com/json/%s", ip.c_str());
 
     //read data
     unsigned FileSize = CHttpDownloader::GetFileSize(aUrl);
@@ -66,7 +66,7 @@ GeoInfo CGeoIP::GetInfo(std::string ip)
 		}
 
 		// generate configurations
-		const json_value &countryCode = (*pJsonData)["country_code"];
+		const json_value &countryCode = (*pJsonData)["countryCode"];
 		if (countryCode.type == json_string) str_copy(rInfo.m_aCountryCode, (const char *)countryCode, sizeof(rInfo.m_aCountryCode));
 		const json_value &countryName = (*pJsonData)["country"];
 		if (countryName.type == json_string) str_copy(rInfo.m_aCountryName, (const char *)countryName, sizeof(rInfo.m_aCountryName));

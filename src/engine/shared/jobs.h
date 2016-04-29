@@ -24,6 +24,10 @@ public:
 	{
 		m_Status = STATE_DONE;
 		m_pFuncData = 0;
+		m_pPrev = 0x0;
+		m_pNext = 0x0;
+		m_pPool = 0x0;
+		m_pfnFunc = 0x0;
 	}
 
 	enum

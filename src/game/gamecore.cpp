@@ -440,8 +440,8 @@ void CCharacterCore::Tick(bool UseInput)
 		//
 
 		// Predict Stoppers!
-		int TilesIndexGame[5], TilesIndexFront[5], TilesIndexSwitch[5];
-		int TilesFlagsGame[5], TilesFlagsFront[5], TilesFlagsSwitch[5];
+		int TilesIndexGame[5] = { -1, -1, -1, -1, -1 }, TilesIndexFront[5] = { -1, -1, -1, -1, -1 }, TilesIndexSwitch[5] = { -1, -1, -1, -1, -1 };
+		int TilesFlagsGame[5] = { -1, -1, -1, -1, -1 }, TilesFlagsFront[5] = { -1, -1, -1, -1, -1 }, TilesFlagsSwitch[5] = { -1, -1, -1, -1, -1 };
 		m_pCollision->GetRadTiles(CCollision::TILEMAP_GAME, m_Pos, TilesIndexGame, TilesFlagsGame);
 		m_pCollision->GetRadTiles(CCollision::TILEMAP_FRONT, m_Pos, TilesIndexFront, TilesFlagsFront);
 		m_pCollision->GetRadTiles(CCollision::TILEMAP_SWITCH, m_Pos, TilesIndexSwitch, TilesFlagsSwitch, m_Team);
