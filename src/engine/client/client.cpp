@@ -2443,7 +2443,7 @@ extern "C" int SDL_main(int argc, char **argv_) // ignore_convention
 {9
 	const char **argv = const_cast<const char **>(argv_);
 #else
-int main(int argc, char **argv) // ignore_conventi on
+int main(int argc, const char **argv) // ignore_conventi on
 {
 #endif
 #if defined(CONF_FAMILY_WINDOWS)
@@ -2465,7 +2465,7 @@ int main(int argc, char **argv) // ignore_conventi on
 	// create the components
 	IEngine *pEngine = CreateEngine("Teeworlds");
 	IConsole *pConsole = CreateConsole(CFGFLAG_CLIENT);
-	IStorage *pStorage = CreateStorage("Teeworlds", IStorage::STORAGETYPE_CLIENT, argc, (const char**)argv); // ignore_convention
+	IStorage *pStorage = CreateStorage("Teeworlds", IStorage::STORAGETYPE_CLIENT, argc, argv); // ignore_convention
 	IConfig *pConfig = CreateConfig();
 	IStats *pStats = CreateStats(); // H-Client
 	IEngineSound *pEngineSound = CreateEngineSound();
@@ -2532,7 +2532,7 @@ int main(int argc, char **argv) // ignore_conventi on
 
 	// parse the command line arguments
 	if(argc > 1) // ignore_convention
-		pConsole->ParseArguments(argc-1, (const char**)&argv[1]); // ignore_convention
+		pConsole->ParseArguments(argc-1, &argv[1]); // ignore_convention
 
 	// restore empty config strings to their defaults
 	pConfig->RestoreStrings();

@@ -185,7 +185,7 @@ function build(settings)
         if platform == "linux" then
             -- H-Client: libnotify includes
             settings.cc.flags:Add("`pkg-config --cflags libnotify`")
-            settings.link.libs:Add("notify", "gdk_pixbuf-2.0", "gobject-2.0")
+            settings.link.flags:Add("`pkg-config --libs libnotify`")
         end
 		
 		if platform == "solaris" then
