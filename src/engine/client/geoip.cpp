@@ -21,7 +21,7 @@ void CGeoIP::Search(CServerInfo *pServerInfo, CServerInfoRegv2 *pServerReg)
 {
 	for (unsigned i = 0; i<3; i++)
 	{
-		if (m_aGeoJobs[i].Status() != CJob::STATE_RUNNING)
+		if (m_aGeoJobs[i].CurrentStatus() != CJob::STATE_RUNNING)
 		{
 			InfoGeoIPThread *pGeoThread = &m_aInfoThreads[i];
 			str_copy(pGeoThread->m_aIpAddress, pServerInfo->m_aAddress, sizeof(pGeoThread->m_aIpAddress));
@@ -48,11 +48,10 @@ GeoInfo CGeoIP::GetInfo(std::string ip)
     str_format(aUrl, sizeof(aUrl), "http://ip-api.com/json/%s", ip.c_str());
 
     //read data
-    unsigned FileSize = CHttpDownloader::GetFileSize(aUrl);
-    char *pHttpData = (char*)mem_alloc(FileSize, 1);
-    bool errors = !CHttpDownloader::GetToMemory(aUrl, pHttpData, FileSize, 1);
+    unsigned FileSize = 0;
+    char *pHttpData = CHttpDownloader::GetToMemory(aUrl, &FileSize, 1);
 
-    if (!errors && FileSize > 0)
+    if (pHttpData && FileSize > 0)
     {
 		// parse json data
 		json_settings JsonSettings;
@@ -75,7 +74,7 @@ GeoInfo CGeoIP::GetInfo(std::string ip)
 		json_value_free(pJsonData);
     }
 
-    mem_free(pHttpData);
+    delete pHttpData;
 	return rInfo;
 }
 

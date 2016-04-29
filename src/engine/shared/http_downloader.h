@@ -15,7 +15,7 @@ public:
 	};
 
 	static bool GetToFile(const char *url, const char *dest, unsigned timeOut = 3, unsigned downloadSpeed = 0);
-	static bool GetToMemory(const char *url, char *dest, unsigned destSize, unsigned timeOut = 3, unsigned downloadSpeed = 0);
+	static char* GetToMemory(const char *url, unsigned *size, unsigned timeOut = 3, unsigned downloadSpeed = 0);
 	static unsigned GetFileSize(const char *url, unsigned timeOut = 3);
 
 	static NETURL CreateUrl(std::string url);

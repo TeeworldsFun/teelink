@@ -149,8 +149,9 @@ bool CHttpDownloader::GetToFile(const char *url, const char *dest, unsigned time
 	return false;
 }
 
-bool CHttpDownloader::GetToMemory(const char *url, char *dest, unsigned destSize, unsigned timeOut, unsigned downloadSpeed)
+char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, unsigned timeOut, unsigned downloadSpeed)
 {
+	char *pData = 0x0;
 	int64 downloadTime = time_get();
 	unsigned chunkBytes = 0;
     NETSOCKET sock;
@@ -164,7 +165,7 @@ bool CHttpDownloader::GetToMemory(const char *url, char *dest, unsigned destSize
     if (net_host_lookup(NetUrl.m_aHost, &nadd, NETTYPE_IPV4) != 0)
     {
         dbg_msg("HttpDownloader", "Error can't found '%s'...", NetUrl.m_aHost);
-        return false;
+        return 0x0;
     }
     nadd.port = 80;
 
@@ -173,7 +174,7 @@ bool CHttpDownloader::GetToMemory(const char *url, char *dest, unsigned destSize
     {
         dbg_msg("HttpDownloader", "Error can't connect with '%s'...", NetUrl.m_aHost);
         net_tcp_close(sock);
-        return false;
+        return 0x0;
     }
 
     net_socket_rcv_timeout(sock, timeOut);
@@ -182,6 +183,7 @@ bool CHttpDownloader::GetToMemory(const char *url, char *dest, unsigned destSize
     str_format(aBuff, sizeof(aBuff), "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", NetUrl.m_aSlug, NetUrl.m_aHost);
 	net_tcp_send(sock, aBuff, str_length(aBuff));
 
+	*size = 0;
 	std::string NetData;
 	unsigned TotalBytes = 0;
 	int CurrentRecv = 0;
@@ -227,7 +229,7 @@ bool CHttpDownloader::GetToMemory(const char *url, char *dest, unsigned destSize
                         {
                             dbg_msg("HttpDownloader", "ERROR 404: '%s' not found...", NetUrl.m_aFile);
                             net_tcp_close(sock);
-                            return false;
+                            return 0x0;
                         }
                         else if (NetData.find("content-length:") != std::string::npos)
                         {
@@ -235,6 +237,7 @@ bool CHttpDownloader::GetToMemory(const char *url, char *dest, unsigned destSize
                         	str_copy(aFileSize, NetData.substr(15).c_str(), sizeof(aFileSize));
                         	str_trim(aFileSize);
                             TotalBytes = atoi(aFileSize);
+                            pData = new char[TotalBytes];
                         }
 
                         NetData.clear();
@@ -255,21 +258,22 @@ bool CHttpDownloader::GetToMemory(const char *url, char *dest, unsigned destSize
                     {
                         dbg_msg("HttpDownloader", "Error downloading '%s'...", NetUrl.m_aFile);
                         net_tcp_close(sock);
-                        return false;
+                        return 0x0;
                     }
 
                     ++nlCount;
                 }
 
-			    dest[destCursor++] = aNetBuff[i];
-				if (destCursor >= TotalBytes || destCursor >= destSize)
+			    pData[destCursor++] = aNetBuff[i];
+				if (destCursor >= TotalBytes)
 					break;
 			}
 		}
 	} while (CurrentRecv > 0);
-
 	net_tcp_close(sock);
-    return true;
+
+	*size = TotalBytes;
+    return pData;
 }
 
 unsigned CHttpDownloader::GetFileSize(const char *url, unsigned timeOut)

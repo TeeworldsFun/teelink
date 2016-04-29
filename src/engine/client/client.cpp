@@ -59,6 +59,7 @@
 	#include <windows.h>
 #elif defined(CONF_FAMILY_UNIX)
 	#if defined(CONF_PLATFORM_LINUX)
+		#include <X11/Xlib.h>
 		#include <libnotify/notify.h> // H-Client
 		#include <gdk-pixbuf-2.0/gdk-pixbuf/gdk-pixbuf.h>
 	#endif
@@ -1798,7 +1799,7 @@ void CClient::VersionUpdate()
 	}
 	else if(m_VersionInfo.m_State == CVersionInfo::STATE_START)
 	{
-		if(m_VersionInfo.m_VersionServeraddr.m_Job.Status() == CJob::STATE_DONE)
+		if(m_VersionInfo.m_VersionServeraddr.m_Job.CurrentStatus() == CJob::STATE_DONE)
 		{
 			CNetChunk Packet;
 
@@ -2446,6 +2447,13 @@ extern "C" int SDL_main(int argc, char **argv_) // ignore_convention
 int main(int argc, const char **argv) // ignore_conventi on
 {
 #endif
+
+// H-Client
+#if defined(CONF_PLATFORM_LINUX)
+	XInitThreads();
+	notify_init("H-Client Notifications");
+#endif
+//
 #if defined(CONF_FAMILY_WINDOWS)
 	for(int i = 1; i < argc; i++) // ignore_convention
 	{
@@ -2505,10 +2513,6 @@ int main(int argc, const char **argv) // ignore_conventi on
 		if(RegisterFail)
 			return -1;
 	}
-
-#if defined(CONF_PLATFORM_LINUX)
-	notify_init("H-Client Notification"); // H-Client
-#endif
 
 	pEngine->Init();
 	pConfig->Init();

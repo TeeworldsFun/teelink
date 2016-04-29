@@ -37,7 +37,7 @@ public:
 		STATE_DONE
 	};
 
-	int Status() const { return m_Status; }
+	int CurrentStatus() const { return m_Status; }
 	int Result() const {return m_Result; }
 };
 

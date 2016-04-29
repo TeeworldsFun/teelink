@@ -16,7 +16,7 @@ public:
     bool IsActive() const {
     	for (unsigned i = 0; i<3; i++)
     	{
-    	 if (m_aGeoJobs[i].Status() != CJob::STATE_DONE)
+    	 if (m_aGeoJobs[i].CurrentStatus() != CJob::STATE_DONE)
     		 return true;
     	}
 

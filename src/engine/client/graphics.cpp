@@ -1007,7 +1007,7 @@ int CGraphics_SDL::Init()
 
 void CGraphics_SDL::Shutdown()
 {
-	#ifdef CONF_PLATFORM_LINUX
+	#if defined(CONF_PLATFORM_LINUX)
 		if (m_pPixBufNotifIcon)
 			g_object_unref(G_OBJECT(m_pPixBufNotifIcon));
 		m_pPixBufNotifIcon = 0x0;

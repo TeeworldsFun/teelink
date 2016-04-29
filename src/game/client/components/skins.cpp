@@ -251,7 +251,7 @@ void CSkins::AddDownloadJob(const char *name)
 
 	for (unsigned i=0; i<MAX_DOWNLOADS; i++)
 	{
-		if (m_Jobs[i].Status() == CJob::STATE_DONE)
+		if (m_Jobs[i].CurrentStatus() == CJob::STATE_DONE)
 			UsableIndex = i;
 		else if (str_comp(m_InfoThreads[i].m_SkinName, name) == 0)
 			return;
