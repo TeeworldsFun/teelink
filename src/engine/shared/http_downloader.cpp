@@ -237,7 +237,7 @@ char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, unsigned tim
                         	str_copy(aFileSize, NetData.substr(15).c_str(), sizeof(aFileSize));
                         	str_trim(aFileSize);
                             TotalBytes = atoi(aFileSize);
-                            pData = new char[TotalBytes];
+                            pData = (char*)mem_alloc(TotalBytes, 1);
                         }
 
                         NetData.clear();

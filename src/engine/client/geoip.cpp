@@ -74,7 +74,7 @@ GeoInfo CGeoIP::GetInfo(std::string ip)
 		json_value_free(pJsonData);
     }
 
-    delete pHttpData;
+    mem_free(pHttpData);
 	return rInfo;
 }
 
