@@ -191,7 +191,9 @@ CGraphics_OpenGL::CGraphics_OpenGL()
 	m_pStorage = 0x0;
 	m_pConsole = 0x0;
 	m_FirstFreeTexture = 0;
-	m_pPixBufNotifIcon = 0x0;
+	#ifdef CONF_PLATFORM_LINUX
+		m_pPixBufNotifIcon = 0x0;
+	#endif
 }
 
 void CGraphics_OpenGL::ClipEnable(int x, int y, int w, int h)
