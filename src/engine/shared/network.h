@@ -78,9 +78,11 @@ enum
 	NET_ENUM_TERMINATOR
 };
 
+// DDNet (Security Token)
 typedef int SECURITY_TOKEN;
-
+SECURITY_TOKEN ToSecurityToken(unsigned char* pData);
 static const unsigned char SECURITY_TOKEN_MAGIC[] = {'T', 'K', 'E', 'N'};
+//
 
 enum
 {
@@ -145,6 +147,7 @@ class CNetConnection
 private:
 	unsigned short m_Sequence;
 	unsigned short m_Ack;
+	unsigned short m_PeerAck; // DDNet (Security Token)
 	unsigned m_State;
 
 	int m_Token;

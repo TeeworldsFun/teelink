@@ -112,6 +112,7 @@ int CNetServer::Update()
 /*
 	TODO: chopp up this function into smaller working parts
 */
+// TODO: Update!!
 int CNetServer::Recv(CNetChunk *pChunk)
 {
 	while(1)

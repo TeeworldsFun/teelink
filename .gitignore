@@ -1,6 +1,7 @@
 .project
 .cproject
 .pydevproject
+.autotools
 
 *.save
 *.upd
