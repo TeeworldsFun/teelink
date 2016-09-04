@@ -21,7 +21,7 @@ inline float sign(float f)
 }
 
 // H-Client (round defined in MSVC++ 11.0 or higher)
-#if !defined(_MSC_VER) || _MSC_VER <= 1600
+#if defined(_MSC_VER) && _MSC_VER <= 1600
 inline int round(float f)
 {
 	if(f > 0)

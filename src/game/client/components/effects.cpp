@@ -326,7 +326,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
         }
 
         // Body
-        for(int i = 0; i < 18; i++)
+        for(int i = 0; i < 8; i++)
         {
         	float size = 15.0f*frandom();
             CParticle p_body;

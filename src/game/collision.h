@@ -78,7 +78,7 @@ public:
 	bool CheckPointFreeze(vec2 Pos) { return CheckPointFreeze(Pos.x, Pos.y); }
 	bool CheckPointSpeedUp(vec2 Pos) { return IsSpeedUp(GetPureMapIndex(Pos)); }
 
-	int IsThrough(int x, int y);
+	bool IsThrough(int x, int y, int xoff, int yoff, vec2 pos0, vec2 pos1);
 	int GetTileIndex(int Index);
     int GetPureMapIndex(vec2 Pos);
     vec2 GetPos(int Index);
