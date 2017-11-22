@@ -3,6 +3,7 @@ CheckVersion("0.5")
 Import("configure.lua")
 Import("other/sdl/sdl.lua")
 Import("other/freetype/freetype.lua")
+Import("other/opus/opusfile.lua")
 
 --- Setup Config -------
 config = NewConfig()
@@ -13,6 +14,7 @@ config:Add(OptTestCompileC("macosxppc", "int main(){return 0;}", "-arch ppc"))
 config:Add(OptLibrary("zlib", "zlib.h", false))
 config:Add(SDL.OptFind("sdl", true))
 config:Add(FreeType.OptFind("freetype", true))
+config:Add(Opusfile.OptFind("opusfile", true))
 config:Finalize("config.lua")
 
 -- data compiler
@@ -118,9 +120,20 @@ if family == "windows" then
 	if platform == "win32" then
 		table.insert(client_depends, CopyToDirectory(".", "other\\freetype\\lib32\\freetype.dll"))
 		table.insert(client_depends, CopyToDirectory(".", "other\\sdl\\lib32\\SDL.dll"))
+        -- H-Client: DDNet Maps
+        table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib32\\libwinpthread-1.dll"))
+        table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib32\\libgcc_s_sjlj-1.dll"))
+        table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib32\\libogg.dll"))
+        table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib32\\libopus.dll"))
+		table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib32\\libopusfile.dll"))
 	else
 		table.insert(client_depends, CopyToDirectory(".", "other\\freetype\\lib64\\freetype.dll"))
 		table.insert(client_depends, CopyToDirectory(".", "other\\sdl\\lib64\\SDL.dll"))
+        -- H-Client: DDNet Maps
+        table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib64\\libwinpthread-1.dll"))
+        table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib64\\libogg.dll"))
+        table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib64\\libopus.dll"))
+		table.insert(client_depends, CopyToDirectory(".", "other\\opus\\windows\\lib64\\libopusfile.dll"))
 	end
 
 	if config.compiler.driver == "cl" then
@@ -241,12 +254,15 @@ function build(settings)
 		client_settings.link.libs:Add("opengl32")
 		client_settings.link.libs:Add("glu32")
 		client_settings.link.libs:Add("winmm")
+		client_settings.link.libs:Add("opusfile")
 	end
 
 	-- apply sdl settings
 	config.sdl:Apply(client_settings)
 	-- apply freetype settings
 	config.freetype:Apply(client_settings)
+	-- apply opus settings
+	config.opusfile:Apply(client_settings)
 
 	engine = Compile(engine_settings, Collect("src/engine/shared/*.cpp", "src/base/*.c"))
 	client = Compile(client_settings, Collect("src/engine/client/*.cpp"))

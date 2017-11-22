@@ -2,6 +2,10 @@
 .cproject
 .pydevproject
 .autotools
+.externalToolBuilders/
+.settings/
+Debug/
+Release/
 
 *.save
 *.upd

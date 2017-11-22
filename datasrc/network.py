@@ -363,6 +363,11 @@ Messages = [
 
 	NetMessage("Sv_TeamsState", []),
 	#
+	
+	# DDRace: Show Others Compatibility
+	NetMessage("Cl_ShowOthers", [
+		NetBool("m_Show"),
+	]),
 
 	# ANDROID MAPPER
 	NetMessage("SvAn_TileModif", [

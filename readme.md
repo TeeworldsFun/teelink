@@ -1,13 +1,14 @@
-+ H-Client README [![Circle CI](https://circleci.com/gh/CytraL/HClient.png)](https://circleci.com/gh/CytraL/HClient)
++ H-Client README [![Circle CI](https://circleci.com/gh/Tardo/HClient.png)](https://circleci.com/gh/Tardo/HClient)
 =============================================
 H-Client its a mod for the game Teeworlds created and maintained by unsigned char*.
 
 Please visit http://hclient.wordpress.com for up-to-date information about 
 the mod.
 
-Extra libraries used (Linux):
-- libnotify
-- gdk_pixbuf-2.0
+Extra libraries used:
+- libnotify (Only Linux)
+- gdk_pixbuf-2.0 (Only Linux)
+- libopus
 
 
 
