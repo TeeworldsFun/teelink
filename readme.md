@@ -1,5 +1,4 @@
-+ H-Client README [![Circle CI](https://circleci.com/gh/Tardo/HClient.png)](https://circleci.com/gh/Tardo/HClient)
-=============================================
+# H-Client README [![Circle CI](https://circleci.com/gh/Tardo/HClient.png)](https://circleci.com/gh/Tardo/HClient)
 H-Client its a mod for the game Teeworlds created and maintained by unsigned char*.
 
 Please visit http://hclient.wordpress.com for up-to-date information about 
@@ -12,9 +11,7 @@ Extra libraries used:
 
 
 
-+ TEEWORLDS README
-=============================================
-
+# TEEWORLDS README
 Copyright (c) 2011 Magnus Auvinen
 
 
