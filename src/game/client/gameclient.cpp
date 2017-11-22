@@ -103,7 +103,7 @@ const char *CGameClient::GetItemName(int Type) { return m_NetObjHandler.GetObjNa
 
 void CGameClient::OnConsoleInit()
 {
-	m_pEngine = Kernel()->RequestInterface<IEngine>();
+	m_pEngine = Kernel()->RequestInterface<CSystem>();
 	m_pClient = Kernel()->RequestInterface<IClient>();
 	m_pTextRender = Kernel()->RequestInterface<ITextRender>();
 	m_pSound = Kernel()->RequestInterface<ISound>();
@@ -299,6 +299,7 @@ void CGameClient::OnInit()
 
     m_TakeInitScreenShot = false;
     m_DDRaceMsgSent = false;
+    m_LastDDRaceShowOthers = false;
 
 	if(g_Config.m_ddrTimeoutHash[0] == 0)
 		for (size_t i = 0; i < sizeof(g_Config.m_ddrTimeoutHash)-1; g_Config.m_ddrTimeoutHash[i++] = (rand() % 26) + 97);
@@ -360,9 +361,7 @@ void CGameClient::OnConnected()
 	m_Collision.Init(Layers());
 
 	// FIXME: H-Client: Android Mapper
-	CServerInfo SInfo;
-	m_pClient->GetServerInfo(&SInfo);
-	if (str_comp_nocase(SInfo.m_aGameType, "mapper") != 0)
+	if (m_pClient->IsServerType("mapper"))
 		RenderTools()->RenderTilemapGenerateSkip(Layers());
 
 	for(int i = 0; i < m_All.m_Num; i++)
@@ -399,6 +398,7 @@ void CGameClient::OnReset()
 
     m_Teams.Reset(); // H-Client: DDNet
     m_DDRaceMsgSent = false;
+    m_LastDDRaceShowOthers = false;
 	m_TakeInitScreenShot = false; // H-Client
 
     // H-Client
@@ -506,26 +506,27 @@ void CGameClient::OnRender()
 	DispatchInput();
 
 	// H-Client
-    if (g_Config.m_hcShowPreviewMap && m_TakeInitScreenShot && Client()->State() == IClient::STATE_ONLINE)
-    {
-        ServerBrowser()->UpdateServerInfo(g_Config.m_UiServerAddress);
-        char preview[255], mapName[255];
-        mem_zero(mapName, sizeof(mapName));
-        str_copy(mapName, Client()->GetCurrentMap(), sizeof(mapName));
-        str_sanitize_cc(mapName);
-        str_format(preview, sizeof(preview), "mappreviews/%s.png", mapName);
-        Graphics()->TakeScreenshotFree(preview, true);
-        m_pMenus->GetImageMapPreview(0);
-    }
+	if (m_TakeInitScreenShot)
+	{
+		if (g_Config.m_hcShowPreviewMap && m_pClient->IsNewMap() && Client()->State() == IClient::STATE_ONLINE)
+		{
+			ServerBrowser()->UpdateServerInfo(g_Config.m_UiServerAddress);
+			char preview[255], mapName[255];
+			mem_zero(mapName, sizeof(mapName));
+			str_copy(mapName, Client()->GetCurrentMap(), sizeof(mapName));
+			str_sanitize_cc(mapName);
+			str_format(preview, sizeof(preview), "mappreviews/%s.png", mapName);
+			Graphics()->TakeScreenshotFree(preview, true);
+			m_pMenus->GetImageMapPreview(0);
+		}
+
+		m_TakeInitScreenShot = false; // FIXME: This affect to camera. Need be false for normal control!
+	}
 	//
 
 	// render all systems
 	for(int i = 0; i < m_All.m_Num; i++)
 		m_All.m_paComponents[i]->OnRender();
-
-	// H-Client
-    if (g_Config.m_hcShowPreviewMap && m_TakeInitScreenShot && Client()->State() == IClient::STATE_ONLINE)
-        m_TakeInitScreenShot = false;
 
 	// clear new tick flags
 	m_NewTick = false;
@@ -732,7 +733,8 @@ void CGameClient::OnStartGame()
 		Client()->DemoRecorder_HandleAutoStart();
 
     m_TakeInitScreenShot = true;
-    m_DDRaceMsgSent = true; // H-Client: DDRace
+    m_DDRaceMsgSent = false; // H-Client: DDRace
+    m_LastDDRaceShowOthers = false;
     Graphics()->ShowInfoKills(false);  // H-Client
 }
 
@@ -1105,12 +1107,23 @@ void CGameClient::OnNewSnapshot()
 	}
 
     //H-Client: DDNet
-	if(!m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
+	if (Client()->IsServerType("ddrace"))
 	{
-		CMsgPacker Msg(NETMSGTYPE_CL_ISDDNET); // <-- NO, THIS IS H-CLIENT BITCH!
-		Msg.AddInt(DDRACE_VERSIONNR);
-		Client()->SendMsg(&Msg, MSGFLAG_VITAL);
-		m_DDRaceMsgSent = true;
+		if(!m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
+		{
+			CMsgPacker Msg(NETMSGTYPE_CL_ISDDNET); // <-- NO, THIS IS H-CLIENT BITCH! (Used for get some net messages)
+			Msg.AddInt(DDRACE_VERSIONNR);
+			Client()->SendMsg(&Msg, MSGFLAG_VITAL);
+			m_DDRaceMsgSent = true;
+		}
+
+		if (m_LastDDRaceShowOthers != g_Config.m_ddrShowOthers)
+		{
+			m_LastDDRaceShowOthers = g_Config.m_ddrShowOthers;
+			CNetMsg_Cl_ShowOthers Msg;
+			Msg.m_Show = m_LastDDRaceShowOthers;
+			Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+		}
 	}
     //
 

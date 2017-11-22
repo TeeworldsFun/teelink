@@ -53,7 +53,6 @@ private:
 		MAX_DOWNLOADS = 3
 	};
 
-	class CJobPool m_JobPool;
 	class CJob m_Jobs[MAX_DOWNLOADS];
 
 	InfoDownloadSkinThread m_InfoThreads[MAX_DOWNLOADS];

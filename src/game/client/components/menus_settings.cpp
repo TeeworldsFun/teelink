@@ -23,6 +23,8 @@
 #include <game/client/animstate.h>
 #include <game/localization.h>
 
+#include <game/client/components/effects.h> // H-Client
+
 #include "binds.h"
 #include "countryflags.h"
 #include "menus.h"
@@ -1072,7 +1074,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 
     //PanelL.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
     StandartGame = PanelL;
-    PanelR.HSplitTop(160.0f, &DDRaceGame, &Ghost);
+    PanelR.HSplitTop(180.0f, &DDRaceGame, &Ghost);
 
     //Standart Game
     {
@@ -1116,6 +1118,11 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcShowPreviewMap, Localize("Show map preview in server browser"), g_Config.m_hcShowPreviewMap, &HUDItem))
             g_Config.m_hcShowPreviewMap ^= 1;
+
+        //Download Maps From DDNet Servers
+        StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+        if(DoButton_CheckBox(&g_Config.m_ddrMapsFromHttp, Localize("Try download maps from DDNet servers"), g_Config.m_ddrMapsFromHttp, &HUDItem))
+            g_Config.m_ddrMapsFromHttp ^= 1;
 
         /*if (g_Config.m_hcShowPreviewMap)
         {
@@ -1223,13 +1230,13 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
                 g_Config.m_hcGoreStyleDropWeapons ^= 1;
         }
 
+        CUIRect Text, LaserColorArea, Laser, SmokeColorArea, Smoke;
         //Laser Color
-        CUIRect Text, LaserColorArea, Laser;
         //StandartGame.HSplitTop(5.0f, 0, &StandartGame);
         if (g_Config.m_hcLaserCustomColor)
-            StandartGame.HSplitTop(110.0f, &LaserColorArea, &StandartGame);
+            StandartGame.HSplitTop(140.0f, &LaserColorArea, &StandartGame);
         else
-            StandartGame.HSplitTop(30.0f, &LaserColorArea, &StandartGame);
+            StandartGame.HSplitTop(20.0f, &LaserColorArea, &StandartGame);
 
        // RenderTools()->DrawUIRect(&LaserColorArea, vec4(0.0f,0.0f,0.0f,0.15f), CUI::CORNER_ALL, 5.0f);
         //LaserColorArea.HSplitTop(5.0f, 0, &LaserColorArea);
@@ -1269,7 +1276,53 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
                 UI()->DoLabel(&Text, paLabels[s], Text.h*ms_FontmodHeight*0.8f, -1);
             }
         }
-        StandartGame.HSplitTop(5.0f, 0, &StandartGame);
+
+        //Smoke Color
+		if (g_Config.m_hcSmokeCustomColor)
+			StandartGame.HSplitTop(110.0f, &SmokeColorArea, &StandartGame);
+		else
+			StandartGame.HSplitTop(20.0f, &SmokeColorArea, &StandartGame);
+
+		SmokeColorArea.HSplitTop(20.0f, &Text, &SmokeColorArea);
+
+		if(DoButton_CheckBox(&g_Config.m_hcSmokeCustomColor, Localize("Custom smoke color"), g_Config.m_hcSmokeCustomColor, &Text))
+			g_Config.m_hcSmokeCustomColor ^= 1;
+
+		if (g_Config.m_hcSmokeCustomColor)
+		{
+			SmokeColorArea.HSplitTop(20.0f, &Smoke, &SmokeColorArea);
+			Smoke.Margin(15.0f, &Smoke);
+			vec4 s_SmokeColors[] = {
+				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
+				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
+				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
+				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f)
+			};
+			RenderTools()->DrawUIRect(&Smoke, s_SmokeColors);
+
+			const char *paLabels[] = {
+				Localize("Hue"),
+				Localize("Sat."),
+				Localize("Lht."),
+				Localize("Alpha")};
+			int *pColorSlider[4] = {&g_Config.m_hcSmokeColorHue, &g_Config.m_hcSmokeColorSat, &g_Config.m_hcSmokeColorLht, &g_Config.m_hcSmokeColorAlpha};
+			for(int s = 0; s < 4; s++)
+			{
+				CUIRect Text;
+				SmokeColorArea.HSplitTop(19.0f, &HUDItem, &SmokeColorArea);
+				HUDItem.VMargin(15.0f, &HUDItem);
+				HUDItem.VSplitLeft(100.0f, &Text, &HUDItem);
+				//Button.VSplitRight(5.0f, &Button, 0);
+				HUDItem.HSplitTop(4.0f, 0, &HUDItem);
+
+				float k = (*pColorSlider[s]) / 255.0f;
+				k = DoScrollbarH(pColorSlider[s], &HUDItem, k);
+				*pColorSlider[s] = (int)(k*255.0f);
+				Text.y+=3.0f;
+				UI()->DoLabel(&Text, paLabels[s], Text.h*ms_FontmodHeight*0.8f, -1);
+			}
+		}
+		StandartGame.HSplitTop(5.0f, 0, &StandartGame);
     }
 
 	// DDRace/DDNet
@@ -1288,9 +1341,14 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             g_Config.m_ddrShowTeeDirection ^= 1;
 
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
-        if(DoButton_CheckBox(&g_Config.m_ddrPreventPrediction, Localize("Prevent prediction when you are 'frozen' (experimental)"), g_Config.m_ddrPreventPrediction, &HUDItem))
+        if(DoButton_CheckBox(&g_Config.m_ddrPreventPrediction, Localize("Prevent prediction in 'freezing' zones (experimental)"), g_Config.m_ddrPreventPrediction, &HUDItem))
             g_Config.m_ddrPreventPrediction ^= 1;
 
+        DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
+		if(DoButton_CheckBox(&g_Config.m_ddrShowOthers, Localize("Show Others"), g_Config.m_ddrShowOthers, &HUDItem))
+			g_Config.m_ddrShowOthers ^= 1;
+
+		DDRaceGame.HSplitTop(10.0f, 0x0, &DDRaceGame); // Blank Space
 
         CUIRect Edit;
         static float Offset = 0.0f;
@@ -1348,9 +1406,12 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	//Feet
 	{
 		const char *pUrl = "http://hclient.wordpress.com";
-		CUIRect TextRect;
+		CUIRect TextRect, Button;
         MainView.HSplitBottom(20.0f, &MainView, &HUDItem);
-        HUDItem.VSplitLeft(TextRender()->TextWidth(0, 14.0, pUrl, -1), &TextRect, &HUDItem);
+        HUDItem.VSplitRight(150.0f, &HUDItem, &Button);
+        Button.Margin(2.0f, &Button);
+        HUDItem.VSplitRight(15.0f, &HUDItem, 0x0);
+        HUDItem.VSplitRight(TextRender()->TextWidth(0, 14.0, pUrl, -1), 0x0, &TextRect);
         if (UI()->MouseInside(&TextRect))
         {
         	TextRender()->TextColor(0.0f, 1.0f, 0.39f, 1.0f);
@@ -1362,10 +1423,6 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 		UI()->DoLabelScaled(&TextRect, pUrl, 14.0f, -1);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-
-	    CUIRect Button;
-	    HUDItem.VSplitRight(150.0f, 0x0, &Button);
-        Button.Margin(2.0f, &Button);
         static int s_ButtonClearCache = 0;
         if (DoButton_Menu((void*)&s_ButtonClearCache, Localize("Clear Map-Preview Cache"), 0, &Button))
             DeleteMapPreviewCache();

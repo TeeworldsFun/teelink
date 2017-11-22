@@ -13,7 +13,6 @@ class CMapLayers : public CComponent
 	bool m_EnvelopeUpdate;
 
 	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup);
-	static void EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser);
 
 	CQuad *NewQuad(int _x, int _y); // H-Client
 public:
@@ -28,6 +27,8 @@ public:
 	virtual void OnRender();
 
 	void EnvelopeUpdate();
+
+	static void EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser); // H-Client: DDRace Maps
 };
 
 #endif

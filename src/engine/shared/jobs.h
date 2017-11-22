@@ -10,7 +10,7 @@ class CJob
 {
 	friend class CJobPool;
 
-	CJobPool *m_pPool;
+	CJobPool *m_pWorker;
 	CJob *m_pPrev;
 	CJob *m_pNext;
 
@@ -26,7 +26,7 @@ public:
 		m_pFuncData = 0;
 		m_pPrev = 0x0;
 		m_pNext = 0x0;
-		m_pPool = 0x0;
+		m_pWorker = 0x0;
 		m_pfnFunc = 0x0;
 	}
 

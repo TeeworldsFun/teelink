@@ -84,8 +84,36 @@ void CCharacterCore::Reset()
 void CCharacterCore::Tick(bool UseInput)
 {
 	float PhysSize = 28.0f;
-	vec2 PrevPos = m_Pos; // H-Client: DDNet
 	m_TriggeredEvents = 0;
+
+	// H-Client: DDNet
+	vec2 PrevPos = m_Pos;
+	int MapIndex = m_pCollision->GetPureMapIndex(m_Pos);
+	int MapIndexL = m_pCollision->GetPureMapIndex(vec2(m_Pos.x + (28/2)+4,m_Pos.y));
+	int MapIndexR = m_pCollision->GetPureMapIndex(vec2(m_Pos.x - (28/2)-4,m_Pos.y));
+	int MapIndexT = m_pCollision->GetPureMapIndex(vec2(m_Pos.x,m_Pos.y + (28/2)+4));
+	int MapIndexB = m_pCollision->GetPureMapIndex(vec2(m_Pos.x,m_Pos.y - (28/2)-4));
+	m_TileIndex = m_pCollision->GetTileIndex(MapIndex);
+	m_TileFlags = m_pCollision->GetTileFlags(MapIndex);
+	m_TileIndexL = m_pCollision->GetTileIndex(MapIndexL);
+	m_TileFlagsL = m_pCollision->GetTileFlags(MapIndexL);
+	m_TileIndexR = m_pCollision->GetTileIndex(MapIndexR);
+	m_TileFlagsR = m_pCollision->GetTileFlags(MapIndexR);
+	m_TileIndexB = m_pCollision->GetTileIndex(MapIndexB);
+	m_TileFlagsB = m_pCollision->GetTileFlags(MapIndexB);
+	m_TileIndexT = m_pCollision->GetTileIndex(MapIndexT);
+	m_TileFlagsT = m_pCollision->GetTileFlags(MapIndexT);
+	m_TileFIndex = m_pCollision->GetFTileIndex(MapIndex);
+	m_TileFFlags = m_pCollision->GetFTileFlags(MapIndex);
+	m_TileFIndexL = m_pCollision->GetFTileIndex(MapIndexL);
+	m_TileFFlagsL = m_pCollision->GetFTileFlags(MapIndexL);
+	m_TileFIndexR = m_pCollision->GetFTileIndex(MapIndexR);
+	m_TileFFlagsR = m_pCollision->GetFTileFlags(MapIndexR);
+	m_TileFIndexB = m_pCollision->GetFTileIndex(MapIndexB);
+	m_TileFFlagsB = m_pCollision->GetFTileFlags(MapIndexB);
+	m_TileFIndexT = m_pCollision->GetFTileIndex(MapIndexT);
+	m_TileFFlagsT = m_pCollision->GetFTileFlags(MapIndexT);
+	//
 
 	// get ground state
 	bool Grounded = false;
@@ -217,11 +245,15 @@ void CCharacterCore::Tick(bool UseInput)
 		// make sure that the hook doesn't go though the ground
 		bool GoingToHitGround = false;
 		bool GoingToRetract = false;
-		int Hit = m_pCollision->IntersectLine(m_HookPos, NewPos, &NewPos, 0, true); // H-Client: DDNet
+		bool GoingThroughTele = false; // H-Client: DDNet -- Need Finish!
+		int teleNr = 0;
+		int Hit = m_pCollision->IntersectLineTeleHook(m_HookPos, NewPos, &NewPos, 0, &teleNr); // H-Client: DDNet
 		if(Hit)
 		{
 			if(Hit&CCollision::COLFLAG_NOHOOK)
 				GoingToRetract = true;
+			else if (Hit == TILE_TELEINHOOK) // H-Client: DDNet
+				GoingThroughTele = true;
 			else
 				GoingToHitGround = true;
 		}
@@ -373,19 +405,19 @@ void CCharacterCore::Tick(bool UseInput)
 		// SpeedUps Prediction
 		if(InTileSpeed)
 		{
-			int CurrentIndex = m_pCollision->GetPureMapIndex(m_Pos);
 			vec2 Direction, MaxVel, TempVel = m_Vel;
 			int Force, MaxSpeed = 0;
+			int Index = m_pCollision->GetPureMapIndex(m_Pos);
 			float TeeAngle, SpeederAngle, DiffAngle, SpeedLeft, TeeSpeed;
-			m_pCollision->GetSpeedUp(CurrentIndex, &Direction, &Force, &MaxSpeed);
+			m_pCollision->GetSpeedUp(Index, &Direction, &Force, &MaxSpeed);
 			if(Force == 255 && MaxSpeed)
 			{
 				m_Vel = Direction * (MaxSpeed/5);
 			}
 			else
 			{
-				if(MaxSpeed > 0 && MaxSpeed < 5) MaxSpeed = 5;
-				if(MaxSpeed > 0)
+				MaxSpeed = max(5,MaxSpeed);
+				if (MaxSpeed > 0)
 				{
 					if(Direction.x > 0.0000001f)
 						SpeederAngle = -atan(Direction.y / Direction.x);
@@ -415,16 +447,74 @@ void CCharacterCore::Tick(bool UseInput)
 
 					DiffAngle = SpeederAngle - TeeAngle;
 					SpeedLeft = MaxSpeed / 5.0f - cos(DiffAngle) * TeeSpeed;
-
-					if(abs(SpeedLeft) > Force && SpeedLeft > 0.0000001f)
+					if(abs((int)SpeedLeft) > Force && SpeedLeft > 0.0000001f)
 						TempVel += Direction * Force;
-					else if(abs(SpeedLeft) > Force)
+					else if(abs((int)SpeedLeft) > Force)
 						TempVel += Direction * -Force;
 					else
 						TempVel += Direction * SpeedLeft;
 				}
 				else
 					TempVel += Direction * Force;
+
+
+				if(TempVel.x > 0 &&
+						((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_270) ||
+								(m_TileIndexL == TILE_STOP && m_TileFlagsL == ROTATION_270) ||
+								(m_TileIndexL == TILE_STOPS && (this->m_TileFlagsL == ROTATION_90 || m_TileFlagsL ==ROTATION_270)) ||
+								(m_TileIndexL == TILE_STOPA) ||
+								(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_270) ||
+								(m_TileFIndexL == TILE_STOP && m_TileFFlagsL == ROTATION_270) ||
+								(m_TileFIndexL == TILE_STOPS && (m_TileFFlagsL == ROTATION_90 || m_TileFFlagsL == ROTATION_270)) ||
+								(m_TileFIndexL == TILE_STOPA) ||
+								(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_270) ||
+								(m_TileSIndexL == TILE_STOP && m_TileSFlagsL == ROTATION_270) ||
+								(m_TileSIndexL == TILE_STOPS && (m_TileSFlagsL == ROTATION_90 || m_TileSFlagsL == ROTATION_270)) ||
+								(m_TileSIndexL == TILE_STOPA)))
+					TempVel.x = 0;
+				if(TempVel.x < 0 &&
+						((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_90) ||
+								(m_TileIndexR == TILE_STOP && m_TileFlagsR == ROTATION_90) ||
+								(m_TileIndexR == TILE_STOPS && (m_TileFlagsR == ROTATION_90 || m_TileFlagsR == ROTATION_270)) ||
+								(m_TileIndexR == TILE_STOPA) ||
+								(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_90) ||
+								(m_TileFIndexR == TILE_STOP && m_TileFFlagsR == ROTATION_90) ||
+								(m_TileFIndexR == TILE_STOPS && (m_TileFFlagsR == ROTATION_90 || m_TileFFlagsR == ROTATION_270)) ||
+								(m_TileFIndexR == TILE_STOPA) ||
+								(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_90) ||
+								(m_TileSIndexR == TILE_STOP && m_TileSFlagsR == ROTATION_90) ||
+								(m_TileSIndexR == TILE_STOPS && (m_TileSFlagsR == ROTATION_90 || m_TileSFlagsR == ROTATION_270)) ||
+								(m_TileSIndexR == TILE_STOPA)))
+					TempVel.x = 0;
+				if(TempVel.y < 0 &&
+						((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_180) ||
+								(m_TileIndexB == TILE_STOP && m_TileFlagsB == ROTATION_180) ||
+								(m_TileIndexB == TILE_STOPS && (m_TileFlagsB == ROTATION_0 || m_TileFlagsB == ROTATION_180)) ||
+								(m_TileIndexB == TILE_STOPA) ||
+								(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_180) ||
+								(m_TileFIndexB == TILE_STOP && m_TileFFlagsB == ROTATION_180) ||
+								(m_TileFIndexB == TILE_STOPS && (m_TileFFlagsB == ROTATION_0 || m_TileFFlagsB == ROTATION_180)) ||
+								(m_TileFIndexB == TILE_STOPA) ||
+								(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_180) ||
+								(m_TileSIndexB == TILE_STOP && m_TileSFlagsB == ROTATION_180) ||
+								(m_TileSIndexB == TILE_STOPS && (m_TileSFlagsB == ROTATION_0 || m_TileSFlagsB == ROTATION_180)) ||
+								(m_TileSIndexB == TILE_STOPA)))
+					TempVel.y = 0;
+				if(TempVel.y > 0 &&
+						((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_0) ||
+								(m_TileIndexT == TILE_STOP && m_TileFlagsT == ROTATION_0) ||
+								(m_TileIndexT == TILE_STOPS && (m_TileFlagsT == ROTATION_0 || m_TileFlagsT == ROTATION_180)) ||
+								(m_TileIndexT == TILE_STOPA) ||
+								(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_0) ||
+								(m_TileFIndexT == TILE_STOP && m_TileFFlagsT == ROTATION_0) ||
+								(m_TileFIndexT == TILE_STOPS && (m_TileFFlagsT == ROTATION_0 || m_TileFFlagsT == ROTATION_180)) ||
+								(m_TileFIndexT == TILE_STOPA) ||
+								(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_0) ||
+								(m_TileSIndexT == TILE_STOP && m_TileSFlagsT == ROTATION_0) ||
+								(m_TileSIndexT == TILE_STOPS && (m_TileSFlagsT == ROTATION_0 || m_TileSFlagsT == ROTATION_180)) ||
+								(m_TileSIndexT == TILE_STOPA)))
+					TempVel.y = 0;
+
 
 				m_Vel = TempVel;
 			}
@@ -436,89 +526,81 @@ void CCharacterCore::Tick(bool UseInput)
 			// jetpack and ninjajetpack prediction
 			if(!InTileFreeze && UseInput && (m_Input.m_Fire&1) && (m_ActiveWeapon == WEAPON_GUN || m_ActiveWeapon == WEAPON_NINJA))
 				m_Vel += TargetDirection * -1.0f * (m_pWorld->m_Tuning.m_JetpackStrength / 100.0f / 6.11f);
+
+			if(((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_270) ||
+					(m_TileIndexL == TILE_STOP && m_TileFlagsL == ROTATION_270) ||
+					(m_TileIndexL == TILE_STOPS && (m_TileFlagsL == ROTATION_90 || m_TileFlagsL ==ROTATION_270)) ||
+					(m_TileIndexL == TILE_STOPA) ||
+					(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_270) ||
+					(m_TileFIndexL == TILE_STOP && m_TileFFlagsL == ROTATION_270) ||
+					(m_TileFIndexL == TILE_STOPS && (m_TileFFlagsL == ROTATION_90 || m_TileFFlagsL == ROTATION_270)) ||
+					(m_TileFIndexL == TILE_STOPA) ||
+					(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_270) ||
+					(m_TileSIndexL == TILE_STOP && m_TileSFlagsL == ROTATION_270) ||
+					(m_TileSIndexL == TILE_STOPS && (m_TileSFlagsL == ROTATION_90 || m_TileSFlagsL == ROTATION_270)) ||
+					(m_TileSIndexL == TILE_STOPA)) && m_Vel.x > 0)
+			{
+				if((int)m_pCollision->GetPos(MapIndexL).x < (int)m_Pos.x)
+					m_Pos = PrevPos;
+				m_Vel.x = 0;
+			}
+			if(((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_90) ||
+					(m_TileIndexR == TILE_STOP && m_TileFlagsR == ROTATION_90) ||
+					(m_TileIndexR == TILE_STOPS && (m_TileFlagsR == ROTATION_90 || m_TileFlagsR == ROTATION_270)) ||
+					(m_TileIndexR == TILE_STOPA) ||
+					(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_90) ||
+					(m_TileFIndexR == TILE_STOP && m_TileFFlagsR == ROTATION_90) ||
+					(m_TileFIndexR == TILE_STOPS && (m_TileFFlagsR == ROTATION_90 || m_TileFFlagsR == ROTATION_270)) ||
+					(m_TileFIndexR == TILE_STOPA) ||
+					(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_90) ||
+					(m_TileSIndexR == TILE_STOP && m_TileSFlagsR == ROTATION_90) ||
+					(m_TileSIndexR == TILE_STOPS && (m_TileSFlagsR == ROTATION_90 || m_TileSFlagsR == ROTATION_270)) ||
+					(m_TileSIndexR == TILE_STOPA)) && m_Vel.x < 0)
+			{
+				if((int)m_pCollision->GetPos(MapIndexR).x)
+					if((int)m_pCollision->GetPos(MapIndexR).x < (int)m_Pos.x)
+						m_Pos = PrevPos;
+				m_Vel.x = 0;
+			}
+			if(((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_180) ||
+					(m_TileIndexB == TILE_STOP && m_TileFlagsB == ROTATION_180) ||
+					(m_TileIndexB == TILE_STOPS && (m_TileFlagsB == ROTATION_0 || m_TileFlagsB == ROTATION_180)) ||
+					(m_TileIndexB == TILE_STOPA) ||
+					(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_180) ||
+					(m_TileFIndexB == TILE_STOP && m_TileFFlagsB == ROTATION_180) ||
+					(m_TileFIndexB == TILE_STOPS && (m_TileFFlagsB == ROTATION_0 || m_TileFFlagsB == ROTATION_180)) ||
+					(m_TileFIndexB == TILE_STOPA) ||
+					(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_180) ||
+					(m_TileSIndexB == TILE_STOP && m_TileSFlagsB == ROTATION_180) ||
+					(m_TileSIndexB == TILE_STOPS && (m_TileSFlagsB == ROTATION_0 || m_TileSFlagsB == ROTATION_180)) ||
+					(m_TileSIndexB == TILE_STOPA)) && m_Vel.y < 0)
+			{
+				if((int)m_pCollision->GetPos(MapIndexB).y)
+					if((int)m_pCollision->GetPos(MapIndexB).y < (int)m_Pos.y)
+						m_Pos = PrevPos;
+				m_Vel.y = 0;
+			}
+			if(((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_0) ||
+					(m_TileIndexT == TILE_STOP && m_TileFlagsT == ROTATION_0) ||
+					(m_TileIndexT == TILE_STOPS && (m_TileFlagsT == ROTATION_0 || m_TileFlagsT == ROTATION_180)) ||
+					(m_TileIndexT == TILE_STOPA) ||
+					(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_0) ||
+					(m_TileFIndexT == TILE_STOP && m_TileFFlagsT == ROTATION_0) ||
+					(m_TileFIndexT == TILE_STOPS && (m_TileFFlagsT == ROTATION_0 || m_TileFFlagsT == ROTATION_180)) ||
+					(m_TileFIndexT == TILE_STOPA) ||
+					(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_0) ||
+					(m_TileSIndexT == TILE_STOP && m_TileSFlagsT == ROTATION_0) ||
+					(m_TileSIndexT == TILE_STOPS && (m_TileSFlagsT == ROTATION_0 || m_TileSFlagsT == ROTATION_180)) ||
+					(m_TileSIndexT == TILE_STOPA)) && m_Vel.y > 0)
+			{
+				if((int)m_pCollision->GetPos(MapIndexT).y)
+					if((int)m_pCollision->GetPos(MapIndexT).y < (int)m_Pos.y)
+						m_Pos = PrevPos;
+				m_Vel.y = 0;
+				m_Jumped = 0;
+			}
 		}
 		//
-
-		// Predict Stoppers!
-		int TilesIndexGame[5] = { -1, -1, -1, -1, -1 }, TilesIndexFront[5] = { -1, -1, -1, -1, -1 }, TilesIndexSwitch[5] = { -1, -1, -1, -1, -1 };
-		int TilesFlagsGame[5] = { -1, -1, -1, -1, -1 }, TilesFlagsFront[5] = { -1, -1, -1, -1, -1 }, TilesFlagsSwitch[5] = { -1, -1, -1, -1, -1 };
-		m_pCollision->GetRadTiles(CCollision::TILEMAP_GAME, m_Pos, TilesIndexGame, TilesFlagsGame);
-		m_pCollision->GetRadTiles(CCollision::TILEMAP_FRONT, m_Pos, TilesIndexFront, TilesFlagsFront);
-		m_pCollision->GetRadTiles(CCollision::TILEMAP_SWITCH, m_Pos, TilesIndexSwitch, TilesFlagsSwitch, m_Team);
-
-		if (((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_270) ||
-		      (TilesIndexGame[1] == TILE_STOP && TilesFlagsGame[1] == ROTATION_270) ||
-			  (TilesIndexGame[1] == TILE_STOPS && (TilesFlagsGame[1] == ROTATION_90 || TilesFlagsGame[1] == ROTATION_270)) ||
-			  (TilesIndexGame[1] == TILE_STOPA) ||
-			  (TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_270) ||
-			  (TilesIndexFront[1] == TILE_STOP && TilesFlagsFront[1] == ROTATION_270) ||
-			  (TilesIndexFront[1] == TILE_STOPS && (TilesFlagsFront[1] == ROTATION_90 || TilesFlagsFront[1] == ROTATION_270)) ||
-			  (TilesIndexFront[1] == TILE_STOPA) ||
-			  (TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_270) ||
-			  (TilesIndexSwitch[1] == TILE_STOP && TilesFlagsSwitch[1] == ROTATION_270) ||
-			  (TilesIndexSwitch[1] == TILE_STOPS && (TilesFlagsSwitch[1] == ROTATION_90 || TilesFlagsSwitch[1] == ROTATION_270)) ||
-			  (TilesIndexSwitch[1] == TILE_STOPA)) && m_Vel.x > 0)
-		{
-			if((int)m_pCollision->GetPos(TilesIndexGame[1]).x < (int)m_Pos.x)
-				m_Pos = PrevPos;
-
-			m_Vel.x = 0;
-		}
-		if (((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_90) ||
-				(TilesIndexGame[2] == TILE_STOP && TilesFlagsGame[2] == ROTATION_90) ||
-				(TilesIndexGame[2] == TILE_STOPS && (TilesFlagsGame[2] == ROTATION_90 || TilesFlagsGame[2] == ROTATION_270)) ||
-				(TilesIndexGame[2] == TILE_STOPA) ||
-				(TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_90) ||
-				(TilesIndexFront[2] == TILE_STOP && TilesFlagsFront[2] == ROTATION_90) ||
-				(TilesIndexFront[2] == TILE_STOPS && (TilesFlagsFront[2] == ROTATION_90 || TilesFlagsFront[2] == ROTATION_270)) ||
-				(TilesIndexFront[2] == TILE_STOPA) ||
-				(TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_90) ||
-				(TilesIndexSwitch[2] == TILE_STOP && TilesFlagsSwitch[2] == ROTATION_90) ||
-				(TilesIndexSwitch[2] == TILE_STOPS && (TilesFlagsSwitch[2] == ROTATION_90 || TilesFlagsSwitch[2] == ROTATION_270)) ||
-				(TilesIndexSwitch[2] == TILE_STOPA)) && m_Vel.x < 0)
-		{
-			if((int)m_pCollision->GetPos(TilesIndexGame[2]).x < (int)m_Pos.x)
-				m_Pos = PrevPos;
-
-			m_Vel.x = 0;
-		}
-		if (((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_180) ||
-				(TilesIndexGame[4] == TILE_STOP && TilesFlagsGame[4] == ROTATION_180) ||
-				(TilesIndexGame[4] == TILE_STOPS && (TilesFlagsGame[4] == ROTATION_0 || TilesFlagsGame[4] == ROTATION_180)) ||
-				(TilesIndexGame[4] == TILE_STOPA) ||
-				(TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_180) ||
-				(TilesIndexFront[4] == TILE_STOP && TilesFlagsFront[4] == ROTATION_180) ||
-				(TilesIndexFront[4] == TILE_STOPS && (TilesFlagsFront[4] == ROTATION_0 || TilesFlagsFront[4] == ROTATION_180)) ||
-				(TilesIndexFront[4] == TILE_STOPA) ||
-				(TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_180) ||
-				(TilesIndexSwitch[4] == TILE_STOP && TilesFlagsSwitch[4] == ROTATION_180) ||
-				(TilesIndexSwitch[4] == TILE_STOPS && (TilesFlagsSwitch[4] == ROTATION_0 || TilesFlagsSwitch[4] == ROTATION_180)) ||
-				(TilesIndexSwitch[4] == TILE_STOPA)) && m_Vel.y < 0)
-		{
-			if((int)m_pCollision->GetPos(TilesIndexGame[4]).y < (int)m_Pos.y)
-				m_Pos = PrevPos;
-
-			m_Vel.y = 0;
-		}
-		if(((TilesIndexGame[0] == TILE_STOP && TilesFlagsGame[0] == ROTATION_0) ||
-				(TilesIndexGame[3] == TILE_STOP && TilesFlagsGame[3] == ROTATION_0) ||
-				(TilesIndexGame[3] == TILE_STOPS && (TilesFlagsGame[3] == ROTATION_0 || TilesFlagsGame[3] == ROTATION_180)) ||
-				(TilesIndexGame[3] == TILE_STOPA) ||
-				(TilesIndexFront[0] == TILE_STOP && TilesFlagsFront[0] == ROTATION_0) ||
-				(TilesIndexFront[3] == TILE_STOP && TilesFlagsFront[3] == ROTATION_0) ||
-				(TilesIndexFront[3] == TILE_STOPS && (TilesFlagsFront[3] == ROTATION_0 || TilesFlagsFront[3] == ROTATION_180)) ||
-				(TilesIndexFront[3] == TILE_STOPA) ||
-				(TilesIndexSwitch[0] == TILE_STOP && TilesFlagsSwitch[0] == ROTATION_0) ||
-				(TilesIndexSwitch[3] == TILE_STOP && TilesFlagsSwitch[3] == ROTATION_0) ||
-				(TilesIndexSwitch[3] == TILE_STOPS && (TilesFlagsSwitch[3] == ROTATION_0 || TilesFlagsSwitch[3] == ROTATION_180)) ||
-				(TilesIndexSwitch[3] == TILE_STOPA)) && m_Vel.y > 0)
-		{
-			if((int)m_pCollision->GetPos(TilesIndexGame[3]).y < (int)m_Pos.y)
-				m_Pos = PrevPos;
-
-			m_Vel.y = 0;
-			m_Jumped = 0;
-		}
 	}
 
 	// clamp the velocity to something sane

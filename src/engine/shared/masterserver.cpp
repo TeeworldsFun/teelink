@@ -33,7 +33,7 @@ public:
 
 	CMasterInfo m_aMasterServers[MAX_MASTERSERVERS];
 	int m_State;
-	IEngine *m_pEngine;
+	CSystem *m_pEngine;
 	IStorage *m_pStorage;
 
 	CMasterServer()
@@ -115,7 +115,7 @@ public:
 
 	virtual void Init()
 	{
-		m_pEngine = Kernel()->RequestInterface<IEngine>();
+		m_pEngine = Kernel()->RequestInterface<CSystem>();
 		m_pStorage = Kernel()->RequestInterface<IStorage>();
 	}
 

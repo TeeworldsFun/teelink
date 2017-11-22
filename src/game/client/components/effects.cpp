@@ -73,7 +73,7 @@ void CEffects::PowerupShine(vec2 Pos, vec2 size)
 	m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 }
 
-void CEffects::SmokeTrail(vec2 Pos, vec2 Vel)
+void CEffects::SmokeTrail(vec2 Pos, vec2 Vel, const vec4 &color)
 {
 	if(!m_Add50hz)
 		return;
@@ -91,6 +91,7 @@ void CEffects::SmokeTrail(vec2 Pos, vec2 Vel)
 	p.m_Friction = 0.7f;
 	p.m_Gravity = frandom()*-500.0f;
 	p.m_ToBlack = true;
+	p.m_Color = color;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
@@ -116,7 +117,7 @@ void CEffects::SkidTrail(vec2 Pos, vec2 Vel)
 	m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 }
 
-void CEffects::BulletTrail(vec2 Pos)
+void CEffects::BulletTrail(vec2 Pos, const vec4 &color)
 {
 	if(!m_Add100hz)
 		return;
@@ -129,6 +130,7 @@ void CEffects::BulletTrail(vec2 Pos)
 	p.m_StartSize = vec2(8.0f, 8.0f);
 	p.m_EndSize = vec2(0.0f, 0.0f);
 	p.m_Friction = 0.7f;
+	p.m_Color = color;
 	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 

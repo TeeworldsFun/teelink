@@ -13,8 +13,8 @@ public:
 
 	virtual void OnRender();
 
-	void BulletTrail(vec2 Pos);
-	void SmokeTrail(vec2 Pos, vec2 Vel);
+	void BulletTrail(vec2 Pos, const vec4 &color); // H-Client: Color
+	void SmokeTrail(vec2 Pos, vec2 Vel, const vec4 &color); // H-Client: Color
 	void SkidTrail(vec2 Pos, vec2 Vel);
 	void Explosion(vec2 Pos);
 	void HammerHit(vec2 Pos);

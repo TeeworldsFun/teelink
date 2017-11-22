@@ -11,8 +11,9 @@ class CPlayers : public CComponent
 		PLAYERFLAG_ANTIPING = 1
 	};
 
+	CTeeRenderInfo m_RenderFreezeInfo; // H-Client
 	CTeeRenderInfo m_aRenderInfo[MAX_CLIENTS];
-	void RenderHand(class CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset);
+	void RenderHand(class CTeeRenderInfo *pInfo, const vec2 &CenterPos, vec2 Dir, float AngleOffset, const vec2 &PostRotOffset);
 	void RenderPlayer(
 		const CNetObj_Character *pPrevChar,
 		const CNetObj_Character *pPlayerChar,
@@ -29,6 +30,7 @@ class CPlayers : public CComponent
 
 public:
 	virtual void OnRender();
+	virtual void OnMapLoad();
 };
 
 #endif

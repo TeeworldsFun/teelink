@@ -27,7 +27,27 @@
 #include "players.h"
 
 
-void CPlayers::RenderHand(CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset)
+// H-Client
+void CPlayers::OnMapLoad()
+{
+	CComponent::OnMapLoad();
+
+    m_RenderFreezeInfo.m_TextureDamage = -1;
+    m_RenderFreezeInfo.m_Texture = -1;
+    m_RenderFreezeInfo.m_Size = 64.0f;
+    const int fSkin = m_pClient->m_pSkins->Find("x_freeze");
+    if (fSkin != -1)
+    {
+    	m_RenderFreezeInfo.m_Texture = m_pClient->m_pSkins->Get(fSkin)->m_OrgTexture;
+    	m_RenderFreezeInfo.m_ColorBody = vec4(1,1,1,1);
+    	m_RenderFreezeInfo.m_ColorFeet = vec4(1,1,1,1);
+    	m_RenderFreezeInfo.m_ColorHand = vec4(1,1,1,1);
+
+    }
+}
+//
+
+void CPlayers::RenderHand(CTeeRenderInfo *pInfo, const vec2 &CenterPos, vec2 Dir, float AngleOffset, const vec2 &PostRotOffset)
 {
 	// for drawing hand
 	//const skin *s = skin_get(skin_id);
@@ -375,7 +395,8 @@ void CPlayers::RenderPlayer(
             Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 
             // Collide with walls?
-            Hit = Collision()->IntersectLine(orgPos, toPos, &toPos, 0, true);
+            int teleNr = 0;
+            Hit = Collision()->IntersectLineTeleHook(orgPos, toPos, &toPos, 0, &teleNr);
             if (Hit && !(Hit&CCollision::COLFLAG_NOHOOK)) // Hookable Tile
             	Graphics()->SetColor(0.5f, 0.9f, 0.62f, 1.0f);
 
@@ -564,19 +585,10 @@ void CPlayers::RenderPlayer(
 	RenderInfo.m_ColorBody.a = 1.0f;
 	RenderInfo.m_ColorFeet.a = 1.0f;
 
-    //H-Client: DDRace
-    CTeeRenderInfo RenderFreezeInfo = RenderInfo;
-    RenderFreezeInfo.m_TextureDamage = -1;
-    int fSkin = m_pClient->m_pSkins->Find("x_freeze");
-    if (fSkin != -1)
-    {
-        RenderFreezeInfo.m_Texture = m_pClient->m_pSkins->Get(fSkin)->m_OrgTexture;
-        RenderFreezeInfo.m_ColorBody = vec4(1,1,1,1);
-        RenderFreezeInfo.m_ColorFeet = vec4(1,1,1,1);
-    }
+    //H-Client: DDRace Stuff
 	if (Client()->IsServerType("ddrace"))
 	{
-        //Tee Direction Info
+        // Tee Direction Info
         if (g_Config.m_ddrShowTeeDirection && !pInfo.m_Local)
         {
             if (Player.m_Direction != 0)
@@ -601,44 +613,52 @@ void CPlayers::RenderPlayer(
         }
 	}
 
-    if (m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Freezed)
-    {
-        if (Client()->GameTick() - m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze > Client()->GameTickSpeed() * 0.5f && m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha < 1.0f)
-        {
-            m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha = min(m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha+0.01f, 1.0f);
-            m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
-        }
+	// H-Client: Render Tee (Is Freezed?)
+	m_RenderFreezeInfo.m_GotAirJump = RenderInfo.m_GotAirJump;
 
-        if (m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha < 1.0f)
-        {
-            RenderInfo.m_ColorBody.a = RenderInfo.m_ColorFeet.a = 1.0f - m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha;
-            RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
-        }
+	if (m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Freezed)
+	{
+		if (m_RenderFreezeInfo.m_Texture != -1 && Client()->GameTick() - m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze > Client()->GameTickSpeed() * 0.5f && m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha < 1.0f)
+		{
+			m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha = min(m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha+0.01f, 1.0f);
+			m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
+		}
 
-        RenderFreezeInfo.m_ColorBody.a = RenderFreezeInfo.m_ColorFeet.a = m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha;
-        RenderTools()->RenderTee(&State, &RenderFreezeInfo, Player.m_Emote, Direction, Position);
-    }
-    else
-    {
-        if (Client()->GameTick() - m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze > Client()->GameTickSpeed() * 0.12f && m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha > 0.0f)
-        {
-            m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha = max(0.0f, m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha-0.01f);
-            m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
-        }
+		if (m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha < 1.0f)
+		{
+			RenderInfo.m_ColorBody.a = RenderInfo.m_ColorFeet.a = 1.0f - m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha;
+			RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
+		}
 
-        RenderInfo.m_ColorBody.a = RenderInfo.m_ColorFeet.a = 1.0f - m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha;
-        RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
+		if (m_RenderFreezeInfo.m_Texture != -1)
+		{
+			m_RenderFreezeInfo.m_ColorBody.a = m_RenderFreezeInfo.m_ColorFeet.a = m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha;
+			RenderTools()->RenderTee(&State, &m_RenderFreezeInfo, Player.m_Emote, Direction, Position);
+		}
+	}
+	else
+	{
+		if (Client()->GameTick() - m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze > Client()->GameTickSpeed() * 0.12f && m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha > 0.0f)
+		{
+			m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha = max(0.0f, m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha-0.01f);
+			m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
+		}
 
-        if (m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha > 0.0f)
-        {
-            RenderFreezeInfo.m_ColorBody.a = RenderFreezeInfo.m_ColorFeet.a = m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha;
-            RenderTools()->RenderTee(&State, &RenderFreezeInfo, Player.m_Emote, Direction, Position);
-        }
-    }
+		RenderInfo.m_ColorBody.a = RenderInfo.m_ColorFeet.a = 1.0f - m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha;
+		RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
 
-	//H-Client
+		if (m_RenderFreezeInfo.m_Texture != -1 && m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha > 0.0f)
+		{
+			m_RenderFreezeInfo.m_ColorBody.a = m_RenderFreezeInfo.m_ColorFeet.a = m_pClient->m_aClients[pInfo.m_ClientID].m_FreezedState.m_Alpha;
+			RenderTools()->RenderTee(&State, &m_RenderFreezeInfo, Player.m_Emote, Direction, Position);
+		}
+	}
+	//
+
+	//H-Client: Gore
     if (g_Config.m_hcGoreStyle && !Client()->IsServerType("ddrace") && Prev.m_Emote == EMOTE_NORMAL && Player.m_Emote == EMOTE_PAIN)
         m_pClient->m_pEffects->Blood(Position, Direction, 0);
+    //
 
 	if(Player.m_PlayerFlags&PLAYERFLAG_CHATTING)
 	{
@@ -722,9 +742,9 @@ void CPlayers::OnRender()
 	}
 
 	// render other players in two passes, first pass we render the other, second pass we render our self
-	for(int p = 0; p < 4; p++)
+	for(int p = 1; p < 4; ++p)
 	{
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{
 			// only render active characters
 			if(!m_pClient->m_Snap.m_aCharacters[i].m_Active)

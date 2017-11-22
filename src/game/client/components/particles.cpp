@@ -111,7 +111,7 @@ void CParticles::Update(float TimePassed)
                 Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, 0.1f, NULL, &coll);
                 if (coll && !m_aParticles[i].m_Collide)
                 {
-                    Collision()->IntersectLine(m_aParticles[i].m_LastPos, m_aParticles[i].m_Pos, 0x0, &m_aParticles[i].m_Pos, false);
+                    Collision()->IntersectLine(m_aParticles[i].m_LastPos, m_aParticles[i].m_Pos, 0x0, &m_aParticles[i].m_Pos);
 
                     vec2 Dir = normalize(m_aParticles[i].m_Vel);
 

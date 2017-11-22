@@ -99,17 +99,23 @@ MACRO_CONFIG_STR(hcAutoDownloadSkinsSpeed, hc_auto_download_skins_speed, 5, "1",
 MACRO_CONFIG_INT(hcUseHUD, hc_use_hud, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Uses H-Client HUD")
 MACRO_CONFIG_INT(hcColorClan, hc_color_clan, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "HighLight Clan Members")
 MACRO_CONFIG_INT(hcChatEmoticons, hc_chat_emoticons, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat emoticons")
-MACRO_CONFIG_INT(hcChatColours, hc_chat_colours, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat colours")
-MACRO_CONFIG_INT(hcChatTeamColors, hc_chat_team_colors, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat team colours")
+MACRO_CONFIG_INT(hcChatColours, hc_chat_colours, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat colors")
+MACRO_CONFIG_INT(hcChatTeamColors, hc_chat_team_colors, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat team colors")
 MACRO_CONFIG_INT(hcGoreStyle, hc_gore_style, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Gore Style!")
 MACRO_CONFIG_INT(hcGoreStyleTeeColors, hc_gore_style_tee_colors, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Tee Colors in Gore Style!")
 MACRO_CONFIG_INT(hcGoreStyleDropWeapons, hc_gore_style_drop_weapons, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Drop Weapons in Gore Style!")
 
-MACRO_CONFIG_INT(hcLaserCustomColor, hc_laser_custom_color, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Custom Lase Color")
+MACRO_CONFIG_INT(hcLaserCustomColor, hc_laser_custom_color, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Custom Laser Color")
 MACRO_CONFIG_INT(hcLaserColorHue, hc_laser_color_hue, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color hue")
 MACRO_CONFIG_INT(hcLaserColorSat, hc_laser_color_sat, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color saturation")
 MACRO_CONFIG_INT(hcLaserColorLht, hc_laser_color_lht, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color lightness")
 MACRO_CONFIG_INT(hcLaserColorAlpha, hc_laser_color_alpha, 190, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser alpha")
+
+MACRO_CONFIG_INT(hcSmokeCustomColor, hc_smoke_custom_color, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Custom Smoke Color")
+MACRO_CONFIG_INT(hcSmokeColorHue, hc_smoke_color_hue, 191, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color hue")
+MACRO_CONFIG_INT(hcSmokeColorSat, hc_smoke_color_sat, 191, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color saturation")
+MACRO_CONFIG_INT(hcSmokeColorLht, hc_smoke_color_lht, 191, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color lightness")
+MACRO_CONFIG_INT(hcSmokeColorAlpha, hc_smoke_color_alpha, 255, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke alpha")
 
 MACRO_CONFIG_INT(hcDisableChatSoundNotification, hc_disable_chat_sound_notification, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Disable Chat Sound Notification")
 MACRO_CONFIG_INT(hcPlayerInfo, hc_player_info, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Player Info")
@@ -125,6 +131,8 @@ MACRO_CONFIG_INT(hcRaceSaveGhost, hc_race_save_ghost, 1, 0, 1, CFGFLAG_CLIENT|CF
 
 MACRO_CONFIG_INT(AntiPing, anti_ping, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Anti-Ping")
 
+MACRO_CONFIG_INT(ddrMapsFromHttp, ddrace_maps_from_http, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Try Download Maps From DDRaceNet HTTP Servers")
+MACRO_CONFIG_INT(ddrShowOthers, ddrace_show_others, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show Others")
 MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")
 MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")
 MACRO_CONFIG_INT(ddrPreventPrediction, ddr_prevent_prediction, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Prevent Predection When Freeze")
@@ -137,13 +145,13 @@ MACRO_CONFIG_INT(hcNotificationTime, hc_notification_time, 5000, 0, 99999, CFGFL
 // Editor
 MACRO_CONFIG_INT(hcEditorDrawRouteAccuracy, hc_editor_draw_route_accuracy, 5, 0, 100, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Editor Draw Route Accuracy")
 
-// Theme
-MACRO_CONFIG_STR(hcTheme, theme, 25, "default", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
-
 // Irc
 MACRO_CONFIG_STR(IrcNick, irc_nick, 15, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Nick")
 MACRO_CONFIG_STR(IrcServer, irc_server, 124, "port80c.se.quakenet.org", CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Server")
 MACRO_CONFIG_INT(IrcPort, irc_port, 6667, 1111, 9999, CFGFLAG_SAVE|CFGFLAG_CLIENT, "IRC Port")
+
+// Theme
+MACRO_CONFIG_STR(hcTheme, theme, 25, "default", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
 
 MACRO_CONFIG_STR(hcListHeaderBackgroundColor, list_header_background_color, 9, "FFFFFF44", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")
 MACRO_CONFIG_STR(hcListHeaderTextColor, list_header_text_color, 9, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "")

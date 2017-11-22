@@ -173,9 +173,9 @@ void CRenderTools::RenderTilemap(CTile *pFrontTiles, int fw, int fh, CTile *pGam
 	//Graphics()->MapScreen(screen_x0-50, screen_y0-50, screen_x1+50, screen_y1+50);
 
 	// calculate the final pixelsize for the tiles
-	float TilePixelSize = 1024/32.0f;
-	float FinalTileSize = Scale/(ScreenX1-ScreenX0) * Graphics()->ScreenWidth();
-	float FinalTilesetScale = FinalTileSize/TilePixelSize;
+	const float TilePixelSize = 1024/32.0f;
+	const float FinalTileSize = Scale/(ScreenX1-ScreenX0) * Graphics()->ScreenWidth();
+	const float FinalTilesetScale = FinalTileSize/TilePixelSize;
 
 	float r=1, g=1, b=1, a=1;
 	if(ColorEnv >= 0)
@@ -229,9 +229,9 @@ void CRenderTools::RenderTilemap(CTile *pFrontTiles, int fw, int fh, CTile *pGam
 					continue; // my = h-1;
 			}
 
-			int c = mx + my*w;
-			int cg = mx + my*gw;
-			int cf = mx + my*fw;
+			const int c = mx + my*w;
+			const int cg = mx + my*gw;
+			const int cf = mx + my*fw;
 
 			unsigned char Index = pTiles[c].m_Index;
 			if(Index)
@@ -253,10 +253,10 @@ void CRenderTools::RenderTilemap(CTile *pFrontTiles, int fw, int fh, CTile *pGam
                 }
                 //
 
-				unsigned char Flags = pTiles[c].m_Flags;
+				const unsigned char Flags = pTiles[c].m_Flags;
 
 				bool Render = false;
-				if(Flags&TILEFLAG_OPAQUE && Color.a*a > 254.0f/255.0f)
+				if((Flags&TILEFLAG_OPAQUE) && Color.a*a > 254.0f/255.0f)
 				{
 					if(RenderFlags&LAYERRENDERFLAG_OPAQUE)
 						Render = true;

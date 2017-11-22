@@ -255,6 +255,31 @@ void CSmoothTime::Update(CGraph *pGraph, int64 Target, int TimeLeft, int AdjustD
 		UpdateInt(Target);
 }
 
+// H-Client
+int ThreadDownloadMap(void *params)
+{
+    CClient *pClient = static_cast<CClient*>(params);
+    if (!pClient)
+    	return -1;
+
+    char aFileName[255];
+    str_format(aFileName, sizeof(aFileName), "%s_%08x", pClient->m_aMapdownloadName, pClient->m_MapdownloadCrc);
+    if (pClient->DownloadMap(aFileName))
+    {
+    	dbg_msg("Client", "Map downloaded successfully! %d bytes -- %d -- %s", pClient->m_DownloadMapStatus.m_Received, pClient->m_DownloadMapStatus.m_Status, pClient->m_DownloadMapStatus.m_ForceStop?"YES":"NO");
+    	pClient->m_MapdownloadTotalsize = -1;
+    	pClient->TryLoadMap();
+    }
+    else
+    {
+    	dbg_msg("Client", "Can't download map from DDNet servers. Downloading direct from server...", pClient->m_DownloadMapStatus.m_Received);
+    	pClient->SendRequestMap();
+    }
+
+    return 0;
+}
+//
+
 
 CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotDelta)
 {
@@ -324,6 +349,18 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_RecivedSnapshots = 0;
 
 	m_VersionInfo.m_State = CVersionInfo::STATE_INIT;
+
+	m_IsNewMap = false; // H-Client
+	m_ResortServerBrowser = true;
+	m_LocalStartTime = 0;
+	m_SnapshotParts = 0;
+	m_pIrc = 0x0;
+	m_pTexturePack = 0x0;
+	m_pEngine = 0x0;
+	m_pMasterServer = 0x0;
+	m_pGeoIP = 0x0;
+	m_pStorage = 0x0;
+	m_pServerBrowser = 0x0;
 }
 
 // ----- send functions -----
@@ -621,6 +658,13 @@ void CClient::DisconnectWithReason(const char *pReason)
 	m_aSnapshots[SNAP_CURRENT] = 0;
 	m_aSnapshots[SNAP_PREV] = 0;
 	m_RecivedSnapshots = 0;
+
+	// Download Maps
+	if (m_DownloadMapStatus.m_Status != CHttpDownloader::DOWNLOADED || m_DownloadMapStatus.m_Status != CHttpDownloader::ERROR)
+	{
+		net_tcp_close(m_DownloadMapStatus.m_Socket);
+		m_DownloadMapStatus.m_ForceStop = true;
+	}
 }
 
 void CClient::Disconnect()
@@ -1180,35 +1224,23 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 
 				if(!pError)
 				{
+					m_IsNewMap = false;
 					m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client/network", "loading done");
 					SendReady();
 				}
 				else
 				{
+					m_IsNewMap = true;
+
 					str_format(m_aMapdownloadFilename, sizeof(m_aMapdownloadFilename), "downloadedmaps/%s_%08x.map", pMap, MapCrc);
-
-					char aBuf[256];
-					str_format(aBuf, sizeof(aBuf), "starting to download map to '%s'", m_aMapdownloadFilename);
-					m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client/network", aBuf);
-
-					m_MapdownloadChunk = 0;
 					str_copy(m_aMapdownloadName, pMap, sizeof(m_aMapdownloadName));
-					if(m_MapdownloadFile)
-						io_close(m_MapdownloadFile);
-					m_MapdownloadFile = Storage()->OpenFile(m_aMapdownloadFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 					m_MapdownloadCrc = MapCrc;
 					m_MapdownloadTotalsize = MapSize;
-					m_MapdownloadAmount = 0;
 
-					CMsgPacker Msg(NETMSG_REQUEST_MAP_DATA);
-					Msg.AddInt(m_MapdownloadChunk);
-					SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH);
-
-					if(g_Config.m_Debug)
-					{
-						str_format(aBuf, sizeof(aBuf), "requested chunk %d", m_MapdownloadChunk);
-						m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client/network", aBuf);
-					}
+					if (g_Config.m_ddrMapsFromHttp)
+						Engine()->AddJob(&m_DownloadMapJob, ThreadDownloadMap, this);
+					else
+						SendRequestMap();
 				}
 			}
 		}
@@ -1230,7 +1262,6 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 
 			if(Last)
 			{
-				const char *pError;
 				m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client/network", "download complete, loading map");
 
 				if(m_MapdownloadFile)
@@ -1240,14 +1271,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 				m_MapdownloadTotalsize = -1;
 
 				// load map
-				pError = LoadMap(m_aMapdownloadName, m_aMapdownloadFilename, m_MapdownloadCrc);
-				if(!pError)
-				{
-					m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client/network", "loading done");
-					SendReady();
-				}
-				else
-					DisconnectWithReason(pError);
+				TryLoadMap();
 			}
 			else
 			{
@@ -1835,7 +1859,7 @@ void CClient::RegisterInterfaces()
 void CClient::InitInterfaces()
 {
 	// fetch interfaces
-	m_pEngine = Kernel()->RequestInterface<IEngine>();
+	m_pEngine = Kernel()->RequestInterface<CSystem>();
 	m_pEditor = Kernel()->RequestInterface<IEditor>();
 	//m_pGraphics = Kernel()->RequestInterface<IEngineGraphics>();
 	m_pSound = Kernel()->RequestInterface<IEngineSound>();
@@ -2086,14 +2110,17 @@ void CClient::Run()
 				}
 
 				// H-Client
+				static float totalTime = 0.0f;
 				if (m_RecordVideo && State() == STATE_DEMOPLAYBACK)
-					AddFrameToRecordVideo();
-				//
-
-				// H-Client: Limit ~60fps
-				long TimeElapsed = Now - m_LastRenderTime;
-				if(m_RecordVideo && State() == STATE_DEMOPLAYBACK && TimeElapsed < 1000 / 60)
-					thread_sleep((1000 / 60) - TimeElapsed);
+				{
+					const float fr = 3.0f*0.01f;
+					totalTime+=m_RenderFrameTime;
+					if(totalTime > fr)
+					{
+						AddFrameToRecordVideo();
+						totalTime = 0.0f;
+					}
+				}
 				//
 
 				m_LastRenderTime = Now;
@@ -2471,7 +2498,7 @@ int main(int argc, const char **argv) // ignore_conventi on
 	pClient->RegisterInterfaces();
 
 	// create the components
-	IEngine *pEngine = CreateEngine("Teeworlds");
+	CSystem *pEngine = CreateEngine("Teeworlds");
 	IConsole *pConsole = CreateConsole(CFGFLAG_CLIENT);
 	IStorage *pStorage = CreateStorage("Teeworlds", IStorage::STORAGETYPE_CLIENT, argc, argv); // ignore_convention
 	IConfig *pConfig = CreateConfig();
@@ -2587,9 +2614,9 @@ bool CClient::StartRecordVideo()
 
 	// Audio: -f alsa -ac 2 -i default
 	if (m_RecordVideoMode == MODE_RECORD_FAST)
-		snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf 'setpts=2.5*PTS,scale=%sx%s,vflip' -strict -2 %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
+		snprintf(aBuf, sizeof(aBuf), "ffmpeg -f rawvideo -pix_fmt rgba -s %dx%d -i - -y -vf 'setpts=2.5*PTS,scale=%sx%s' %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
 	else
-		snprintf(aBuf, sizeof(aBuf), "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s %dx%d -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf 'scale=%sx%s,vflip' -strict -2 %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
+		snprintf(aBuf, sizeof(aBuf), "ffmpeg -f rawvideo -pix_fmt rgba -s %dx%d -i - -y -vf 'scale=%sx%s' %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
 
 	if (m_RecordVideo)
 		EndRecordVideo();
@@ -2605,10 +2632,9 @@ bool CClient::AddFrameToRecordVideo()
 	if (!m_RecordVideo || !m_RecordVideoFile)
 		return false;
 
-	int *pBuffer = new int[Graphics()->ScreenWidth()*Graphics()->ScreenHeight()];
-	glReadPixels(0, 0, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), GL_RGBA, GL_UNSIGNED_BYTE, pBuffer);
-	fwrite(pBuffer, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_RecordVideoFile);
-	delete [] pBuffer;
+	unsigned char *pPixelData = Graphics()->GetFrameBuffer();
+	fwrite(pPixelData, sizeof(int)*Graphics()->ScreenWidth()*Graphics()->ScreenHeight(), 1, (FILE*)m_RecordVideoFile);
+	mem_free(pPixelData);
 
 	return true;
 }
@@ -2625,4 +2651,53 @@ bool CClient::EndRecordVideo()
 	m_RecordVideo = false;
 
 	return true;
+}
+
+bool CClient::DownloadMap(const char *pName)
+{
+    char aUrl[255];
+    str_format(aUrl, sizeof(aUrl), "http://maps.ddnet.tw/%s.map", pName);
+    char aDest[255], aCompleteFilename[512];
+    str_format(aDest, sizeof(aDest), "downloadedmaps/%s.map", pName);
+    Storage()->GetPath(IStorage::TYPE_SAVE, aDest, aCompleteFilename, sizeof(aCompleteFilename));
+
+    dbg_msg("Client", "Try download '%s' map from ddnet server...", pName);
+    m_DownloadMapStatus.Reset();
+    return CHttpDownloader::GetToFile(aUrl, aCompleteFilename, &m_DownloadMapStatus, 3);
+}
+
+void CClient::SendRequestMap()
+{
+	if(m_MapdownloadFile)
+		io_close(m_MapdownloadFile);
+	m_MapdownloadFile = Storage()->OpenFile(m_aMapdownloadFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "starting to download map to '%s'", m_aMapdownloadFilename);
+	m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client/network", aBuf);
+
+	m_MapdownloadChunk = 0;
+	m_MapdownloadAmount = 0;
+
+	CMsgPacker Msg(NETMSG_REQUEST_MAP_DATA);
+	Msg.AddInt(m_MapdownloadChunk);
+	SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH);
+
+	if(g_Config.m_Debug)
+	{
+		str_format(aBuf, sizeof(aBuf), "requested chunk %d", m_MapdownloadChunk);
+		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client/network", aBuf);
+	}
+}
+
+void CClient::TryLoadMap()
+{
+	const char *pError = LoadMap(m_aMapdownloadName, m_aMapdownloadFilename, m_MapdownloadCrc);
+	if(!pError)
+	{
+		m_pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client/network", "loading done");
+		SendReady();
+	}
+	else
+		DisconnectWithReason(pError);
 }

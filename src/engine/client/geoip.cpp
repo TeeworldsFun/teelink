@@ -49,32 +49,37 @@ GeoInfo CGeoIP::GetInfo(std::string ip)
 
     //read data
     unsigned FileSize = 0;
-    char *pHttpData = CHttpDownloader::GetToMemory(aUrl, &FileSize, 1);
+    CHttpDownloader::NETDOWNLOAD DownloadStatus;
+    unsigned char *pHttpData = CHttpDownloader::GetToMemory(aUrl, &FileSize, &DownloadStatus, 1);
 
-    if (pHttpData && FileSize > 0)
+    if (pHttpData)
     {
-		// parse json data
-		json_settings JsonSettings;
-		mem_zero(&JsonSettings, sizeof(JsonSettings));
-		char aError[256];
-		json_value *pJsonData = json_parse_ex(&JsonSettings, pHttpData, FileSize, aError);
-		if (pJsonData == 0)
-		{
-			dbg_msg("GeoIP", "Error: %s", aError);
-			return rInfo;
-		}
+    	if (FileSize > 0)
+    	{
+			// parse json data
+			json_settings JsonSettings;
+			mem_zero(&JsonSettings, sizeof(JsonSettings));
+			char aError[256];
+			json_value *pJsonData = json_parse_ex(&JsonSettings, (char*)pHttpData, FileSize, aError);
+			if (pJsonData == 0)
+			{
+				dbg_msg("GeoIP", "Error: %s", aError);
+				return rInfo;
+			}
 
-		// generate configurations
-		const json_value &countryCode = (*pJsonData)["countryCode"];
-		if (countryCode.type == json_string) str_copy(rInfo.m_aCountryCode, (const char *)countryCode, sizeof(rInfo.m_aCountryCode));
-		const json_value &countryName = (*pJsonData)["country"];
-		if (countryName.type == json_string) str_copy(rInfo.m_aCountryName, (const char *)countryName, sizeof(rInfo.m_aCountryName));
-		//const json_value &isp = (*pJsonData)["isp"];
-		//if (isp.type == json_string) geoInfo->m_Isp = (const char *)isp;
-		json_value_free(pJsonData);
+			// generate configurations
+			const json_value &countryCode = (*pJsonData)["countryCode"];
+			if (countryCode.type == json_string) str_copy(rInfo.m_aCountryCode, (const char *)countryCode, sizeof(rInfo.m_aCountryCode));
+			const json_value &countryName = (*pJsonData)["country"];
+			if (countryName.type == json_string) str_copy(rInfo.m_aCountryName, (const char *)countryName, sizeof(rInfo.m_aCountryName));
+			//const json_value &isp = (*pJsonData)["isp"];
+			//if (isp.type == json_string) geoInfo->m_Isp = (const char *)isp;
+			json_value_free(pJsonData);
+    	}
+
+    	mem_free(pHttpData);
     }
 
-    mem_free(pHttpData);
 	return rInfo;
 }
 

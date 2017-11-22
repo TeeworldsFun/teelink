@@ -795,20 +795,22 @@ void CGraphics_OpenGL::ShowInfoKills(bool state)
 // H-Client: FFMPEG Encoder
 unsigned char* CGraphics_OpenGL::GetFrameBuffer()
 {
-	unsigned char *pPixelData = (unsigned char *)mem_alloc(m_ScreenWidth*(m_ScreenHeight+1)*3, 1);
-	unsigned char *pTempRow = pPixelData+m_ScreenWidth*m_ScreenHeight*3;
+	const unsigned int _b = 4;
+	unsigned char *pPixelData = (unsigned char *)mem_alloc(m_ScreenWidth*(m_ScreenHeight+1)*_b, 1);
+	unsigned char *pTempRow = pPixelData+m_ScreenWidth*m_ScreenHeight*_b;
 	GLint Alignment;
 	glGetIntegerv(GL_PACK_ALIGNMENT, &Alignment);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(0, 0, m_ScreenWidth, m_ScreenHeight, GL_RGB, GL_UNSIGNED_BYTE, pPixelData);
+    glReadPixels(0, 0, m_ScreenWidth, m_ScreenHeight, GL_RGBA, GL_UNSIGNED_BYTE, pPixelData);
 	glPixelStorei(GL_PACK_ALIGNMENT, Alignment);
 
 	// flip the pixel because opengl works from bottom left corner
-	for(int y = 0; y < m_ScreenHeight/2; y++)
+	const int mid = m_ScreenHeight/2;
+	for(int y = 0; y < mid; y++)
 	{
-		mem_copy(pTempRow, pPixelData+y*m_ScreenWidth*3, m_ScreenWidth*3);
-		mem_copy(pPixelData+y*m_ScreenWidth*3, pPixelData+(m_ScreenHeight-y-1)*m_ScreenWidth*3, m_ScreenWidth*3);
-		mem_copy(pPixelData+(m_ScreenHeight-y-1)*m_ScreenWidth*3, pTempRow,m_ScreenWidth*3);
+		mem_copy(pTempRow, pPixelData+y*m_ScreenWidth*_b, m_ScreenWidth*_b);
+		mem_copy(pPixelData+y*m_ScreenWidth*_b, pPixelData+(m_ScreenHeight-y-1)*m_ScreenWidth*_b, m_ScreenWidth*_b);
+		mem_copy(pPixelData+(m_ScreenHeight-y-1)*m_ScreenWidth*_b, pTempRow,m_ScreenWidth*_b);
 	}
 
 	return pPixelData;

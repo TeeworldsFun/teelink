@@ -5,6 +5,7 @@
 #include "kernel.h"
 
 #include "message.h"
+#include <engine/shared/http_downloader.h> // H-Client
 
 class IClient : public IInterface
 {
@@ -154,6 +155,9 @@ public:
 	virtual bool EndRecordVideo() = 0;
 	virtual bool AddFrameToRecordVideo() = 0;
 	bool IsRecordVideo() { return m_RecordVideo; }
+	virtual bool IsNewMap() const = 0;
+
+	virtual CHttpDownloader::NETDOWNLOAD* DownloadMapStatus() = 0;
 
 	int m_RecordVideoMode;
 	char m_aRecordVideoFilename[128];

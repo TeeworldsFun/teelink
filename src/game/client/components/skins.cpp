@@ -5,6 +5,7 @@
 #include <base/system.h>
 #include <base/math.h>
 
+#include <engine/engine.h> // H-Client
 #include <engine/graphics.h>
 #include <engine/storage.h>
 #include <engine/shared/config.h>
@@ -16,7 +17,7 @@
 #include <cstdio> // H-Client
 
 // H-Client
-static int ThreadDownloadSkin(void *params)
+int ThreadDownloadSkin(void *params)
 {
     CSkins::InfoDownloadSkinThread *pInfoThread = static_cast<CSkins::InfoDownloadSkinThread*>(params);
     if (!pInfoThread || !pInfoThread->m_pSkins || pInfoThread->m_SkinName[0] == 0)
@@ -145,8 +146,6 @@ int CSkins::LoadSkinFromFile(const char *pPath, const char *pName, int DirType)
 
 void CSkins::OnInit()
 {
-	m_JobPool.Init(3);
-
 	// load skins
 	m_aSkins.clear();
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "skins", SkinScan, this);
@@ -223,7 +222,7 @@ void CSkins::DownloadSkin(const char *pName)
     std::string sName(pName);
     if (m_DownloadedSkinsSet.size() > 0 && m_DownloadedSkinsSet.find(sName) != m_DownloadedSkinsSet.end())
         return;
-    dbg_msg("skins", "INiciando: %s", sName.c_str());
+
     m_DownloadedSkinsSet.insert(std::pair<std::string,bool>(sName, false));
 
     const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 0, 2048) * 1024;
@@ -233,7 +232,8 @@ void CSkins::DownloadSkin(const char *pName)
     str_format(aDest, sizeof(aDest), "skins/%s.png", pName);
     Storage()->GetPath(IStorage::TYPE_SAVE+1, aDest, aCompleteFilename, sizeof(aCompleteFilename));
 
-    if (CHttpDownloader::GetToFile(aUrl, aCompleteFilename, 3, downloadSpeed))
+    CHttpDownloader::NETDOWNLOAD DownloadStatus;
+    if (CHttpDownloader::GetToFile(aUrl, aCompleteFilename, &DownloadStatus, 3, downloadSpeed))
     {
     	m_DownloadedSkinsSet.find(sName)->second = true;
     	dbg_msg("skins", "'%s' downloaded successfully :)", pName);
@@ -252,7 +252,10 @@ void CSkins::AddDownloadJob(const char *name)
 	for (unsigned i=0; i<MAX_DOWNLOADS; i++)
 	{
 		if (m_Jobs[i].CurrentStatus() == CJob::STATE_DONE)
+		{
 			UsableIndex = i;
+			return;
+		}
 		else if (str_comp(m_InfoThreads[i].m_SkinName, name) == 0)
 			return;
 	}
@@ -261,6 +264,6 @@ void CSkins::AddDownloadJob(const char *name)
 	{
 		m_InfoThreads[UsableIndex].m_pSkins = this;
 		str_copy(m_InfoThreads[UsableIndex].m_SkinName, name, sizeof(m_InfoThreads[UsableIndex].m_SkinName));
-		m_JobPool.Add(&m_Jobs[UsableIndex], ThreadDownloadSkin, &m_InfoThreads[UsableIndex]);
+		m_pClient->Engine()->AddJob(&m_Jobs[UsableIndex], ThreadDownloadSkin, &m_InfoThreads[UsableIndex]);
 	}
 }

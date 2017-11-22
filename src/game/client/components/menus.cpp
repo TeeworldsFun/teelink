@@ -1052,7 +1052,7 @@ int CMenus::Render()
 			pTitle = Localize("Connecting to");
 			pExtraText = g_Config.m_UiServerAddress; // TODO: query the client about the address
 			pButtonText = Localize("Abort");
-			if(Client()->MapDownloadTotalsize() > 0)
+			if(Client()->MapDownloadTotalsize() > 0 || Client()->DownloadMapStatus()->m_Status == CHttpDownloader::DOWNLOADING)
 			{
 				pTitle = Localize("Downloading map");
 				pExtraText = "";
@@ -1463,36 +1463,41 @@ int CMenus::Render()
 				m_Popup = POPUP_NONE;
 			}
 
-			if(Client()->MapDownloadTotalsize() > 0)
+			const int MapDownloadTotalSize = Client()->MapDownloadTotalsize();
+			int MapDownloadAmount = Client()->MapDownloadAmount();
+			if (Client()->DownloadMapStatus()->m_Status == CHttpDownloader::DOWNLOADING)
+				MapDownloadAmount = Client()->DownloadMapStatus()->m_Received;
+
+			if(MapDownloadTotalSize > 0)
 			{
 				int64 Now = time_get();
 				if(Now-m_DownloadLastCheckTime >= time_freq())
 				{
-					if(m_DownloadLastCheckSize > Client()->MapDownloadAmount())
+					if(m_DownloadLastCheckSize > MapDownloadAmount)
 					{
 						// map downloaded restarted
 						m_DownloadLastCheckSize = 0;
 					}
 
 					// update download speed
-					float Diff = (Client()->MapDownloadAmount()-m_DownloadLastCheckSize)/((int)((Now-m_DownloadLastCheckTime)/time_freq()));
+					float Diff = (MapDownloadAmount-m_DownloadLastCheckSize)/((int)((Now-m_DownloadLastCheckTime)/time_freq()));
 					float StartDiff = m_DownloadLastCheckSize-0.0f;
 					if(StartDiff+Diff > 0.0f)
 						m_DownloadSpeed = (Diff/(StartDiff+Diff))*(Diff/1.0f) + (StartDiff/(Diff+StartDiff))*m_DownloadSpeed;
 					else
 						m_DownloadSpeed = 0.0f;
 					m_DownloadLastCheckTime = Now;
-					m_DownloadLastCheckSize = Client()->MapDownloadAmount();
+					m_DownloadLastCheckSize = MapDownloadAmount;
 				}
 
 				Box.HSplitTop(64.f, 0, &Box);
 				Box.HSplitTop(24.f, &Part, &Box);
-				str_format(aBuf, sizeof(aBuf), "%d/%d KiB (%.1f KiB/s)", Client()->MapDownloadAmount()/1024, Client()->MapDownloadTotalsize()/1024,	m_DownloadSpeed/1024.0f);
+				str_format(aBuf, sizeof(aBuf), "%d/%d KiB (%.1f KiB/s)", MapDownloadAmount/1024, MapDownloadTotalSize/1024,	m_DownloadSpeed/1024.0f);
 				UI()->DoLabel(&Part, aBuf, 20.f, 0, -1);
 
 				// time left
 				const char *pTimeLeftString;
-				int TimeLeft = max(1, m_DownloadSpeed > 0.0f ? static_cast<int>((Client()->MapDownloadTotalsize()-Client()->MapDownloadAmount())/m_DownloadSpeed) : 1);
+				int TimeLeft = max(1, m_DownloadSpeed > 0.0f ? static_cast<int>((MapDownloadTotalSize-MapDownloadAmount)/m_DownloadSpeed) : 1);
 				if(TimeLeft >= 60)
 				{
 					TimeLeft /= 60;
@@ -1512,16 +1517,16 @@ int CMenus::Render()
 				RenderTools()->DrawUIRect(&Part, HexToVec4(g_Config.m_hcProgressbarBackgroundColor), CUI::CORNER_ALL, 5.0f);
 				CUIRect PartOrg = Part;
 				Part.Margin(5.0f, &Part);
-				Part.w = max(10.0f, (Part.w*Client()->MapDownloadAmount())/Client()->MapDownloadTotalsize());
+				Part.w = max(10.0f, (Part.w*MapDownloadAmount)/MapDownloadTotalSize);
 				RenderTools()->DrawUIRect(&Part, HexToVec4(g_Config.m_hcProgressbarSliderBackgroundColor), CUI::CORNER_ALL, 5.0f);
 
                 //H-Client
                 {
-                    float percent = (Client()->MapDownloadAmount()*100.0f)/(float)Client()->MapDownloadTotalsize();
+                    float percent = (MapDownloadAmount*100.0f)/(float)MapDownloadTotalSize;
                     char aBuf[50];
                     str_format(aBuf, sizeof(aBuf), "%.2f%c", percent, '%');
                     float perLen = TextRender()->TextWidth(0, 16.0f, aBuf, str_length(aBuf));
-                    vec3 RgbBar = HslToRgb(vec3(((Client()->MapDownloadAmount() * 0.35f) / Client()->MapDownloadTotalsize()), 1.0f, 0.5f));
+                    vec3 RgbBar = HslToRgb(vec3(((MapDownloadAmount * 0.35f) / MapDownloadTotalSize), 1.0f, 0.5f));
                     TextRender()->TextColor(RgbBar.r, RgbBar.g, RgbBar.b, 1.0f);
                     PartOrg.y += 3.0f;
                     PartOrg.x -= perLen/2.0f;

@@ -191,7 +191,7 @@ void CMapLayers::OnRender()
 			}
 
 			// skip rendering if detail layers if not wanted
-			if(pLayer->m_Flags&LAYERFLAG_DETAIL && !g_Config.m_GfxHighDetail && !IsGameLayer)
+			if((pLayer->m_Flags&LAYERFLAG_DETAIL) && !g_Config.m_GfxHighDetail && !IsGameLayer)
 				continue;
 
 			if(m_Type == -1)

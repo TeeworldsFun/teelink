@@ -15,7 +15,7 @@ public:
 	NETADDR m_Addr;
 };
 
-class IEngine : public IInterface
+class CSystem : public IInterface
 {
 	MACRO_INTERFACE("engine", 0)
 
@@ -29,6 +29,6 @@ public:
 	virtual void AddJob(CJob *pJob, JOBFUNC pfnFunc, void *pData) = 0;
 };
 
-extern IEngine *CreateEngine(const char *pAppname);
+extern CSystem *CreateEngine(const char *pAppname);
 
 #endif

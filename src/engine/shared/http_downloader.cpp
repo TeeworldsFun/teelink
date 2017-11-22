@@ -1,187 +1,80 @@
 #include "http_downloader.h"
 #include <base/math.h>
-#include <base/system.h>
 #include <algorithm>
 
 // TODO: Clean duplicate code and HTTP1.1 support
 // TODO 2: Add regex or ssl support? ummm if yes best use libcurl
 
-bool CHttpDownloader::GetToFile(const char *url, const char *dest, unsigned timeOut, unsigned downloadSpeed)
+bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOAD *pNetDownload, unsigned timeOut, unsigned downloadSpeed)
 {
-	if (!dest || dest[0] == 0)
-		return false;
+	unsigned int FileSize = 0u;
+	unsigned char *pFileData = GetToMemory(url, &FileSize, pNetDownload, timeOut, downloadSpeed);
 
-	int64 downloadTime = time_get();
-	unsigned chunkBytes = 0;
-    NETSOCKET sock;
-    NETADDR nadd, bindAddr;
-    mem_zero(&nadd, sizeof(nadd));
-    mem_zero(&bindAddr, sizeof(bindAddr));
-    bindAddr.type = NETTYPE_IPV4;
-
-    NETURL NetUrl = CreateUrl(url);
-
-    if (net_host_lookup(NetUrl.m_aHost, &nadd, NETTYPE_IPV4) != 0)
-    {
-        dbg_msg("HttpDownloader", "Error can't found '%s'...", NetUrl.m_aHost);
-        return false;
-    }
-    nadd.port = 80;
-
-    sock = net_tcp_create(bindAddr);
-    if (net_tcp_connect(sock, &nadd) != 0)
-    {
-        dbg_msg("HttpDownloader", "Error can't connect with '%s'...", NetUrl.m_aHost);
-        net_tcp_close(sock);
-        return false;
-    }
-
-    net_socket_rcv_timeout(sock, timeOut);
-
-    char aBuff[512] = {0};
-    str_format(aBuff, sizeof(aBuff), "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", NetUrl.m_aSlug, NetUrl.m_aHost);
-	net_tcp_send(sock, aBuff, str_length(aBuff));
-
-	std::string NetData;
-	unsigned TotalRecv = 0;
-	unsigned TotalBytes = 0;
-	int CurrentRecv = 0;
-	unsigned nlCount = 0;
-	char aNetBuff[1024] = {0};
-	IOHANDLE dstFile = NULL;
-	do
+	if (pFileData)
 	{
-		// Limit Speed
-		if (downloadSpeed > 0)
+		if (FileSize > 0u)
 		{
-			int64 ctime = time_get();
-			if (ctime - downloadTime <= time_freq())
+			IOHANDLE dstFile = io_open(dest, IOFLAG_WRITE);
+			if(!dstFile)
 			{
-				if (chunkBytes >= downloadSpeed)
-				{
-					int tdff = (time_freq() - (ctime - downloadTime)) / 1000;
-					thread_sleep(tdff);
-					continue;
-				}
+				dbg_msg("HttpDownloader", "Error creating '%s'...", dest);
+				pNetDownload->m_Status = ERROR;
+				return false;
 			}
-			else
+			if (!io_write(dstFile, pFileData, FileSize))
 			{
-				chunkBytes = 0;
-				downloadTime = time_get();
+				dbg_msg("HttpDownloader", "Error writing '%s'...", dest);
+				io_close(dstFile);
+				fs_remove(dest);
+				mem_free(pFileData);
+				pNetDownload->m_Status = ERROR;
+				return false;
 			}
+			io_close(dstFile);
+			pNetDownload->m_Status = DOWNLOADED;
 		}
-		//
+		else
+			pNetDownload->m_Status = ERROR;
 
-		CurrentRecv = net_tcp_recv(sock, aNetBuff, sizeof(aNetBuff));
-		chunkBytes += CurrentRecv;
-		for (int i=0; i<CurrentRecv ; i++)
-		{
-			if (nlCount < 2)
-			{
-				if (aNetBuff[i] == '\r' || aNetBuff[i] == '\n')
-				{
-				    ++nlCount;
-					if (NetData.size() > 0)
-					{
-                        std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
-                        if (NetData.find("404 not found") != std::string::npos)
-                        {
-                            dbg_msg("HttpDownloader", "ERROR 404: '%s' not found...", NetUrl.m_aFile);
-                            net_tcp_close(sock);
-                            return false;
-                        }
-                        else if (NetData.find("content-length:") != std::string::npos)
-                        {
-                        	char aFileSize[64];
-                        	str_copy(aFileSize, NetData.substr(15).c_str(), sizeof(aFileSize));
-                        	str_trim(aFileSize);
-                            TotalBytes = atoi(aFileSize);
-                        }
-
-                        NetData.clear();
-					}
-
-					if (aNetBuff[i] == '\r') ++i;
-					continue;
-				}
-
-                nlCount = 0;
-                NetData += aNetBuff[i];
-			}
-			else
-			{
-			    if (nlCount == 2)
-                {
-                    if (TotalBytes <= 0)
-                    {
-                        dbg_msg("HttpDownloader", "Error downloading '%s'...", NetUrl.m_aFile);
-                        net_tcp_close(sock);
-                        return false;
-                    }
-
-                    dstFile = io_open(dest, IOFLAG_WRITE);
-                    if(!dstFile)
-                    {
-                        dbg_msg("HttpDownloader", "Error creating '%s'...", dest);
-                        net_tcp_close(sock);
-                        return false;
-                    }
-
-                    ++nlCount;
-                }
-
-				io_write(dstFile, &aNetBuff[i], 1);
-
-				TotalRecv++;
-				if (TotalRecv == TotalBytes)
-					break;
-			}
-		}
-	} while (CurrentRecv > 0);
-
-	net_tcp_close(sock);
-	if (TotalRecv > 0)
-	{
-		io_close(dstFile);
-		return true;
+		mem_free(pFileData);
+		return pNetDownload->m_Status != ERROR;
 	}
 
+	pNetDownload->m_Status = ERROR;
 	return false;
 }
 
-char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, unsigned timeOut, unsigned downloadSpeed)
+unsigned char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, NETDOWNLOAD *pNetDownload, unsigned timeOut, unsigned downloadSpeed)
 {
-	char *pData = 0x0;
+	unsigned char *pData = 0x0;
 	int64 downloadTime = time_get();
 	unsigned chunkBytes = 0;
-    NETSOCKET sock;
-    NETADDR nadd, bindAddr;
-    mem_zero(&nadd, sizeof(nadd));
-    mem_zero(&bindAddr, sizeof(bindAddr));
-    bindAddr.type = NETTYPE_IPV4;
 
-    NETURL NetUrl = CreateUrl(url);
+	pNetDownload->m_NetURL = CreateUrl(url);
 
-    if (net_host_lookup(NetUrl.m_aHost, &nadd, NETTYPE_IPV4) != 0)
+    if (net_host_lookup(pNetDownload->m_NetURL.m_aHost, &pNetDownload->m_NAddr, NETTYPE_IPV4) != 0)
     {
-        dbg_msg("HttpDownloader", "Error can't found '%s'...", NetUrl.m_aHost);
+        dbg_msg("HttpDownloader", "Error can't found '%s'...", pNetDownload->m_NetURL.m_aHost);
+        pNetDownload->m_Status = ERROR;
         return 0x0;
     }
-    nadd.port = 80;
+    pNetDownload->m_NAddr.port = 80;
 
-    sock = net_tcp_create(bindAddr);
-    if (net_tcp_connect(sock, &nadd) != 0)
+    pNetDownload->m_Socket = net_tcp_create(pNetDownload->m_BindAddr);
+    if (net_tcp_connect(pNetDownload->m_Socket, &pNetDownload->m_NAddr) != 0)
     {
-        dbg_msg("HttpDownloader", "Error can't connect with '%s'...", NetUrl.m_aHost);
-        net_tcp_close(sock);
+        dbg_msg("HttpDownloader", "Error can't connect with '%s'...", pNetDownload->m_NetURL.m_aHost);
+        net_tcp_close(pNetDownload->m_Socket);
+        pNetDownload->m_Status = ERROR;
         return 0x0;
     }
 
-    net_socket_rcv_timeout(sock, timeOut);
+    net_socket_rcv_timeout(pNetDownload->m_Socket, timeOut);
+    pNetDownload->m_Status = CONNECTING;
 
     char aBuff[512] = {0};
-    str_format(aBuff, sizeof(aBuff), "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", NetUrl.m_aSlug, NetUrl.m_aHost);
-	net_tcp_send(sock, aBuff, str_length(aBuff));
+    str_format(aBuff, sizeof(aBuff), "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", pNetDownload->m_NetURL.m_aSlug, pNetDownload->m_NetURL.m_aHost);
+	net_tcp_send(pNetDownload->m_Socket, aBuff, str_length(aBuff));
 
 	*size = 0;
 	std::string NetData;
@@ -213,9 +106,9 @@ char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, unsigned tim
 		}
 		//
 
-		CurrentRecv = net_tcp_recv(sock, aNetBuff, sizeof(aNetBuff));
+		CurrentRecv = net_tcp_recv(pNetDownload->m_Socket, aNetBuff, sizeof(aNetBuff));
 		chunkBytes += CurrentRecv;
-		for (int i=0; i<CurrentRecv ; i++)
+		for (int i=0; i<CurrentRecv; i++)
 		{
 			if (nlCount < 2)
 			{
@@ -227,50 +120,61 @@ char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, unsigned tim
                         std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
                         if (NetData.find("404 not found") != std::string::npos)
                         {
-                            dbg_msg("HttpDownloader", "ERROR 404: '%s' not found...", NetUrl.m_aFile);
-                            net_tcp_close(sock);
+                            dbg_msg("HttpDownloader", "ERROR 404: '%s' not found...", pNetDownload->m_NetURL.m_aFile);
+                            net_tcp_close(pNetDownload->m_Socket);
+                            pNetDownload->m_Status = ERROR;
                             return 0x0;
                         }
                         else if (NetData.find("content-length:") != std::string::npos)
                         {
-                        	char aFileSize[64];
-                        	str_copy(aFileSize, NetData.substr(15).c_str(), sizeof(aFileSize));
-                        	str_trim(aFileSize);
-                            TotalBytes = atoi(aFileSize);
-                            pData = (char*)mem_alloc(TotalBytes, 1);
+							char aFileSize[64];
+							str_copy(aFileSize, NetData.substr(15).c_str(), sizeof(aFileSize));
+							str_trim(aFileSize);
+							TotalBytes = atoi(aFileSize);
+							if (TotalBytes <= 0)
+							{
+							   dbg_msg("HttpDownloader", "Error downloading '%s'...", pNetDownload->m_NetURL.m_aFile);
+							   net_tcp_close(pNetDownload->m_Socket);
+							   pNetDownload->m_Status = ERROR;
+							   return 0x0;
+							}
+
+                            pData = (unsigned char*)mem_alloc(TotalBytes, 1);
+                            if (!pData)
+                            {
+                            	dbg_msg("HttpDownloader", "Error allocating memory for download '%s'...", pNetDownload->m_NetURL.m_aFile);
+                            	net_tcp_close(pNetDownload->m_Socket);
+                            	pNetDownload->m_Status = ERROR;
+                            	return 0x0;
+                            }
+
+                            pNetDownload->m_Status = DOWNLOADING;
                         }
 
                         NetData.clear();
 					}
 
-					if (aNetBuff[i] == '\r') ++i;
-					continue;
+					if (aNetBuff[i] == '\r')
+						++i;
 				}
-
-                nlCount = 0;
-                NetData += aNetBuff[i];
+				else
+				{
+					nlCount = 0;
+					NetData += aNetBuff[i];
+				}
 			}
 			else
 			{
-			    if (nlCount == 2)
-                {
-                    if (TotalBytes <= 0)
-                    {
-                        dbg_msg("HttpDownloader", "Error downloading '%s'...", NetUrl.m_aFile);
-                        net_tcp_close(sock);
-                        return 0x0;
-                    }
-
-                    ++nlCount;
-                }
-
 			    pData[destCursor++] = aNetBuff[i];
+			    pNetDownload->m_Received = destCursor;
 				if (destCursor >= TotalBytes)
 					break;
 			}
 		}
-	} while (CurrentRecv > 0);
-	net_tcp_close(sock);
+	} while (CurrentRecv > 0 && !pNetDownload->m_ForceStop);
+
+	net_tcp_close(pNetDownload->m_Socket);
+	pNetDownload->m_Status = DOWNLOADED;
 
 	*size = TotalBytes;
     return pData;

@@ -47,26 +47,28 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 	static float s_LastGameTickTime = Client()->GameTickTime();
 	if(m_pClient->m_Snap.m_pGameInfoObj && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
 		s_LastGameTickTime = Client()->GameTickTime();
-	float Ct = (Client()->PrevGameTick()-pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + s_LastGameTickTime;
+	const float Ct = (Client()->PrevGameTick()-pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + s_LastGameTickTime;
 	if(Ct < 0)
 		return; // projectile havn't been shot yet
 
-	vec2 StartPos(pCurrent->m_X, pCurrent->m_Y);
-	vec2 StartVel(pCurrent->m_VelX/100.0f, pCurrent->m_VelY/100.0f);
-	vec2 Pos = CalcPos(StartPos, StartVel, Curvature, Speed, Ct);
-	vec2 PrevPos = CalcPos(StartPos, StartVel, Curvature, Speed, Ct-0.001f);
+	const vec2 StartPos(pCurrent->m_X, pCurrent->m_Y);
+	const vec2 StartVel(pCurrent->m_VelX/100.0f, pCurrent->m_VelY/100.0f);
+	const vec2 Pos = CalcPos(StartPos, StartVel, Curvature, Speed, Ct);
+	const vec2 PrevPos = CalcPos(StartPos, StartVel, Curvature, Speed, Ct-0.001f);
 
 
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 	Graphics()->QuadsBegin();
 
 	RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[clamp(pCurrent->m_Type, 0, NUM_WEAPONS-1)].m_pSpriteProj);
-	vec2 Vel = Pos-PrevPos;
+	const vec2 Vel = Pos-PrevPos;
+
+	const vec4 SmokeColor = g_Config.m_hcSmokeCustomColor?vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f):vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// add particle for this projectile
 	if(pCurrent->m_Type == WEAPON_GRENADE)
 	{
-		m_pClient->m_pEffects->SmokeTrail(Pos, Vel*-1);
+		m_pClient->m_pEffects->SmokeTrail(Pos, Vel*-1, SmokeColor);
 		static float s_Time = 0.0f;
 		static float s_LastLocalTime = Client()->LocalTime();
 
@@ -87,7 +89,7 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 	}
 	else
 	{
-		m_pClient->m_pEffects->BulletTrail(Pos);
+		m_pClient->m_pEffects->BulletTrail(Pos, SmokeColor);
 
 		if(length(Vel) > 0.00001f)
 			Graphics()->QuadsSetRotation(GetAngle(Vel));
@@ -100,7 +102,7 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 	Graphics()->QuadsDraw(&QuadItem, 1);
 
 	// Draw shadows of grenades
-	bool LocalPlayerInGame = m_pClient->m_aClients[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Team != -1;
+	const bool LocalPlayerInGame = m_pClient->m_aClients[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Team != -1;
 
 	if(g_Config.m_AntiPing && pCurrent->m_Type == WEAPON_GRENADE && LocalPlayerInGame && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
 	{
@@ -120,27 +122,27 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 		}
 
 		// Draw shadow only if grenade directed to local player
-		CNetObj_CharacterCore& CurChar = m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Cur;
-		CNetObj_CharacterCore& PrevChar = m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Prev;
-		vec2 ServerPos = mix(vec2(PrevChar.m_X, PrevChar.m_Y), vec2(CurChar.m_X, CurChar.m_Y), Client()->IntraGameTick());
+		const CNetObj_CharacterCore& CurChar = m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Cur;
+		const CNetObj_CharacterCore& PrevChar = m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_pLocalInfo->m_ClientID].m_Prev;
+		const vec2 ServerPos = mix(vec2(PrevChar.m_X, PrevChar.m_Y), vec2(CurChar.m_X, CurChar.m_Y), Client()->IntraGameTick());
 
 		float d1 = distance(Pos, ServerPos);
 		float d2 = distance(PrevPos, ServerPos);
 		if (d1 < 0) d1 *= -1;
 		if (d2 < 0) d2 *= -1;
-		bool GrenadeIsDirectedToLocalPlayer = d1 < d2;
+		const bool GrenadeIsDirectedToLocalPlayer = d1 < d2;
 
 		if (m_pClient->m_Average_Prediction_Offset != -1 && GrenadeIsDirectedToLocalPlayer)
 		{
-			int PredictedTick = Client()->PrevGameTick() + m_pClient->m_Average_Prediction_Offset;
-			float PredictedCt = (PredictedTick - pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + Client()->GameTickTime();
+			const int PredictedTick = Client()->PrevGameTick() + m_pClient->m_Average_Prediction_Offset;
+			const float PredictedCt = (PredictedTick - pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + Client()->GameTickTime();
 
 			if (PredictedCt >= 0)
 			{
 				int shadow_type = WEAPON_GUN; // Pistol bullet sprite is used for marker of shadow. TODO: use something custom.
 				RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[clamp(shadow_type, 0, NUM_WEAPONS-1)].m_pSpriteProj);
 
-				vec2 PredictedPos = CalcPos(StartPos, StartVel, Curvature, Speed, PredictedCt);
+				const vec2 PredictedPos = CalcPos(StartPos, StartVel, Curvature, Speed, PredictedCt);
 
 				IGraphics::CQuadItem QuadItem(PredictedPos.x, PredictedPos.y, 32, 32);
 				Graphics()->QuadsDraw(&QuadItem, 1);

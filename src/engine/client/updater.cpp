@@ -100,7 +100,8 @@ void CUpdater::ExecuteExit()
 void CUpdater::CheckUpdates(CMenus *pMenus)
 {
 	dbg_msg("autoupdate", "Checking for updates...");
-	if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH UPDATES_MANIFEST_FILE, UPDATES_MANIFEST_FILE))
+	CHttpDownloader::NETDOWNLOAD DownloadStatus;
+	if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH UPDATES_MANIFEST_FILE, UPDATES_MANIFEST_FILE, &DownloadStatus))
 	{
 		dbg_msg("autoupdate", "Error downloading updates manifest :/");
 		return;
@@ -171,6 +172,7 @@ void CUpdater::CheckUpdates(CMenus *pMenus)
 void CUpdater::DoUpdates(CMenus *pMenus)
 {
     bool noErrors = true;
+    CHttpDownloader::NETDOWNLOAD DownloadStatus;
 
     // Remove Files
     for (int i=0; i<m_vToRemove.size(); i++)
@@ -179,24 +181,29 @@ void CUpdater::DoUpdates(CMenus *pMenus)
 
     // Download Files
     for (int i=0; i<m_vToDownload.size(); i++)
-        if (!CHttpDownloader::GetToFile(m_vToDownload[i].c_str(), m_vToDownload[i].c_str())) noErrors = false;
+    {
+    	DownloadStatus.Reset();
+        if (!CHttpDownloader::GetToFile(m_vToDownload[i].c_str(), m_vToDownload[i].c_str(), &DownloadStatus))
+        	noErrors = false;
+    }
     m_vToDownload.clear();
 
     if (m_NeedUpdateClient)
     {
+    	DownloadStatus.Reset();
         #ifdef CONF_FAMILY_WINDOWS
             #ifdef CONF_PLATFORM_WIN64
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds64.exe", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds64.exe", "tw_tmp", &DownloadStatus))
             #else
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds.exe", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds.exe", "tw_tmp", &DownloadStatus))
             #endif
         #elif defined(CONF_FAMILY_UNIX)
             #ifdef CONF_PLATFORM_MACOSX
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_mac", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_mac", "tw_tmp", &DownloadStatus))
             #elif defined(CONF_ARCH_IA64) || defined(CONF_ARCH_AMD64)
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds64", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds64", "tw_tmp", &DownloadStatus))
             #else
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds", "tw_tmp"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds", "tw_tmp", &DownloadStatus))
             #endif
         #endif
         {
@@ -206,19 +213,20 @@ void CUpdater::DoUpdates(CMenus *pMenus)
 
     if (m_NeedUpdateServer)
     {
+    	DownloadStatus.Reset();
         #ifdef CONF_FAMILY_WINDOWS
             #ifdef CONF_PLATFORM_WIN64
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv64.exe", "teeworlds_srv.exe"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv64.exe", "teeworlds_srv.exe", &DownloadStatus))
             #else
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv.exe", "teeworlds_srv.exe"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv.exe", "teeworlds_srv.exe", &DownloadStatus))
             #endif
         #elif defined(CONF_FAMILY_UNIX)
             #ifdef CONF_PLATFORM_MACOSX
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv_mac", "teeworlds_srv"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv_mac", "teeworlds_srv", &DownloadStatus))
             #elif defined(CONF_ARCH_IA64) || defined(CONF_ARCH_AMD64)
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv64", "teeworlds_srv"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv64", "teeworlds_srv", &DownloadStatus))
             #else
-                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv", "teeworlds_srv"))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv", "teeworlds_srv", &DownloadStatus))
             #endif
         #endif
         {

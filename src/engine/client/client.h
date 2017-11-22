@@ -54,7 +54,7 @@ public:
 class CClient : public IClient, public CDemoPlayer::IListner
 {
 	// needed interfaces
-	IEngine *m_pEngine;
+	CSystem *m_pEngine;
 	IEditor *m_pEditor;
 	IEngineInput *m_pInput;
 	IEngineGraphics *m_pGraphics;
@@ -90,6 +90,7 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	class CIrc m_Irc; // H-Client
 
 	bool m_TimeoutCodeSent; // H-Client
+	bool m_IsNewMap; // H-Client
 
 	char m_aServerAddressStr[256];
 
@@ -131,12 +132,9 @@ class CClient : public IClient, public CDemoPlayer::IListner
 
 	// map download
 	char m_aMapdownloadFilename[256];
-	char m_aMapdownloadName[256];
 	IOHANDLE m_MapdownloadFile;
 	int m_MapdownloadChunk;
-	int m_MapdownloadCrc;
 	int m_MapdownloadAmount;
-	int m_MapdownloadTotalsize;
 
 	// time
 	CSmoothTime m_GameTime;
@@ -192,8 +190,12 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	static void GraphicsThreadProxy(void *pThis) { ((CClient*)pThis)->GraphicsThread(); }
 	void GraphicsThread();
 
+	// H-Client
+	CJob m_DownloadMapJob;
+	//
+
 public:
-	IEngine *Engine() { return m_pEngine; }
+	CSystem *Engine() { return m_pEngine; }
 	IEngineGraphics *Graphics() { return m_pGraphics; }
 	IEngineInput *Input() { return m_pInput; }
 	IEngineSound *Sound() { return m_pSound; }
@@ -332,8 +334,18 @@ public:
 	virtual bool StartRecordVideo();
 	virtual bool EndRecordVideo();
 	virtual bool AddFrameToRecordVideo();
+	virtual bool IsNewMap() const { return m_IsNewMap; }
+
+	virtual CHttpDownloader::NETDOWNLOAD* DownloadMapStatus() { return &m_DownloadMapStatus; }
+
+	void SendRequestMap();
+	void TryLoadMap();
+	bool DownloadMap(const char *pName);
+	char m_aMapdownloadName[256];
+	int m_MapdownloadCrc;
+	int m_MapdownloadTotalsize;
+	CHttpDownloader::NETDOWNLOAD m_DownloadMapStatus;
 	//
 };
 
-void init_openssl_library(); // H-Client
 #endif

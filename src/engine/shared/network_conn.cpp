@@ -203,7 +203,7 @@ void CNetConnection::Disconnect(const char *pReason)
 	Reset();
 }
 
-// DDNet (Security Token)
+// H-Client: DDNet (Security Token)
 int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr, SECURITY_TOKEN SecurityToken)
 {
 	if (State() != NET_CONNSTATE_OFFLINE && m_SecurityToken != NET_SECURITY_TOKEN_UNKNOWN && m_SecurityToken != NET_SECURITY_TOKEN_UNSUPPORTED)

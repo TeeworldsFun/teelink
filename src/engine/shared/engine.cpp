@@ -17,7 +17,7 @@ static int HostLookupThread(void *pUser)
 	return net_host_lookup(pLookup->m_aHostname, &pLookup->m_Addr, pLookup->m_Nettype);
 }
 
-class CEngine : public IEngine
+class CEngine : public CSystem
 {
 public:
 	IConsole *m_pConsole;
@@ -114,4 +114,4 @@ public:
 	}
 };
 
-IEngine *CreateEngine(const char *pAppname) { return new CEngine(pAppname); }
+CSystem *CreateEngine(const char *pAppname) { return new CEngine(pAppname); }
