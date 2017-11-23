@@ -1059,7 +1059,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 	//char aBuf[128];
     static vec4 s_HeaderColors[] = {HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), vec4(0.0f,0.0f,0.0f,0.0f), vec4(0.0f,0.0f,0.0f,0.0f), HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor)};
 	CUIRect PanelL, PanelR;
-	CUIRect StandartGame, DDRaceGame, Ghost, HUDItem;
+	CUIRect StandartGame, DDRaceGame, Ghost, Colors, HUDItem;
 
 	MainView.VSplitLeft(300.0f, &PanelL, &PanelR);
     PanelL.VSplitRight(10.0f, &PanelL, 0x0);
@@ -1067,14 +1067,18 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 
 	//TODO: Need be change...
 	float splitTop = 260.0f;
-    if (g_Config.m_hcLaserCustomColor)
+    /*if (g_Config.m_hcLaserCustomColor)
         splitTop += 105.0f;
     if (g_Config.m_hcAutoDownloadSkins)
-    	splitTop += 20.0f;
+    	splitTop += 20.0f;*/
+    if (g_Config.m_hcGoreStyle)
+        splitTop += 40.0f;
 
     //PanelL.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
     StandartGame = PanelL;
-    PanelR.HSplitTop(180.0f, &DDRaceGame, &Ghost);
+    PanelR.HSplitTop(170.0f, &DDRaceGame, &Colors);
+    StandartGame.HSplitTop(splitTop, &StandartGame, &Ghost);
+    Ghost.HSplitTop(15.0f, 0x0, &Ghost);
 
     //Standart Game
     {
@@ -1229,100 +1233,32 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             if(DoButton_CheckBox(&g_Config.m_hcGoreStyleDropWeapons, Localize("Drop Weapons"), g_Config.m_hcGoreStyleDropWeapons, &HUDItem))
                 g_Config.m_hcGoreStyleDropWeapons ^= 1;
         }
+    }
 
-        CUIRect Text, LaserColorArea, Laser, SmokeColorArea, Smoke;
-        //Laser Color
-        //StandartGame.HSplitTop(5.0f, 0, &StandartGame);
-        if (g_Config.m_hcLaserCustomColor)
-            StandartGame.HSplitTop(140.0f, &LaserColorArea, &StandartGame);
-        else
-            StandartGame.HSplitTop(20.0f, &LaserColorArea, &StandartGame);
+	//Ghost
+    {
+    	Ghost.HSplitTop(ms_ListheaderHeight, &HUDItem, &Ghost);
+        RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
+        HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
+        UI()->DoLabel(&HUDItem, "⚫·· Ghost (By Rajh, Redix and Sushi)", HUDItem.h*ms_FontmodHeight, -1);
 
-       // RenderTools()->DrawUIRect(&LaserColorArea, vec4(0.0f,0.0f,0.0f,0.15f), CUI::CORNER_ALL, 5.0f);
-        //LaserColorArea.HSplitTop(5.0f, 0, &LaserColorArea);
-        LaserColorArea.HSplitTop(20.0f, &Text, &LaserColorArea);
-        //Text.VSplitLeft(5.0f, 0, &Text);
-        if(DoButton_CheckBox(&g_Config.m_hcLaserCustomColor, Localize("Custom laser color"), g_Config.m_hcLaserCustomColor, &Text))
-            g_Config.m_hcLaserCustomColor ^= 1;
+        Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
+        if(DoButton_CheckBox(&g_Config.m_hcRaceGhost, Localize("Enable ghost"), g_Config.m_hcRaceGhost, &HUDItem))
+            g_Config.m_hcRaceGhost ^= 1;
 
-        //UI()->DoLabelScaled(&Text, Localize("Laser Color"), 14.0f, -1);
-
-        if (g_Config.m_hcLaserCustomColor)
+        if (g_Config.m_hcRaceGhost)
         {
-            LaserColorArea.HSplitTop(20.0f, &Laser, &LaserColorArea);
-            Laser.Margin(15.0f, &Laser);
-            RenderLaser(vec2(Laser.x,Laser.y), vec2(Laser.x+Laser.w, Laser.y));
-            LaserColorArea.HSplitTop(15.0f, 0x0, &LaserColorArea);
 
-            const char *paLabels[] = {
-                Localize("Hue"),
-                Localize("Sat."),
-                Localize("Lht."),
-                Localize("Alpha")};
-            int *pColorSlider[4] = {&g_Config.m_hcLaserColorHue, &g_Config.m_hcLaserColorSat, &g_Config.m_hcLaserColorLht, &g_Config.m_hcLaserColorAlpha};
-            for(int s = 0; s < 4; s++)
-            {
-                CUIRect Text;
-                LaserColorArea.HSplitTop(19.0f, &HUDItem, &LaserColorArea);
-                HUDItem.VMargin(15.0f, &HUDItem);
-                HUDItem.VSplitLeft(100.0f, &Text, &HUDItem);
-                //Button.VSplitRight(5.0f, &Button, 0);
-                HUDItem.HSplitTop(4.0f, 0, &HUDItem);
+            Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
+            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+            if(DoButton_CheckBox(&g_Config.m_hcRaceShowGhost, Localize("Show ghost"), g_Config.m_hcRaceShowGhost, &HUDItem))
+                g_Config.m_hcRaceShowGhost ^= 1;
 
-                float k = (*pColorSlider[s]) / 255.0f;
-                k = DoScrollbarH(pColorSlider[s], &HUDItem, k);
-                *pColorSlider[s] = (int)(k*255.0f);
-                Text.y+=3.0f;
-                UI()->DoLabel(&Text, paLabels[s], Text.h*ms_FontmodHeight*0.8f, -1);
-            }
+            Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
+            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
+            if(DoButton_CheckBox(&g_Config.m_hcRaceSaveGhost, Localize("Auto-Save ghost"), g_Config.m_hcRaceSaveGhost, &HUDItem))
+                g_Config.m_hcRaceSaveGhost ^= 1;
         }
-
-        //Smoke Color
-		if (g_Config.m_hcSmokeCustomColor)
-			StandartGame.HSplitTop(110.0f, &SmokeColorArea, &StandartGame);
-		else
-			StandartGame.HSplitTop(20.0f, &SmokeColorArea, &StandartGame);
-
-		SmokeColorArea.HSplitTop(20.0f, &Text, &SmokeColorArea);
-
-		if(DoButton_CheckBox(&g_Config.m_hcSmokeCustomColor, Localize("Custom smoke color"), g_Config.m_hcSmokeCustomColor, &Text))
-			g_Config.m_hcSmokeCustomColor ^= 1;
-
-		if (g_Config.m_hcSmokeCustomColor)
-		{
-			SmokeColorArea.HSplitTop(20.0f, &Smoke, &SmokeColorArea);
-			Smoke.Margin(15.0f, &Smoke);
-			vec4 s_SmokeColors[] = {
-				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
-				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
-				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
-				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f)
-			};
-			RenderTools()->DrawUIRect(&Smoke, s_SmokeColors);
-
-			const char *paLabels[] = {
-				Localize("Hue"),
-				Localize("Sat."),
-				Localize("Lht."),
-				Localize("Alpha")};
-			int *pColorSlider[4] = {&g_Config.m_hcSmokeColorHue, &g_Config.m_hcSmokeColorSat, &g_Config.m_hcSmokeColorLht, &g_Config.m_hcSmokeColorAlpha};
-			for(int s = 0; s < 4; s++)
-			{
-				CUIRect Text;
-				SmokeColorArea.HSplitTop(19.0f, &HUDItem, &SmokeColorArea);
-				HUDItem.VMargin(15.0f, &HUDItem);
-				HUDItem.VSplitLeft(100.0f, &Text, &HUDItem);
-				//Button.VSplitRight(5.0f, &Button, 0);
-				HUDItem.HSplitTop(4.0f, 0, &HUDItem);
-
-				float k = (*pColorSlider[s]) / 255.0f;
-				k = DoScrollbarH(pColorSlider[s], &HUDItem, k);
-				*pColorSlider[s] = (int)(k*255.0f);
-				Text.y+=3.0f;
-				UI()->DoLabel(&Text, paLabels[s], Text.h*ms_FontmodHeight*0.8f, -1);
-			}
-		}
-		StandartGame.HSplitTop(5.0f, 0, &StandartGame);
     }
 
 	// DDRace/DDNet
@@ -1377,30 +1313,106 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         	for (size_t i = 0; i < sizeof(g_Config.m_ddrTimeoutHash)-1; g_Config.m_ddrTimeoutHash[i++] = (rand() % 26) + 97);
 	}
 
-	//Ghost
+    // Colors
     {
-    	Ghost.HSplitTop(ms_ListheaderHeight, &HUDItem, &Ghost);
-        RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
-        HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
-        UI()->DoLabel(&HUDItem, "⚫·· Ghost (By Rajh, Redix and Sushi)", HUDItem.h*ms_FontmodHeight, -1);
+    	Colors.HSplitTop(ms_ListheaderHeight, &HUDItem, &Colors);
+		RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
+		HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
+		UI()->DoLabel(&HUDItem, "⚫·· Colors", HUDItem.h*ms_FontmodHeight, -1);
 
-        Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
-        if(DoButton_CheckBox(&g_Config.m_hcRaceGhost, Localize("Enable ghost"), g_Config.m_hcRaceGhost, &HUDItem))
-            g_Config.m_hcRaceGhost ^= 1;
+    	CUIRect Text, LaserColorArea, Laser, SmokeColorArea, Smoke;
+		//Laser Color
+		//StandartGame.HSplitTop(5.0f, 0, &StandartGame);
+		if (g_Config.m_hcLaserCustomColor)
+			Colors.HSplitTop(140.0f, &LaserColorArea, &Colors);
+		else
+			Colors.HSplitTop(20.0f, &LaserColorArea, &Colors);
 
-        if (g_Config.m_hcRaceGhost)
-        {
+	   // RenderTools()->DrawUIRect(&LaserColorArea, vec4(0.0f,0.0f,0.0f,0.15f), CUI::CORNER_ALL, 5.0f);
+		//LaserColorArea.HSplitTop(5.0f, 0, &LaserColorArea);
+		LaserColorArea.HSplitTop(20.0f, &Text, &LaserColorArea);
+		//Text.VSplitLeft(5.0f, 0, &Text);
+		if(DoButton_CheckBox(&g_Config.m_hcLaserCustomColor, Localize("Custom laser color"), g_Config.m_hcLaserCustomColor, &Text))
+			g_Config.m_hcLaserCustomColor ^= 1;
 
-            Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
-            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-            if(DoButton_CheckBox(&g_Config.m_hcRaceShowGhost, Localize("Show ghost"), g_Config.m_hcRaceShowGhost, &HUDItem))
-                g_Config.m_hcRaceShowGhost ^= 1;
+		//UI()->DoLabelScaled(&Text, Localize("Laser Color"), 14.0f, -1);
 
-            Ghost.HSplitTop(20.0f, &HUDItem, &Ghost);
-            HUDItem.VSplitLeft(20.0f, 0x0, &HUDItem);
-            if(DoButton_CheckBox(&g_Config.m_hcRaceSaveGhost, Localize("Auto-Save ghost"), g_Config.m_hcRaceSaveGhost, &HUDItem))
-                g_Config.m_hcRaceSaveGhost ^= 1;
-        }
+		if (g_Config.m_hcLaserCustomColor)
+		{
+			LaserColorArea.HSplitTop(20.0f, &Laser, &LaserColorArea);
+			Laser.Margin(15.0f, &Laser);
+			RenderLaser(vec2(Laser.x,Laser.y), vec2(Laser.x+Laser.w, Laser.y));
+			LaserColorArea.HSplitTop(15.0f, 0x0, &LaserColorArea);
+
+			const char *paLabels[] = {
+				Localize("Hue"),
+				Localize("Sat."),
+				Localize("Lht."),
+				Localize("Alpha")};
+			int *pColorSlider[4] = {&g_Config.m_hcLaserColorHue, &g_Config.m_hcLaserColorSat, &g_Config.m_hcLaserColorLht, &g_Config.m_hcLaserColorAlpha};
+			for(int s = 0; s < 4; s++)
+			{
+				CUIRect Text;
+				LaserColorArea.HSplitTop(19.0f, &HUDItem, &LaserColorArea);
+				HUDItem.VMargin(15.0f, &HUDItem);
+				HUDItem.VSplitLeft(100.0f, &Text, &HUDItem);
+				//Button.VSplitRight(5.0f, &Button, 0);
+				HUDItem.HSplitTop(4.0f, 0, &HUDItem);
+
+				float k = (*pColorSlider[s]) / 255.0f;
+				k = DoScrollbarH(pColorSlider[s], &HUDItem, k);
+				*pColorSlider[s] = (int)(k*255.0f);
+				Text.y+=3.0f;
+				UI()->DoLabel(&Text, paLabels[s], Text.h*ms_FontmodHeight*0.8f, -1);
+			}
+		}
+
+		//Smoke Color
+		if (g_Config.m_hcSmokeCustomColor)
+			Colors.HSplitTop(110.0f, &SmokeColorArea, &Colors);
+		else
+			Colors.HSplitTop(20.0f, &SmokeColorArea, &Colors);
+
+		SmokeColorArea.HSplitTop(20.0f, &Text, &SmokeColorArea);
+
+		if(DoButton_CheckBox(&g_Config.m_hcSmokeCustomColor, Localize("Custom smoke color"), g_Config.m_hcSmokeCustomColor, &Text))
+			g_Config.m_hcSmokeCustomColor ^= 1;
+
+		if (g_Config.m_hcSmokeCustomColor)
+		{
+			SmokeColorArea.HSplitTop(20.0f, &Smoke, &SmokeColorArea);
+			Smoke.Margin(15.0f, &Smoke);
+			vec4 s_SmokeColors[] = {
+				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
+				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
+				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f),
+				vec4(g_Config.m_hcSmokeColorHue/255.0f, g_Config.m_hcSmokeColorSat/255.0f, g_Config.m_hcSmokeColorLht/255.0f, g_Config.m_hcSmokeColorAlpha/255.0f)
+			};
+			RenderTools()->DrawUIRect(&Smoke, s_SmokeColors);
+
+			const char *paLabels[] = {
+				Localize("Hue"),
+				Localize("Sat."),
+				Localize("Lht."),
+				Localize("Alpha")};
+			int *pColorSlider[4] = {&g_Config.m_hcSmokeColorHue, &g_Config.m_hcSmokeColorSat, &g_Config.m_hcSmokeColorLht, &g_Config.m_hcSmokeColorAlpha};
+			for(int s = 0; s < 4; s++)
+			{
+				CUIRect Text;
+				SmokeColorArea.HSplitTop(19.0f, &HUDItem, &SmokeColorArea);
+				HUDItem.VMargin(15.0f, &HUDItem);
+				HUDItem.VSplitLeft(100.0f, &Text, &HUDItem);
+				//Button.VSplitRight(5.0f, &Button, 0);
+				HUDItem.HSplitTop(4.0f, 0, &HUDItem);
+
+				float k = (*pColorSlider[s]) / 255.0f;
+				k = DoScrollbarH(pColorSlider[s], &HUDItem, k);
+				*pColorSlider[s] = (int)(k*255.0f);
+				Text.y+=3.0f;
+				UI()->DoLabel(&Text, paLabels[s], Text.h*ms_FontmodHeight*0.8f, -1);
+			}
+		}
+		StandartGame.HSplitTop(5.0f, 0, &StandartGame);
     }
 
 	//Feet

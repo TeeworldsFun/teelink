@@ -56,6 +56,7 @@
 #include "components/spectator.h"
 #include "components/voting.h"
 #include "components/ghost.h" //H-Client
+#include "components/mapsounds.h" //H-Client
 
 CGameClient g_GameClient;
 
@@ -93,6 +94,7 @@ static CMapLayers gs_MapLayersForeGround(CMapLayers::TYPE_FOREGROUND);
 
 //H-Client
 static CGhost gs_Ghost;
+static CMapSounds gs_MapSounds;
 
 CGameClient::CStack::CStack() { m_Num = 0; }
 void CGameClient::CStack::Add(class CComponent *pComponent) { m_paComponents[m_Num++] = pComponent; }
@@ -144,6 +146,7 @@ void CGameClient::OnConsoleInit()
 	m_pMapLayersBackGround = &::gs_MapLayersBackGround;
 	m_pMapLayersForeGround = &::gs_MapLayersForeGround;
 	m_pGhost = &::gs_Ghost; //H-Client: Ghost
+	m_pMapSounds = &::gs_MapSounds;
 
 	// make a list of all the systems, make sure to add them in the corrent render order
 	m_All.Add(m_pSkins);
@@ -157,6 +160,7 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pSounds);
 	m_All.Add(m_pVoting);
 	m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
+	m_All.Add(m_pMapSounds); // H-Client
 
 	m_All.Add(&gs_MapLayersBackGround); // first to render
 	m_All.Add(&m_pParticles->m_RenderTrail);
@@ -472,12 +476,12 @@ static void Evolve(CNetObj_Character *pCharacter, int Tick)
 
 	while(pCharacter->m_Tick < Tick)
 	{
-		pCharacter->m_Tick++;
+		++pCharacter->m_Tick;
 		TempCore.Tick(false);
 		TempCore.Move();
-		TempCore.Quantize();
 	}
 
+	TempCore.Quantize();
 	TempCore.Write(pCharacter);
 }
 
@@ -948,8 +952,9 @@ void CGameClient::OnNewSnapshot()
 					// H-Client
 					if (Item.m_ID == m_Snap.m_LocalClientID)
 					{
-						int HealthDiff = m_Snap.m_aCharacters[Item.m_ID].m_Prev.m_Health - m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Health;
-						g_Stats.m_TotalDamage += HealthDiff;
+						const int HealthDiff = m_Snap.m_aCharacters[Item.m_ID].m_Prev.m_Health - m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Health;
+						if (HealthDiff > 0)
+							g_Stats.m_TotalDamage += HealthDiff;
 
 						if (m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Weapon != m_Snap.m_aCharacters[Item.m_ID].m_Prev.m_Weapon)
 							g_Stats.m_WeaponChanges++;
@@ -1260,12 +1265,15 @@ void CGameClient::OnPredict()
 			m_PredictedChar = *World.m_apCharacters[m_Snap.m_LocalClientID];
 
 			// H-Client: TDTW: Anti-Ping
-			for (int c = 0; c < MAX_CLIENTS; c++)
+			if (g_Config.m_AntiPing)
 			{
-				if(!World.m_apCharacters[c])
-					continue;
+				for (int c = 0; c < MAX_CLIENTS; c++)
+				{
+					if(!World.m_apCharacters[c])
+						continue;
 
-				g_GameClient.m_aClients[c].m_Predicted = *World.m_apCharacters[c];
+					g_GameClient.m_aClients[c].m_Predicted = *World.m_apCharacters[c];
+				}
 			}
 			//
 		}

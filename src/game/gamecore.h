@@ -215,6 +215,9 @@ public:
 	bool m_Freezes;
 	int m_ActiveWeapon;
 	int m_Team;
+	std::map<int, std::vector<vec2> > *m_pTeleOuts;
+	bool m_NewHook;
+	vec2 m_HookTeleBase;
 	//
 
 	int m_Jumped;

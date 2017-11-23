@@ -111,9 +111,6 @@ void CCollision::Init(class CLayers *pLayers)
 		if (m_pFront)
 		{
 		    Index = m_pFront[i].m_Index;
-            if (Index > TILE_END)
-                continue;
-
             switch(Index)
             {
     		case TILE_DEATH:
@@ -127,6 +124,10 @@ void CCollision::Init(class CLayers *pLayers)
     			break;
     		case TILE_FREEZE:
     			m_pFront[i].m_Index = COLFLAG_FREEZE;
+    			break;
+    		case TILE_TELEIN:
+    		case TILE_TELEINHOOK:
+    		    m_pFront[i].m_Index = COLFLAG_TELE;
     			break;
             }
         }
@@ -164,6 +165,10 @@ void CCollision::Init(class CLayers *pLayers)
 			break;
 		case TILE_FREEZE:
 			m_pTiles[i].m_Index = COLFLAG_FREEZE;
+			break;
+		case TILE_TELEIN:
+		case TILE_TELEINHOOK:
+			m_pFront[i].m_Index = COLFLAG_TELE;
 			break;
 		}
 	}
@@ -429,6 +434,9 @@ bool CCollision::IsThrough(int x, int y, int xoff, int yoff, const vec2 &pos0, c
 		(m_pFront[ItemIndex].m_Flags == ROTATION_180 && pos0.y < pos1.y) ||
 		(m_pFront[ItemIndex].m_Flags == ROTATION_270 && pos0.x > pos1.x) ))
 		return true;
+
+	if(m_pTiles[ItemIndex].m_Index == TILE_THROUGH || (m_pFront && m_pFront[ItemIndex].m_Index == TILE_THROUGH))
+		return true;
 	int ItemIndexOffset = (Ny+yoff)*m_Width+(Nx+xoff);
 	if(m_pTiles[ItemIndexOffset].m_Index == TILE_THROUGH || (m_pFront && m_pFront[ItemIndexOffset].m_Index == TILE_THROUGH))
 		return true;
@@ -490,7 +498,7 @@ int CCollision::IntersectLineTeleHook(const vec2 &Pos0, const vec2 &Pos1, vec2 *
 				*pOutCollision = Pos;
 			if(pOutBeforeCollision)
 				*pOutBeforeCollision = Last;
-			return TILE_TELEINHOOK;
+			return COLFLAG_TELE;
 		}
 
 		int hit = 0;
@@ -501,7 +509,7 @@ int CCollision::IntersectLineTeleHook(const vec2 &Pos0, const vec2 &Pos1, vec2 *
 		}
 		else if(IsHookBlocker(vec2(ix, iy), Pos0, Pos1))
 		{
-			hit = TILE_NOHOOK;
+			hit = COLFLAG_SOLID;
 		}
 		if(hit)
 		{

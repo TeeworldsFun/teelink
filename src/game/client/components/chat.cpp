@@ -753,9 +753,9 @@ void CChat::ParseServerMessage(const char *msg)
             m_pClient->m_LocalInfo.m_CollidePlayers = true;
         else if (srvmsg.find("You can't collide with others") != std::string::npos)
             m_pClient->m_LocalInfo.m_CollidePlayers = false;
-        else if (srvmsg.find("You are now in a solo part.") != std::string::npos)
+        else if (srvmsg.find("You are now in a solo part") != std::string::npos)
             m_pClient->m_LocalInfo.m_SoloPart = true;
-        else if (srvmsg.find("You are now out of the solo part.") != std::string::npos)
+        else if (srvmsg.find("You are now out of the solo part") != std::string::npos)
             m_pClient->m_LocalInfo.m_SoloPart = false;
         else if (srvmsg.find("Endless hook has been activated") != std::string::npos)
             m_pClient->m_LocalInfo.m_EndlessHook = true;

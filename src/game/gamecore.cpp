@@ -61,6 +61,8 @@ void CCharacterCore::Init(CWorldCore *pWorld, CCollision *pCollision)
 {
 	m_pWorld = pWorld;
 	m_pCollision = pCollision;
+	m_pTeleOuts = pCollision->GetTeleOuts();
+	m_NewHook = false;
 }
 
 void CCharacterCore::Reset()
@@ -78,6 +80,7 @@ void CCharacterCore::Reset()
 	// H-Client: DDNet
 	m_Freezes = false;
 	m_ActiveWeapon = -1;
+	m_NewHook = false;
 	//
 }
 
@@ -220,7 +223,6 @@ void CCharacterCore::Tick(bool UseInput)
 	if(m_HookState == HOOK_IDLE)
 	{
 		m_HookedPlayer = -1;
-		m_HookState = HOOK_IDLE;
 		m_HookPos = m_Pos;
 	}
 	else if(m_HookState >= HOOK_RETRACT_START && m_HookState < HOOK_RETRACT_END)
@@ -236,7 +238,8 @@ void CCharacterCore::Tick(bool UseInput)
 	else if(m_HookState == HOOK_FLYING)
 	{
 		vec2 NewPos = m_HookPos+m_HookDir*m_pWorld->m_Tuning.m_HookFireSpeed;
-		if(distance(m_Pos, NewPos) > m_pWorld->m_Tuning.m_HookLength)
+		if((!m_NewHook && distance(m_Pos, NewPos) > m_pWorld->m_Tuning.m_HookLength)
+			|| (m_NewHook && distance(m_HookTeleBase, NewPos) > m_pWorld->m_Tuning.m_HookLength))
 		{
 			m_HookState = HOOK_RETRACT_START;
 			NewPos = m_Pos + normalize(NewPos-m_Pos) * m_pWorld->m_Tuning.m_HookLength;
@@ -245,14 +248,14 @@ void CCharacterCore::Tick(bool UseInput)
 		// make sure that the hook doesn't go though the ground
 		bool GoingToHitGround = false;
 		bool GoingToRetract = false;
-		bool GoingThroughTele = false; // H-Client: DDNet -- Need Finish!
+		bool GoingThroughTele = false; // H-Client: DDNet
 		int teleNr = 0;
-		int Hit = m_pCollision->IntersectLineTeleHook(m_HookPos, NewPos, &NewPos, 0, &teleNr); // H-Client: DDNet
+		const int Hit = m_pCollision->IntersectLineTeleHook(m_HookPos, NewPos, &NewPos, 0, &teleNr); // H-Client: DDNet
 		if(Hit)
 		{
 			if(Hit&CCollision::COLFLAG_NOHOOK)
 				GoingToRetract = true;
-			else if (Hit == TILE_TELEINHOOK) // H-Client: DDNet
+			else if (Hit&CCollision::COLFLAG_TELE) // H-Client: DDNet
 				GoingThroughTele = true;
 			else
 				GoingToHitGround = true;
@@ -296,7 +299,28 @@ void CCharacterCore::Tick(bool UseInput)
 				m_HookState = HOOK_RETRACT_START;
 			}
 
-			m_HookPos = NewPos;
+			if(GoingThroughTele && m_pTeleOuts && m_pTeleOuts->size() && (*m_pTeleOuts)[teleNr-1].size())
+			{
+				m_TriggeredEvents = 0;
+				m_HookedPlayer = -1;
+
+				m_NewHook = true;
+				int Num = (*m_pTeleOuts)[teleNr-1].size();
+				m_HookPos = (*m_pTeleOuts)[teleNr-1][(Num==1)?0:rand() % Num]+TargetDirection*PhysSize*1.5f;
+				m_HookDir = TargetDirection;
+				m_HookTeleBase = m_HookPos;
+			}
+			else
+			{
+				m_HookPos = NewPos;
+			}
+
+			if(m_HookState == HOOK_FLYING)
+				dbg_msg("DEV", "H FLY 33");
+		}
+		else
+		{
+			m_NewHook = false;
 		}
 	}
 
@@ -359,12 +383,8 @@ void CCharacterCore::Tick(bool UseInput)
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			CCharacterCore *pCharCore = m_pWorld->m_apCharacters[i];
-			if(!pCharCore)
+			if(!pCharCore || pCharCore == this)
 				continue;
-
-			//player *p = (player*)ent;
-			if(pCharCore == this) // || !(p->flags&FLAG_ALIVE)
-				continue; // make sure that we don't nudge our self
 
 			// handle player <-> player collision
 			float Distance = distance(m_Pos, pCharCore->m_Pos);
@@ -407,17 +427,16 @@ void CCharacterCore::Tick(bool UseInput)
 		{
 			vec2 Direction, MaxVel, TempVel = m_Vel;
 			int Force, MaxSpeed = 0;
-			int Index = m_pCollision->GetPureMapIndex(m_Pos);
 			float TeeAngle, SpeederAngle, DiffAngle, SpeedLeft, TeeSpeed;
-			m_pCollision->GetSpeedUp(Index, &Direction, &Force, &MaxSpeed);
+			m_pCollision->GetSpeedUp(MapIndex, &Direction, &Force, &MaxSpeed);
 			if(Force == 255 && MaxSpeed)
 			{
 				m_Vel = Direction * (MaxSpeed/5);
 			}
 			else
 			{
-				MaxSpeed = max(5,MaxSpeed);
-				if (MaxSpeed > 0)
+				if(MaxSpeed > 0 && MaxSpeed < 5) MaxSpeed = 5;
+				if(MaxSpeed > 0)
 				{
 					if(Direction.x > 0.0000001f)
 						SpeederAngle = -atan(Direction.y / Direction.x);
@@ -458,61 +477,13 @@ void CCharacterCore::Tick(bool UseInput)
 					TempVel += Direction * Force;
 
 
-				if(TempVel.x > 0 &&
-						((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_270) ||
-								(m_TileIndexL == TILE_STOP && m_TileFlagsL == ROTATION_270) ||
-								(m_TileIndexL == TILE_STOPS && (this->m_TileFlagsL == ROTATION_90 || m_TileFlagsL ==ROTATION_270)) ||
-								(m_TileIndexL == TILE_STOPA) ||
-								(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_270) ||
-								(m_TileFIndexL == TILE_STOP && m_TileFFlagsL == ROTATION_270) ||
-								(m_TileFIndexL == TILE_STOPS && (m_TileFFlagsL == ROTATION_90 || m_TileFFlagsL == ROTATION_270)) ||
-								(m_TileFIndexL == TILE_STOPA) ||
-								(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_270) ||
-								(m_TileSIndexL == TILE_STOP && m_TileSFlagsL == ROTATION_270) ||
-								(m_TileSIndexL == TILE_STOPS && (m_TileSFlagsL == ROTATION_90 || m_TileSFlagsL == ROTATION_270)) ||
-								(m_TileSIndexL == TILE_STOPA)))
+				if(TempVel.x > 0 && ((this->m_TileIndex == TILE_STOP && this->m_TileFlags == ROTATION_270) || (this->m_TileIndexL == TILE_STOP && this->m_TileFlagsL == ROTATION_270) || (this->m_TileIndexL == TILE_STOPS && (this->m_TileFlagsL == ROTATION_90 || this->m_TileFlagsL ==ROTATION_270)) || (this->m_TileIndexL == TILE_STOPA) || (m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_270) || (m_TileFIndexL == TILE_STOP && m_TileFFlagsL == ROTATION_270) || (m_TileFIndexL == TILE_STOPS && (m_TileFFlagsL == ROTATION_90 || m_TileFFlagsL == ROTATION_270)) || (m_TileFIndexL == TILE_STOPA) || (m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_270) || (m_TileSIndexL == TILE_STOP && m_TileSFlagsL == ROTATION_270) || (m_TileSIndexL == TILE_STOPS && (m_TileSFlagsL == ROTATION_90 || m_TileSFlagsL == ROTATION_270)) || (m_TileSIndexL == TILE_STOPA)))
 					TempVel.x = 0;
-				if(TempVel.x < 0 &&
-						((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_90) ||
-								(m_TileIndexR == TILE_STOP && m_TileFlagsR == ROTATION_90) ||
-								(m_TileIndexR == TILE_STOPS && (m_TileFlagsR == ROTATION_90 || m_TileFlagsR == ROTATION_270)) ||
-								(m_TileIndexR == TILE_STOPA) ||
-								(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_90) ||
-								(m_TileFIndexR == TILE_STOP && m_TileFFlagsR == ROTATION_90) ||
-								(m_TileFIndexR == TILE_STOPS && (m_TileFFlagsR == ROTATION_90 || m_TileFFlagsR == ROTATION_270)) ||
-								(m_TileFIndexR == TILE_STOPA) ||
-								(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_90) ||
-								(m_TileSIndexR == TILE_STOP && m_TileSFlagsR == ROTATION_90) ||
-								(m_TileSIndexR == TILE_STOPS && (m_TileSFlagsR == ROTATION_90 || m_TileSFlagsR == ROTATION_270)) ||
-								(m_TileSIndexR == TILE_STOPA)))
+				if(TempVel.x < 0 && ((this->m_TileIndex == TILE_STOP && this->m_TileFlags == ROTATION_90) || (this->m_TileIndexR == TILE_STOP && this->m_TileFlagsR == ROTATION_90) || (this->m_TileIndexR == TILE_STOPS && (this->m_TileFlagsR == ROTATION_90 || this->m_TileFlagsR == ROTATION_270)) || (this->m_TileIndexR == TILE_STOPA) || (m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_90) || (m_TileFIndexR == TILE_STOP && m_TileFFlagsR == ROTATION_90) || (m_TileFIndexR == TILE_STOPS && (m_TileFFlagsR == ROTATION_90 || m_TileFFlagsR == ROTATION_270)) || (m_TileFIndexR == TILE_STOPA) || (m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_90) || (m_TileSIndexR == TILE_STOP && m_TileSFlagsR == ROTATION_90) || (m_TileSIndexR == TILE_STOPS && (m_TileSFlagsR == ROTATION_90 || m_TileSFlagsR == ROTATION_270)) || (m_TileSIndexR == TILE_STOPA)))
 					TempVel.x = 0;
-				if(TempVel.y < 0 &&
-						((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_180) ||
-								(m_TileIndexB == TILE_STOP && m_TileFlagsB == ROTATION_180) ||
-								(m_TileIndexB == TILE_STOPS && (m_TileFlagsB == ROTATION_0 || m_TileFlagsB == ROTATION_180)) ||
-								(m_TileIndexB == TILE_STOPA) ||
-								(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_180) ||
-								(m_TileFIndexB == TILE_STOP && m_TileFFlagsB == ROTATION_180) ||
-								(m_TileFIndexB == TILE_STOPS && (m_TileFFlagsB == ROTATION_0 || m_TileFFlagsB == ROTATION_180)) ||
-								(m_TileFIndexB == TILE_STOPA) ||
-								(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_180) ||
-								(m_TileSIndexB == TILE_STOP && m_TileSFlagsB == ROTATION_180) ||
-								(m_TileSIndexB == TILE_STOPS && (m_TileSFlagsB == ROTATION_0 || m_TileSFlagsB == ROTATION_180)) ||
-								(m_TileSIndexB == TILE_STOPA)))
+				if(TempVel.y < 0 && ((this->m_TileIndex == TILE_STOP && this->m_TileFlags == ROTATION_180) || (this->m_TileIndexB == TILE_STOP && this->m_TileFlagsB == ROTATION_180) || (this->m_TileIndexB == TILE_STOPS && (this->m_TileFlagsB == ROTATION_0 || this->m_TileFlagsB == ROTATION_180)) || (this->m_TileIndexB == TILE_STOPA) || (m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_180) || (m_TileFIndexB == TILE_STOP && m_TileFFlagsB == ROTATION_180) || (m_TileFIndexB == TILE_STOPS && (m_TileFFlagsB == ROTATION_0 || m_TileFFlagsB == ROTATION_180)) || (m_TileFIndexB == TILE_STOPA) || (m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_180) || (m_TileSIndexB == TILE_STOP && m_TileSFlagsB == ROTATION_180) || (m_TileSIndexB == TILE_STOPS && (m_TileSFlagsB == ROTATION_0 || m_TileSFlagsB == ROTATION_180)) || (m_TileSIndexB == TILE_STOPA)))
 					TempVel.y = 0;
-				if(TempVel.y > 0 &&
-						((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_0) ||
-								(m_TileIndexT == TILE_STOP && m_TileFlagsT == ROTATION_0) ||
-								(m_TileIndexT == TILE_STOPS && (m_TileFlagsT == ROTATION_0 || m_TileFlagsT == ROTATION_180)) ||
-								(m_TileIndexT == TILE_STOPA) ||
-								(m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_0) ||
-								(m_TileFIndexT == TILE_STOP && m_TileFFlagsT == ROTATION_0) ||
-								(m_TileFIndexT == TILE_STOPS && (m_TileFFlagsT == ROTATION_0 || m_TileFFlagsT == ROTATION_180)) ||
-								(m_TileFIndexT == TILE_STOPA) ||
-								(m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_0) ||
-								(m_TileSIndexT == TILE_STOP && m_TileSFlagsT == ROTATION_0) ||
-								(m_TileSIndexT == TILE_STOPS && (m_TileSFlagsT == ROTATION_0 || m_TileSFlagsT == ROTATION_180)) ||
-								(m_TileSIndexT == TILE_STOPA)))
+				if(TempVel.y > 0 && ((this->m_TileIndex == TILE_STOP && this->m_TileFlags == ROTATION_0) || (this->m_TileIndexT == TILE_STOP && this->m_TileFlagsT == ROTATION_0) || (this->m_TileIndexT == TILE_STOPS && (this->m_TileFlagsT == ROTATION_0 || this->m_TileFlagsT == ROTATION_180)) || (this->m_TileIndexT == TILE_STOPA) || (m_TileFIndex == TILE_STOP && m_TileFFlags == ROTATION_0) || (m_TileFIndexT == TILE_STOP && m_TileFFlagsT == ROTATION_0) || (m_TileFIndexT == TILE_STOPS && (m_TileFFlagsT == ROTATION_0 || m_TileFFlagsT == ROTATION_180)) || (m_TileFIndexT == TILE_STOPA) || (m_TileSIndex == TILE_STOP && m_TileSFlags == ROTATION_0) || (m_TileSIndexT == TILE_STOP && m_TileSFlagsT == ROTATION_0) || (m_TileSIndexT == TILE_STOPS && (m_TileSFlagsT == ROTATION_0 || m_TileSFlagsT == ROTATION_180)) || (m_TileSIndexT == TILE_STOPA)))
 					TempVel.y = 0;
 
 

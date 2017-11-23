@@ -3,5 +3,8 @@
 - Now only take preview's of new maps
 - Added compatibility with "Show Others" in DDRaceNetwork
 - Fixed server geolocation
-- Support for download maps from DDRaceNetwork servers (No SSL)
+- Support for download maps from DDRaceNetwork http servers (No SSL)
 - Improved some critical code calls (Collisions, Rendering, ...)
+- Added compatibility with sounds in DDRaceNetwork maps
+- Added option for customize smoke color (local effect)
+- Fixed bug when try join on a server without "preview map" enabled

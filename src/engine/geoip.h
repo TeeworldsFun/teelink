@@ -12,12 +12,14 @@ struct GeoInfo
 {
 	GeoInfo()
 	{
-		str_copy(m_aCountryCode, "NULL", sizeof(m_aCountryCode));
-		str_copy(m_aCountryName, "NULL", sizeof(m_aCountryName));
+		mem_zero(m_aCountryCode, sizeof(m_aCountryCode));
+		mem_zero(m_aCountryName,  sizeof(m_aCountryName));
+		mem_zero(m_aTimeZone, sizeof(m_aTimeZone));
 	}
 
 	char m_aCountryCode[8];
 	char m_aCountryName[32];
+	char m_aTimeZone[128];
 };
 
 class IGeoIP : public IInterface

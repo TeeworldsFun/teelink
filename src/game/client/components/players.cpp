@@ -742,7 +742,7 @@ void CPlayers::OnRender()
 	}
 
 	// render other players in two passes, first pass we render the other, second pass we render our self
-	for(int p = 1; p < 4; ++p)
+	for(int p = 0; p < 4; ++p)
 	{
 		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{

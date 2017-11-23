@@ -281,6 +281,7 @@ public:
 
     class CPlayerInfo *m_pPlayerInfo; // H-Client
     class CGhost *m_pGhost; // H-Client: Ghost
+    class CMapSounds *m_pMapSounds; // H-Client: DDRace Maps
     class CTeamsCore m_Teams; // H-Client: DDNet
 	bool m_TakeInitScreenShot; // H-Client
 	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 *pNewPos2, int ownID); // H-Client

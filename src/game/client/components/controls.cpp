@@ -216,8 +216,8 @@ int CControls::SnapInput(int *pData)
 		else if(m_InputData.m_NextWeapon != m_LastData.m_NextWeapon) Send = true;
 		else if(m_InputData.m_PrevWeapon != m_LastData.m_PrevWeapon) Send = true;
 
-		// send at at least 10hz
-		if(time_get() > LastSendTime + time_freq()/25)
+		// send at least 10hz
+		if(time_get() > LastSendTime + time_freq()/10)
 			Send = true;
 
 		// H-Client: DDNet
