@@ -1365,8 +1365,12 @@ int CServer::Run()
 			// snap game
 			if(NewTicks)
 			{
+				dbg_msg("HCLIENT","Snao Num: %d", m_CurrentGameTick);
 				if(g_Config.m_SvHighBandwidth || (m_CurrentGameTick%2) == 0)
+				{
+					dbg_msg("HCLIENT","Do Snapshop!");
 					DoSnapshot();
+				}
 
 				UpdateClientRconCommands();
 			}

@@ -1765,7 +1765,7 @@ void CClient::Update()
 		// only do sane predictions
 		if(Repredict)
 		{
-			if(m_PredTick > m_CurGameTick && m_PredTick < m_CurGameTick+25)
+			if(m_PredTick > m_CurGameTick && m_PredTick < m_CurGameTick+50)
 				GameClient()->OnPredict();
 		}
 
@@ -2111,16 +2111,9 @@ void CClient::Run()
 				}
 
 				// H-Client
-				static float totalTime = 0.0f;
 				if (m_RecordVideo && State() == STATE_DEMOPLAYBACK)
 				{
-					const float fr = 3.0f*0.01f;
-					totalTime+=m_RenderFrameTime;
-					if(totalTime > fr)
-					{
-						AddFrameToRecordVideo();
-						totalTime = 0.0f;
-					}
+					AddFrameToRecordVideo();
 				}
 				//
 
@@ -2613,11 +2606,23 @@ bool CClient::StartRecordVideo()
 {
 	char aBuf[1024];
 
-	// Audio: -f alsa -ac 2 -i default
+	/* https://trac.ffmpeg.org/wiki/Capture/ALSA
+	 * 	Record audio from an application (LINUX)
+
+		Load the snd_aloop module:
+			modprobe snd-aloop pcm_substreams=1
+
+		Set the default ALSA audio output to one substream of the Loopback device in your .asoundrc (or /etc/asound.conf)
+			# .asoundrc
+			pcm.!default { type plug slave.pcm "hw:Loopback,0,0" }
+
+		You can now record audio from a running application using:
+			ffmpeg -f alsa -ac 2 -ar 44100 -i hw:Loopback,1,0 out.wav
+	 */
 	if (m_RecordVideoMode == MODE_RECORD_FAST)
-		snprintf(aBuf, sizeof(aBuf), "ffmpeg -f rawvideo -pix_fmt rgba -s %dx%d -i - -y -vf 'setpts=2.5*PTS,scale=%sx%s' %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
+		snprintf(aBuf, sizeof(aBuf), "%s -f rawvideo -pix_fmt rgba -threads %s -s %dx%d -r %s -i - -y -vf 'setpts=2.5*PTS,scale=%sx%s' %s", g_Config.m_hcRecordVideoFFMPEG, m_RecordVideoThreads, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_RecordVideoOutputFPS, m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
 	else
-		snprintf(aBuf, sizeof(aBuf), "ffmpeg -f rawvideo -pix_fmt rgba -s %dx%d -i - -y -vf 'scale=%sx%s' %s", Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
+		snprintf(aBuf, sizeof(aBuf), "%s -f rawvideo -pix_fmt rgba -threads %s -s %dx%d -r %s -i - -y -vf 'scale=%sx%s' %s", g_Config.m_hcRecordVideoFFMPEG, m_RecordVideoThreads, Graphics()->ScreenWidth(), Graphics()->ScreenHeight(), m_RecordVideoOutputFPS, m_aRecordVideoDimensions[0], m_aRecordVideoDimensions[1], m_aRecordVideoFilename);
 
 	if (m_RecordVideo)
 		EndRecordVideo();

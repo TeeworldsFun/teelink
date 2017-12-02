@@ -16,6 +16,10 @@ bulgarian
 == Български
 == 100
 
+simplified_chinese
+== 简体中文
+== 156
+
 czech
 == Česky
 == 203
@@ -23,6 +27,14 @@ czech
 danish
 == Dansk
 == 208
+
+japanese
+== 日本語
+== 392
+
+korean
+== 한국어
+== 410
 
 dutch
 == Nederlands

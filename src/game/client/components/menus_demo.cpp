@@ -672,12 +672,22 @@ void CMenus::RenderDemoList(CUIRect MainView)
 		static int s_PlayRecordVideo = 0;
 		if(m_DemolistSelectedIndex >= 0 && !m_DemolistSelectedIsDir && DoButton_Menu(&s_PlayRecordVideo, Localize("Record to File"), 0, &RecordVideoRect))
 		{
-			UI()->SetActiveItem(0);
-			str_copy(Client()->m_aRecordVideoFilename, "nameless.mp4", sizeof(Client()->m_aRecordVideoFilename));
-			str_format(Client()->m_aRecordVideoDimensions[0], sizeof(Client()->m_aRecordVideoDimensions[0]), "%d", Graphics()->ScreenWidth());
-			str_format(Client()->m_aRecordVideoDimensions[1], sizeof(Client()->m_aRecordVideoDimensions[1]), "%d", Graphics()->ScreenHeight());
-			Client()->m_RecordVideoMode = IClient::MODE_RECORD_NORMAL;
-			m_Popup = POPUP_RECORD_SETTINGS;
+			if (g_Config.m_GfxThreaded)
+			{
+				PopupMessage("Invalid Render Mode", "Can't start recording...\nPlease, disable 'Threaded Rendering' and try again", Localize("Ok"));
+			}
+			else
+			{
+				UI()->SetActiveItem(0);
+				// TODO: Move to variables?
+				str_copy(Client()->m_aRecordVideoFilename, "nameless.mp4", sizeof(Client()->m_aRecordVideoFilename));
+				str_format(Client()->m_aRecordVideoDimensions[0], sizeof(Client()->m_aRecordVideoDimensions[0]), "%d", Graphics()->ScreenWidth());
+				str_format(Client()->m_aRecordVideoDimensions[1], sizeof(Client()->m_aRecordVideoDimensions[1]), "%d", Graphics()->ScreenHeight());
+				str_copy(Client()->m_RecordVideoOutputFPS, "60", sizeof(Client()->m_RecordVideoOutputFPS));
+				str_copy(Client()->m_RecordVideoThreads, "2", sizeof(Client()->m_RecordVideoThreads));
+				Client()->m_RecordVideoMode = IClient::MODE_RECORD_NORMAL;
+				m_Popup = POPUP_RECORD_SETTINGS;
+			}
 		}
 	}
 

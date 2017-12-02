@@ -157,11 +157,15 @@ public:
 	bool IsRecordVideo() { return m_RecordVideo; }
 	virtual bool IsNewMap() const = 0;
 
-	virtual CHttpDownloader::NETDOWNLOAD* DownloadMapStatus() = 0;
+	virtual CHttpDownloader::NETDOWNLOADINFO* DownloadMapStatus() = 0;
 
 	int m_RecordVideoMode;
+	// Char types for workaround with menu api
+	// TODO: Implement int type controls on menu api
 	char m_aRecordVideoFilename[128];
 	char m_aRecordVideoDimensions[2][5];
+	char m_RecordVideoThreads[2];
+	char m_RecordVideoOutputFPS[3];
 	//
 };
 

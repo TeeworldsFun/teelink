@@ -1161,7 +1161,7 @@ int CMenus::Render()
 		CUIRect Box, Part;
 		Box = Screen;
 		//Box.VMargin(150.0f/UI()->Scale(), &Box);
-		Box.HMargin(150.0f/UI()->Scale(), &Box);
+		Box.HMargin(80.0f/UI()->Scale(), &Box);
 
 		// render the box
 		RenderTools()->DrawUIRect(&Box, HexToVec4(g_Config.m_hcPopupBackgroundColor), 0, 15.0f);
@@ -1376,6 +1376,23 @@ int CMenus::Render()
 			static float OffsetVideoDimH = 0.0f;
 			DoEditBox(&Client()->m_aRecordVideoDimensions[1], &ItemA, Client()->m_aRecordVideoDimensions[1], sizeof(Client()->m_aRecordVideoDimensions[1]), 12.0f, &OffsetVideoDimH);
 
+			Box.HSplitTop(10.0f, 0x0, &Box);
+			Box.HSplitTop(25.0f, &ItemA, &Box);
+			UI()->DoLabel(&ItemA, Localize("Threads:"), 18.0f, -1);
+			Box.HSplitTop(20.0f, &ItemB, &Box);
+			ItemB.VSplitLeft(50.0f, &ItemA, &ItemB);
+			static float OffsetVideoThreads = 0.0f;
+			DoEditBox(&Client()->m_RecordVideoThreads, &ItemA, Client()->m_RecordVideoThreads, sizeof(Client()->m_RecordVideoThreads), 12.0f, &OffsetVideoThreads);
+
+			Box.HSplitTop(10.0f, 0x0, &Box);
+			Box.HSplitTop(25.0f, &ItemA, &Box);
+			UI()->DoLabel(&ItemA, Localize("Output FPS:"), 18.0f, -1);
+			Box.HSplitTop(20.0f, &ItemB, &Box);
+			ItemB.VSplitLeft(50.0f, &ItemA, &ItemB);
+			static float OffsetVideoOutputFPS = 0.0f;
+			DoEditBox(&Client()->m_RecordVideoOutputFPS, &ItemA, Client()->m_RecordVideoOutputFPS, sizeof(Client()->m_RecordVideoOutputFPS), 12.0f, &OffsetVideoOutputFPS);
+
+
 			// buttons
 			Part.VMargin(80.0f, &Part);
 			Part.VSplitMid(&No, &Yes);
@@ -1407,7 +1424,7 @@ int CMenus::Render()
 					}
 					else
 					{
-						PopupMessage("Record Error", "Can't found ffmpeg program. Please, download it for record videos.", Localize("Ok"));
+						PopupMessage("Record Error", "Can't found ffmpeg program. Please, download it for record videos.\n\nhttp://ffmpeg.org/", Localize("Ok"));
 						Client()->Disconnect();
 					}
 				}

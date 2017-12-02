@@ -48,19 +48,18 @@ GeoInfo CGeoIP::GetInfo(std::string ip)
     str_format(aUrl, sizeof(aUrl), "http://ip-api.com/json/%s", ip.c_str());
 
     //read data
-    unsigned FileSize = 0;
-    CHttpDownloader::NETDOWNLOAD DownloadStatus;
-    unsigned char *pHttpData = CHttpDownloader::GetToMemory(aUrl, &FileSize, &DownloadStatus, 1);
+    CHttpDownloader::NETDOWNLOADINFO DownloadStatus;
+    unsigned char *pHttpData = CHttpDownloader::GetToMemory(aUrl, &DownloadStatus, 1);
 
     if (pHttpData)
     {
-    	if (FileSize > 0)
+    	if (DownloadStatus.m_FileSize > 0u)
     	{
 			// parse json data
 			json_settings JsonSettings;
 			mem_zero(&JsonSettings, sizeof(JsonSettings));
 			char aError[256];
-			json_value *pJsonData = json_parse_ex(&JsonSettings, (char*)pHttpData, FileSize, aError);
+			json_value *pJsonData = json_parse_ex(&JsonSettings, (char*)pHttpData, DownloadStatus.m_FileSize, aError);
 			if (!pJsonData)
 				dbg_msg("GeoIP", "Error: %s", aError);
 			else

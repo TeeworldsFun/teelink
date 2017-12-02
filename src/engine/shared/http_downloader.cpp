@@ -1,18 +1,17 @@
+/* Alexandre Díaz - GET HTTP Support */
 #include "http_downloader.h"
 #include <base/math.h>
 #include <algorithm>
 
-// TODO: Clean duplicate code and HTTP1.1 support
-// TODO 2: Add regex or ssl support? ummm if yes best use libcurl
+// TODO: Add regex or ssl support? ummm if yes best use libcurl
 
-bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOAD *pNetDownload, unsigned timeOut, unsigned downloadSpeed)
+bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOADINFO *pNetDownload, unsigned timeOut, unsigned downloadSpeed)
 {
-	unsigned int FileSize = 0u;
-	unsigned char *pFileData = GetToMemory(url, &FileSize, pNetDownload, timeOut, downloadSpeed);
+	unsigned char *pFileData = GetToMemory(url, pNetDownload, timeOut, downloadSpeed);
 
 	if (pFileData)
 	{
-		if (FileSize > 0u)
+		if (pNetDownload->m_FileSize > 0u)
 		{
 			IOHANDLE dstFile = io_open(dest, IOFLAG_WRITE);
 			if(!dstFile)
@@ -21,7 +20,7 @@ bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOAD *
 				pNetDownload->m_Status = ERROR;
 				return false;
 			}
-			if (!io_write(dstFile, pFileData, FileSize))
+			if (!io_write(dstFile, pFileData, pNetDownload->m_FileSize))
 			{
 				dbg_msg("HttpDownloader", "Error writing '%s'...", dest);
 				io_close(dstFile);
@@ -37,14 +36,14 @@ bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOAD *
 			pNetDownload->m_Status = ERROR;
 
 		mem_free(pFileData);
-		return pNetDownload->m_Status != ERROR;
 	}
+	else
+		pNetDownload->m_Status = ERROR;
 
-	pNetDownload->m_Status = ERROR;
-	return false;
+	return pNetDownload->m_Status != ERROR;
 }
 
-unsigned char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, NETDOWNLOAD *pNetDownload, unsigned timeOut, unsigned downloadSpeed)
+unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pNetDownload, unsigned timeOut, unsigned downloadSpeed, bool onlyInfo)
 {
 	unsigned char *pData = 0x0;
 	int64 downloadTime = time_get();
@@ -58,7 +57,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, NET
         pNetDownload->m_Status = ERROR;
         return 0x0;
     }
-    pNetDownload->m_NAddr.port = 80;
+    pNetDownload->m_NAddr.port = pNetDownload->m_NetURL.m_Port;
 
     pNetDownload->m_Socket = net_tcp_create(pNetDownload->m_BindAddr);
     if (net_tcp_connect(pNetDownload->m_Socket, &pNetDownload->m_NAddr) != 0)
@@ -73,27 +72,25 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, NET
     pNetDownload->m_Status = CONNECTING;
 
     char aBuff[512] = {0};
-    str_format(aBuff, sizeof(aBuff), "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", pNetDownload->m_NetURL.m_aSlug, pNetDownload->m_NetURL.m_aHost);
+    str_format(aBuff, sizeof(aBuff), "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", pNetDownload->m_NetURL.m_aFullPath, pNetDownload->m_NetURL.m_aHost);
 	net_tcp_send(pNetDownload->m_Socket, aBuff, str_length(aBuff));
 
-	*size = 0;
+	pNetDownload->m_FileSize = 0u;
 	std::string NetData;
-	unsigned TotalBytes = 0;
 	int CurrentRecv = 0;
-	unsigned nlCount = 0;
-	unsigned destCursor = 0;
-	char aNetBuff[1024] = {0};
+	bool isHeader = true;
+	char aNetBuff[onlyInfo?128:1024] = {0};
 	do
 	{
 		// Limit Speed
 		if (downloadSpeed > 0)
 		{
-			int64 ctime = time_get();
+			const int64 ctime = time_get();
 			if (ctime - downloadTime <= time_freq())
 			{
 				if (chunkBytes >= downloadSpeed)
 				{
-					int tdff = (time_freq() - (ctime - downloadTime)) / 1000;
+					const int tdff = (time_freq() - (ctime - downloadTime)) / 1000;
 					thread_sleep(tdff);
 					continue;
 				}
@@ -110,169 +107,97 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, unsigned *size, NET
 		chunkBytes += CurrentRecv;
 		for (int i=0; i<CurrentRecv; i++)
 		{
-			if (nlCount < 2)
+			if (isHeader)
 			{
-				if (aNetBuff[i] == '\r' || aNetBuff[i] == '\n')
-				{
-				    ++nlCount;
+				if (aNetBuff[i] == '\n')
+				{ // Is end of line
 					if (NetData.size() > 0)
 					{
                         std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
                         if (NetData.find("404 not found") != std::string::npos)
                         {
                             dbg_msg("HttpDownloader", "ERROR 404: '%s' not found...", pNetDownload->m_NetURL.m_aFile);
-                            net_tcp_close(pNetDownload->m_Socket);
                             pNetDownload->m_Status = ERROR;
-                            return 0x0;
+                            break;
                         }
                         else if (NetData.find("content-length:") != std::string::npos)
                         {
-							char aFileSize[64];
-							str_copy(aFileSize, NetData.substr(15).c_str(), sizeof(aFileSize));
+							char aFileSize[10];
+							str_copy(aFileSize, NetData.substr(15).c_str(), sizeof(aFileSize)); // 15 is the length of 'content-length:' string
 							str_trim(aFileSize);
-							TotalBytes = atoi(aFileSize);
-							if (TotalBytes <= 0)
+							pNetDownload->m_FileSize = atoi(aFileSize);
+
+							if (!onlyInfo)
 							{
-							   dbg_msg("HttpDownloader", "Error downloading '%s'...", pNetDownload->m_NetURL.m_aFile);
-							   net_tcp_close(pNetDownload->m_Socket);
-							   pNetDownload->m_Status = ERROR;
-							   return 0x0;
+								if (pNetDownload->m_FileSize <= 0)
+								{
+								   dbg_msg("HttpDownloader", "Error downloading '%s'...", pNetDownload->m_NetURL.m_aFile);
+								   pNetDownload->m_Status = ERROR;
+								   break;
+								}
+
+								pData = (unsigned char*)mem_alloc(pNetDownload->m_FileSize, 1);
+								if (!pData)
+								{
+									dbg_msg("HttpDownloader", "Error allocating memory for download '%s'...", pNetDownload->m_NetURL.m_aFile);
+									pNetDownload->m_Status = ERROR;
+									break;
+								}
 							}
-
-                            pData = (unsigned char*)mem_alloc(TotalBytes, 1);
-                            if (!pData)
-                            {
-                            	dbg_msg("HttpDownloader", "Error allocating memory for download '%s'...", pNetDownload->m_NetURL.m_aFile);
-                            	net_tcp_close(pNetDownload->m_Socket);
-                            	pNetDownload->m_Status = ERROR;
-                            	return 0x0;
-                            }
-
-                            pNetDownload->m_Status = DOWNLOADING;
                         }
 
                         NetData.clear();
 					}
+					else
+					{ // Empty Line: End of Header
+						isHeader = false;
+						if (onlyInfo)
+						{
+							pNetDownload->m_Status = DOWNLOADED;
+							break;
+						}
 
-					if (aNetBuff[i] == '\r')
-						++i;
+						if (!pData)
+						{
+							dbg_msg("HttpDownloader", "Unexpected http error, 'content-length' not found!");
+							pNetDownload->m_Status = ERROR;
+							break;
+						}
+
+						pNetDownload->m_Status = DOWNLOADING;
+					}
 				}
-				else
-				{
-					nlCount = 0;
+				else if (aNetBuff[i] != '\r')
+				{ // Fill line buffer
 					NetData += aNetBuff[i];
 				}
 			}
 			else
-			{
-			    pData[destCursor++] = aNetBuff[i];
-			    pNetDownload->m_Received = destCursor;
-				if (destCursor >= TotalBytes)
+			{ // Read Body
+				const unsigned int numBytes = CurrentRecv-i;
+				if (pNetDownload->m_Received+numBytes > pNetDownload->m_FileSize)
+				{
+					dbg_msg("HttpDownloader", "Unexpected error... server try send more bytes that declared in 'content-length'!");
+					pNetDownload->m_Status = ERROR;
+					mem_free(pData);
+					pData = 0x0;
 					break;
+				}
+
+				mem_copy(pData+pNetDownload->m_Received, aNetBuff+i, numBytes);
+				pNetDownload->m_Received += numBytes;
+				if (pNetDownload->m_Received == pNetDownload->m_FileSize)
+				{
+					pNetDownload->m_Status = DOWNLOADED;
+					break;
+				}
+				i += CurrentRecv;
 			}
 		}
 	} while (CurrentRecv > 0 && !pNetDownload->m_ForceStop);
 
 	net_tcp_close(pNetDownload->m_Socket);
-	pNetDownload->m_Status = DOWNLOADED;
-
-	*size = TotalBytes;
     return pData;
-}
-
-unsigned CHttpDownloader::GetFileSize(const char *url, unsigned timeOut)
-{
-    NETSOCKET sock;
-    NETADDR nadd, bindAddr;
-    mem_zero(&nadd, sizeof(nadd));
-    mem_zero(&bindAddr, sizeof(bindAddr));
-    bindAddr.type = NETTYPE_IPV4;
-
-    NETURL NetUrl = CreateUrl(url);
-
-
-    if (net_host_lookup(NetUrl.m_aHost, &nadd, NETTYPE_IPV4) != 0)
-    {
-        dbg_msg("HttpDownloader", "Error can't found '%s'...", NetUrl.m_aHost);
-        return false;
-    }
-    nadd.port = 80;
-
-    sock = net_tcp_create(bindAddr);
-    net_socket_rcv_timeout(sock, timeOut);
-    if (net_tcp_connect(sock, &nadd) != 0)
-    {
-        dbg_msg("HttpDownloader", "Error can't connect with '%s'...", NetUrl.m_aHost);
-        net_tcp_close(sock);
-        return false;
-    }
-
-    char aBuff[512] = {0};
-    str_format(aBuff, sizeof(aBuff), "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", NetUrl.m_aSlug, NetUrl.m_aHost);
-	net_tcp_send(sock, aBuff, str_length(aBuff));
-
-	std::string NetData;
-	int TotalBytes = 0;
-	int CurrentRecv = 0;
-	int nlCount = 0;
-	char aNetBuff[1024] = {0};
-	do
-	{
-		CurrentRecv = net_tcp_recv(sock, aNetBuff, sizeof(aNetBuff));
-		for (int i=0; i<CurrentRecv ; i++)
-		{
-			if (nlCount < 2)
-			{
-				if (aNetBuff[i] == '\r' || aNetBuff[i] == '\n')
-				{
-				    ++nlCount;
-					if (NetData.size() > 0)
-					{
-                        std::transform(NetData.begin(), NetData.end(), NetData.begin(), ::tolower);
-                        if (NetData.find("404 not found") != std::string::npos)
-                        {
-                            dbg_msg("HttpDownloader", "ERROR 404: '%s' not found...", NetUrl.m_aFile);
-                            net_tcp_close(sock);
-                            return false;
-                        }
-                        else if (NetData.find("content-length:") != std::string::npos)
-                        {
-                        	char aFileSize[64];
-                        	str_copy(aFileSize, NetData.substr(15).c_str(), sizeof(aFileSize));
-                        	str_trim(aFileSize);
-                            TotalBytes = atoi(aFileSize);
-
-                            if (TotalBytes <= 0)
-                            {
-                                dbg_msg("HttpDownloader", "Error getting size of '%s'...", NetUrl.m_aFile);
-                                net_tcp_close(sock);
-                                return 0;
-                            }
-
-                            net_tcp_close(sock);
-                            return TotalBytes;
-                        }
-
-                        NetData.clear();
-					}
-
-					if (aNetBuff[i] == '\r') ++i;
-					continue;
-				}
-
-                nlCount = 0;
-                NetData += aNetBuff[i];
-			}
-			else
-			{
-				dbg_msg("HttpDownloader", "Error getting size of '%s'...", NetUrl.m_aFile);
-				net_tcp_close(sock);
-				return 0;
-			}
-		}
-	} while (CurrentRecv > 0);
-
-    return 0;
 }
 
 CHttpDownloader::NETURL CHttpDownloader::CreateUrl(std::string url)
@@ -287,17 +212,30 @@ CHttpDownloader::NETURL CHttpDownloader::CreateUrl(std::string url)
 		str_copy(re.m_aProtocol, url.substr(0, charpos).c_str(), sizeof(re.m_aProtocol));
 		url = url.substr(charpos+3);
 	}
+	else
+		str_copy(re.m_aProtocol, "http", sizeof(re.m_aProtocol)); // Default
 
-    // Get Host, Slug and File
+    // Get Host, FullPath and File
     charpos = url.find_first_of("/\\");
     str_copy(re.m_aHost, charpos == std::string::npos?url.c_str():url.substr(0, charpos).c_str(), sizeof(re.m_aHost));
-    str_copy(re.m_aSlug, charpos == std::string::npos?"\0":url.substr(charpos).c_str(), sizeof(re.m_aSlug));
-    if (re.m_aSlug[0] != 0)
+    str_copy(re.m_aFullPath, charpos == std::string::npos?"\0":url.substr(charpos).c_str(), sizeof(re.m_aFullPath));
+    if (re.m_aFullPath[0] != 0)
     {
-    	url = re.m_aSlug;
+    	url = re.m_aFullPath;
     	charpos = url.find_last_of("/\\");
     	str_copy(re.m_aFile, charpos == std::string::npos?"\0":url.substr(charpos+1).c_str(), sizeof(re.m_aFile));
     }
+
+    // Get Port?
+    url = re.m_aHost;
+    charpos = url.find(":");
+    if (charpos != std::string::npos)
+    {
+		re.m_Port = atoi(url.substr(charpos).c_str());
+		str_copy(re.m_aHost, url.substr(0, charpos).c_str(), sizeof(re.m_aHost));
+    }
+    else
+    	re.m_Port = 80; // Default
 
     return re;
 }

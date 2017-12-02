@@ -509,7 +509,7 @@ int CCollision::IntersectLineTeleHook(const vec2 &Pos0, const vec2 &Pos1, vec2 *
 		}
 		else if(IsHookBlocker(vec2(ix, iy), Pos0, Pos1))
 		{
-			hit = COLFLAG_SOLID;
+			hit = COLFLAG_NOHOOK;
 		}
 		if(hit)
 		{

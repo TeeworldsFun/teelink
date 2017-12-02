@@ -130,9 +130,6 @@ void CCharacterCore::Tick(bool UseInput)
 	bool InTileSpeed = m_pCollision->CheckPointSpeedUp(m_Pos);
     //
 
-
-	vec2 TargetDirection = normalize(vec2(m_Input.m_TargetX, m_Input.m_TargetY));
-
 	m_Vel.y += m_pWorld->m_Tuning.m_Gravity;
 
 	float MaxSpeed = Grounded ? m_pWorld->m_Tuning.m_GroundControlSpeed : m_pWorld->m_Tuning.m_AirControlSpeed;
@@ -142,6 +139,7 @@ void CCharacterCore::Tick(bool UseInput)
 	// handle input
 	if(UseInput)
 	{
+		vec2 TargetDirection = normalize(vec2(m_Input.m_TargetX, m_Input.m_TargetY));
 		m_Direction = m_Input.m_Direction;
 
 		// setup angle
@@ -299,8 +297,9 @@ void CCharacterCore::Tick(bool UseInput)
 				m_HookState = HOOK_RETRACT_START;
 			}
 
-			if(GoingThroughTele && m_pTeleOuts && m_pTeleOuts->size() && (*m_pTeleOuts)[teleNr-1].size())
+			if(UseInput && GoingThroughTele && m_pTeleOuts && m_pTeleOuts->size() && (*m_pTeleOuts)[teleNr-1].size())
 			{
+				vec2 TargetDirection = normalize(vec2(m_Input.m_TargetX, m_Input.m_TargetY));
 				m_TriggeredEvents = 0;
 				m_HookedPlayer = -1;
 
@@ -314,9 +313,6 @@ void CCharacterCore::Tick(bool UseInput)
 			{
 				m_HookPos = NewPos;
 			}
-
-			if(m_HookState == HOOK_FLYING)
-				dbg_msg("DEV", "H FLY 33");
 		}
 		else
 		{
@@ -496,7 +492,10 @@ void CCharacterCore::Tick(bool UseInput)
 		{
 			// jetpack and ninjajetpack prediction
 			if(!InTileFreeze && UseInput && (m_Input.m_Fire&1) && (m_ActiveWeapon == WEAPON_GUN || m_ActiveWeapon == WEAPON_NINJA))
+			{
+				vec2 TargetDirection = normalize(vec2(m_Input.m_TargetX, m_Input.m_TargetY));
 				m_Vel += TargetDirection * -1.0f * (m_pWorld->m_Tuning.m_JetpackStrength / 100.0f / 6.11f);
+			}
 
 			if(((m_TileIndex == TILE_STOP && m_TileFlags == ROTATION_270) ||
 					(m_TileIndexL == TILE_STOP && m_TileFlagsL == ROTATION_270) ||

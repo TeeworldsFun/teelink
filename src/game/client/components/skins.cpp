@@ -232,7 +232,7 @@ void CSkins::DownloadSkin(const char *pName)
     str_format(aDest, sizeof(aDest), "skins/%s.png", pName);
     Storage()->GetPath(IStorage::TYPE_SAVE+1, aDest, aCompleteFilename, sizeof(aCompleteFilename));
 
-    CHttpDownloader::NETDOWNLOAD DownloadStatus;
+    CHttpDownloader::NETDOWNLOADINFO DownloadStatus;
     if (CHttpDownloader::GetToFile(aUrl, aCompleteFilename, &DownloadStatus, 3, downloadSpeed))
     {
     	m_DownloadedSkinsSet.find(sName)->second = true;

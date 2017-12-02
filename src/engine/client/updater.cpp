@@ -100,7 +100,7 @@ void CUpdater::ExecuteExit()
 void CUpdater::CheckUpdates(CMenus *pMenus)
 {
 	dbg_msg("autoupdate", "Checking for updates...");
-	CHttpDownloader::NETDOWNLOAD DownloadStatus;
+	CHttpDownloader::NETDOWNLOADINFO DownloadStatus;
 	if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH UPDATES_MANIFEST_FILE, UPDATES_MANIFEST_FILE, &DownloadStatus))
 	{
 		dbg_msg("autoupdate", "Error downloading updates manifest :/");
@@ -172,7 +172,7 @@ void CUpdater::CheckUpdates(CMenus *pMenus)
 void CUpdater::DoUpdates(CMenus *pMenus)
 {
     bool noErrors = true;
-    CHttpDownloader::NETDOWNLOAD DownloadStatus;
+    CHttpDownloader::NETDOWNLOADINFO DownloadStatus;
 
     // Remove Files
     for (int i=0; i<m_vToRemove.size(); i++)

@@ -336,7 +336,7 @@ public:
 	virtual bool AddFrameToRecordVideo();
 	virtual bool IsNewMap() const { return m_IsNewMap; }
 
-	virtual CHttpDownloader::NETDOWNLOAD* DownloadMapStatus() { return &m_DownloadMapStatus; }
+	virtual CHttpDownloader::NETDOWNLOADINFO* DownloadMapStatus() { return &m_DownloadMapStatus; }
 
 	void SendRequestMap();
 	void TryLoadMap();
@@ -344,7 +344,7 @@ public:
 	char m_aMapdownloadName[256];
 	int m_MapdownloadCrc;
 	int m_MapdownloadTotalsize;
-	CHttpDownloader::NETDOWNLOAD m_DownloadMapStatus;
+	CHttpDownloader::NETDOWNLOADINFO m_DownloadMapStatus;
 	//
 };
 

@@ -22,13 +22,13 @@ public:
 		char m_aProtocol[8];
 		char m_aHost[128];
 		char m_aFile[255];
-		char m_aSlug[2048];
+		char m_aFullPath[2048];
 		unsigned int m_Port;
 	};
 
-	struct NETDOWNLOAD
+	struct NETDOWNLOADINFO
 	{
-		NETDOWNLOAD()
+		NETDOWNLOADINFO()
 		{
 			Reset();
 		}
@@ -37,6 +37,7 @@ public:
 		{
 			m_ForceStop = false;
 			m_Received = 0;
+			m_FileSize = 0;
 			mem_zero(&m_NAddr, sizeof(m_NAddr));
 			mem_zero(&m_BindAddr, sizeof(m_BindAddr));
 			m_BindAddr.type = NETTYPE_IPV4; // Forced
@@ -45,6 +46,7 @@ public:
 
 		bool m_ForceStop;
 		unsigned int m_Received;
+		unsigned int m_FileSize;
 		NETSOCKET m_Socket;
 		NETADDR m_NAddr;
 		NETADDR m_BindAddr;
@@ -52,10 +54,10 @@ public:
 		int m_Status;
 	};
 
-	static bool GetToFile(const char *url, const char *dest, NETDOWNLOAD *pNetDownload, unsigned timeOut = 3, unsigned downloadSpeed = 0);
-	static unsigned char* GetToMemory(const char *url, unsigned *size, NETDOWNLOAD *pNetDownload, unsigned timeOut = 3, unsigned downloadSpeed = 0);
-	static unsigned GetFileSize(const char *url, unsigned timeOut = 3);
+	static bool GetToFile(const char *url, const char *dest, NETDOWNLOADINFO *pNetDownload, unsigned timeOut = 3, unsigned downloadSpeed = 0);
+	static unsigned char* GetToMemory(const char *url, NETDOWNLOADINFO *pNetDownload, unsigned timeOut = 3, unsigned downloadSpeed = 0, bool onlyInfo = false);
 
+private:
 	static NETURL CreateUrl(std::string url);
 };
 

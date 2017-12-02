@@ -92,6 +92,12 @@ MACRO_CONFIG_INT(DbgFocus, dbg_focus, 0, 0, 1, CFGFLAG_CLIENT, "")
 MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")
 
 /** H-Client **/
+#ifdef CONF_FAMILY_WINDOWS
+	MACRO_CONFIG_STR(hcRecordVideoFFMPEG, hc_record_video_ffmpeg, 512, "c:\\ffmpeg\\ffmpeg.exe", CFGFLAG_SAVE|CFGFLAG_CLIENT, "ffmpeg fullpath")
+#else
+	MACRO_CONFIG_STR(hcRecordVideoFFMPEG, hc_record_video_ffmpeg, 512, "/usr/bin/ffmpeg", CFGFLAG_SAVE|CFGFLAG_CLIENT, "ffmpeg fullpath")
+#endif
+
 //MACRO_CONFIG_INT(hc3DRender, hc_3d_render, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enables/Disable 3D Render")
 MACRO_CONFIG_INT(hcAutoUpdate, hc_auto_update, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update")
 MACRO_CONFIG_INT(hcAutoDownloadSkins, hc_auto_download_skins, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins from DDNet Database")
@@ -131,6 +137,7 @@ MACRO_CONFIG_INT(hcRaceSaveGhost, hc_race_save_ghost, 1, 0, 1, CFGFLAG_CLIENT|CF
 
 MACRO_CONFIG_INT(AntiPing, anti_ping, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Anti-Ping")
 
+MACRO_CONFIG_INT(ddrMapSounds, ddrace_map_sounds, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Play DDRace Map Sounds")
 MACRO_CONFIG_INT(ddrMapsFromHttp, ddrace_maps_from_http, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Try Download Maps From DDRaceNet HTTP Servers")
 MACRO_CONFIG_INT(ddrShowOthers, ddrace_show_others, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show Others")
 MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")

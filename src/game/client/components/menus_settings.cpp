@@ -969,6 +969,29 @@ void CMenus::RenderLanguageSelection(CUIRect MainView)
 	{
 		str_copy(g_Config.m_ClLanguagefile, s_Languages[s_SelectedLanguage].m_FileName, sizeof(g_Config.m_ClLanguagefile));
 		g_Localization.Load(s_Languages[s_SelectedLanguage].m_FileName, Storage(), Console());
+
+		str_copy(g_Config.m_ClLanguagefile, s_Languages[s_SelectedLanguage].m_FileName, sizeof(g_Config.m_ClLanguagefile));
+		g_Localization.Load(s_Languages[s_SelectedLanguage].m_FileName, Storage(), Console());
+
+		// Load Font
+		static CFont *pFont = 0;
+		char aFilename[512];
+		char aFontFile[64] = "fonts/DejaVuSansCJKName.ttf";
+		if (str_find(g_Config.m_ClLanguagefile, "chinese") != NULL || str_find(g_Config.m_ClLanguagefile, "japanese") != NULL || str_find(g_Config.m_ClLanguagefile, "korean") != NULL)
+			str_copy(aFontFile, "fonts/DejavuWenQuanYiMicroHei.ttf", sizeof(aFontFile));
+		IOHANDLE File = Storage()->OpenFile(aFontFile, IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
+		if(File)
+		{
+			io_close(File);
+			pFont = TextRender()->LoadFont(aFilename);
+			TextRender()->SetFont(pFont);
+		}
+		if(!pFont)
+		{
+			char aBuf[1024];
+			str_format(aBuf, sizeof(aBuf), "failed to load font. filename='%s'", aFontFile);
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", aBuf);
+		}
 	}
 }
 
@@ -1281,8 +1304,12 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
             g_Config.m_ddrPreventPrediction ^= 1;
 
         DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
-		if(DoButton_CheckBox(&g_Config.m_ddrShowOthers, Localize("Show Others"), g_Config.m_ddrShowOthers, &HUDItem))
+		if(DoButton_CheckBox(&g_Config.m_ddrShowOthers, Localize("Show others"), g_Config.m_ddrShowOthers, &HUDItem))
 			g_Config.m_ddrShowOthers ^= 1;
+
+		DDRaceGame.HSplitTop(20.0f, &HUDItem, &DDRaceGame);
+		if(DoButton_CheckBox(&g_Config.m_ddrMapSounds, Localize("Play map sounds"), g_Config.m_ddrMapSounds, &HUDItem))
+			g_Config.m_ddrMapSounds ^= 1;
 
 		DDRaceGame.HSplitTop(10.0f, 0x0, &DDRaceGame); // Blank Space
 

@@ -1,10 +1,13 @@
 + v4.0.1
 ==========
 - Now only take preview's of new maps
-- Added compatibility with "Show Others" in DDRaceNetwork
+- Added compatibility with "Show Others" in DDRaceNetwork {original code by GreyFox, ddrace team}
 - Fixed server geolocation
-- Support for download maps from DDRaceNetwork http servers (No SSL)
+- Support for download maps from DDRaceNetwork http servers (No SSL) {original idea by def-, ddnet team}
 - Improved some critical code calls (Collisions, Rendering, ...)
-- Added compatibility with sounds in DDRaceNetwork maps
+- Added compatibility with sounds in DDRaceNetwork maps {original code by cinaera, ddnet team}
 - Added option for customize smoke color (local effect)
 - Fixed bug when try join on a server without "preview map" enabled
+- Add font support for chinese, japanese, korean. {original code by awaysoft, ddnet team}
+- Improved ffmpeg front-end: added variables and new options (Perhaps now works on all supported systems by ffmpeg?)
+- Improved HTTP Downloader: less usage of write calls and refactored source

@@ -271,7 +271,11 @@ void CGameClient::OnInit()
 	// load default font
 	static CFont *pDefaultFont = 0;
 	char aFilename[512];
-	IOHANDLE File = Storage()->OpenFile("fonts/DejaVuSans.ttf", IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
+	char aFontFile[64] = "fonts/DejaVuSansCJKName.ttf";
+	if (str_find(g_Config.m_ClLanguagefile, "chinese") != NULL || str_find(g_Config.m_ClLanguagefile, "japanese") != NULL || str_find(g_Config.m_ClLanguagefile, "korean") != NULL)
+		str_copy(aFontFile, "fonts/DejavuWenQuanYiMicroHei.ttf", sizeof(aFontFile));
+
+	IOHANDLE File = Storage()->OpenFile(aFontFile, IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
 	if(File)
 	{
 		io_close(File);
@@ -510,9 +514,9 @@ void CGameClient::OnRender()
 	DispatchInput();
 
 	// H-Client
-	if (m_TakeInitScreenShot)
+	if (m_TakeInitScreenShot && Client()->State() == IClient::STATE_ONLINE)
 	{
-		if (g_Config.m_hcShowPreviewMap && m_pClient->IsNewMap() && Client()->State() == IClient::STATE_ONLINE)
+		if (g_Config.m_hcShowPreviewMap && m_pClient->IsNewMap())
 		{
 			ServerBrowser()->UpdateServerInfo(g_Config.m_UiServerAddress);
 			char preview[255], mapName[255];
