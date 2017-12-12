@@ -345,6 +345,7 @@ public:
 	int m_MapdownloadCrc;
 	int m_MapdownloadTotalsize;
 	CHttpDownloader::NETDOWNLOADINFO m_DownloadMapStatus;
+	LOCK m_DownloadLock;
 	//
 };
 

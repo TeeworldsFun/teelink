@@ -38,6 +38,7 @@ public:
 	int Find(const char *pName, bool tryDownload = false); // H-Client
 
     // H-Client
+	LOCK m_DownloadLock;
 	static int SkinScan(const char *pName, int IsDir, int DirType, void *pUser);
 	int LoadSkinFromFile(const char *pPath, const char *pName, int DirType);
 	void DownloadSkin(const char *pName);

@@ -79,7 +79,8 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
 	std::string NetData;
 	int CurrentRecv = 0;
 	bool isHeader = true;
-	char aNetBuff[onlyInfo?128:1024] = {0};
+	const unsigned BufferSize = onlyInfo?128:1024;
+	char aNetBuff[BufferSize] = {0};
 	do
 	{
 		// Limit Speed

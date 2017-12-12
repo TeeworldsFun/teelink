@@ -23,7 +23,10 @@ int ThreadDownloadSkin(void *params)
     if (!pInfoThread || !pInfoThread->m_pSkins || pInfoThread->m_SkinName[0] == 0)
     	return -1;
 
+    lock_wait(pInfoThread->m_pSkins->m_DownloadLock);
     pInfoThread->m_pSkins->DownloadSkin(pInfoThread->m_SkinName);
+    lock_unlock(pInfoThread->m_pSkins->m_DownloadLock);
+
     return 0;
 }
 //
@@ -146,6 +149,8 @@ int CSkins::LoadSkinFromFile(const char *pPath, const char *pName, int DirType)
 
 void CSkins::OnInit()
 {
+	m_DownloadLock = lock_create();
+
 	// load skins
 	m_aSkins.clear();
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "skins", SkinScan, this);

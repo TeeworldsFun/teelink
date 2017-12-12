@@ -262,6 +262,7 @@ int ThreadDownloadMap(void *params)
     if (!pClient)
     	return -1;
 
+    lock_wait(pClient->m_DownloadLock);
     char aFileName[255];
     str_format(aFileName, sizeof(aFileName), "%s_%08x", pClient->m_aMapdownloadName, pClient->m_MapdownloadCrc);
     if (pClient->DownloadMap(aFileName))
@@ -275,6 +276,7 @@ int ThreadDownloadMap(void *params)
     	dbg_msg("Client", "Can't download map from DDNet servers. Downloading direct from server...", pClient->m_DownloadMapStatus.m_Received);
     	pClient->SendRequestMap();
     }
+    lock_unlock(pClient->m_DownloadLock);
 
     return 0;
 }
@@ -2565,6 +2567,7 @@ int main(int argc, const char **argv) // ignore_conventi on
 	pClient->Engine()->InitLogfile();
 
 	// run the client
+	pClient->m_DownloadLock = lock_create();
 	dbg_msg("client", "starting...");
 	g_Stats.m_ClientRuns++;
 	pClient->Run();
@@ -2581,6 +2584,7 @@ int main(int argc, const char **argv) // ignore_conventi on
 	pStats->Save();
 
     pClient->Updater()->ExecuteExit();
+    lock_destroy(pClient->m_DownloadLock);
     //
 
 	return 0;
