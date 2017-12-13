@@ -164,7 +164,7 @@ void CRenderTools::RenderQuads(CQuad *pQuads, int NumQuads, int RenderFlags, ENV
 	Graphics()->QuadsEnd();
 }
 
-void CRenderTools::RenderTilemap(CTile *pFrontTiles, int fw, int fh, CTile *pGameTiles, int gw, int gh, CTile *pTiles, int w, int h, float Scale, vec4 Color, int RenderFlags,
+void CRenderTools::RenderTilemap(CTile *pFrontTiles, int fw, int fh, CTile *pGameTiles, int gw, int gh, CTile *pTiles, int w, int h, float Scale, const vec4 &Color, int RenderFlags,
 									ENVELOPE_EVAL pfnEval, void *pUser, int ColorEnv, int ColorEnvOffset)
 {
 	//Graphics()->TextureSet(img_get(tmap->image));

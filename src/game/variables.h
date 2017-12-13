@@ -131,6 +131,9 @@ MACRO_CONFIG_INT(hcPreviewMapMaxHeight, hc_preview_map_max_height, 600, 1, 99999
 
 MACRO_CONFIG_STR(hcEyesSelectorTime, hc_eyes_selector_time, 4, "3", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Eyes Selector Time")
 
+MACRO_CONFIG_INT(hcAutoVoteNoAction, hc_auto_vote_no_action, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Auto Vote NO if the target are you")
+MACRO_CONFIG_INT(hcMarkVoteTarget, hc_mark_vote_target, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Highlight target of vote")
+
 MACRO_CONFIG_INT(hcRaceGhost, hc_race_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Enable ghost")
 MACRO_CONFIG_INT(hcRaceShowGhost, hc_race_show_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show ghost")
 MACRO_CONFIG_INT(hcRaceSaveGhost, hc_race_save_ghost, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Save ghost")

@@ -65,19 +65,19 @@ public:
 	void DrawRoundRect(float x, float y, float w, float h, float r);
 	void DrawRoundRectExt(float x, float y, float w, float h, float r, int Corners);
 
-	void DrawUIRect(const CUIRect *pRect, vec4 Color, int Corners, float Rounding);
-	void DrawUIRect(const CUIRect *pRect, vec4 Colors[4]); // H-Client
+	void DrawUIRect(const CUIRect *pRect, const vec4 &Color, int Corners, float Rounding);
+	void DrawUIRect(const CUIRect *pRect, const vec4 Colors[4]); // H-Client
 
 	// larger rendering methods
 	void RenderTilemapGenerateSkip(class CLayers *pLayers);
 
 	// object render methods (gc_render_obj.cpp)
-	void RenderTee(class CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote, vec2 Dir, vec2 Pos);
+	void RenderTee(class CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote, const vec2 &Dir, const vec2 &Pos);
 
 	// map render methods (gc_render_map.cpp)
 	static void RenderEvalEnvelope(CEnvPoint *pPoints, int NumPoints, int Channels, float Time, float *pResult);
 	void RenderQuads(CQuad *pQuads, int NumQuads, int Flags, ENVELOPE_EVAL pfnEval, void *pUser);
-	void RenderTilemap(CTile *pFrontTiles, int fw, int fh, CTile *pGameTiles, int gw, int gh, CTile *pTiles, int w, int h, float Scale, vec4 Color, int RenderFlags, ENVELOPE_EVAL pfnEval, void *pUser, int ColorEnv, int ColorEnvOffset);
+	void RenderTilemap(CTile *pFrontTiles, int fw, int fh, CTile *pGameTiles, int gw, int gh, CTile *pTiles, int w, int h, float Scale, const vec4 &Color, int RenderFlags, ENVELOPE_EVAL pfnEval, void *pUser, int ColorEnv, int ColorEnvOffset);
 
 	// helpers
 	void MapscreenToWorld(float CenterX, float CenterY, float ParallaxX, float ParallaxY,

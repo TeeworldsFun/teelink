@@ -13,8 +13,11 @@ class CVoting : public CComponent
 {
 	CHeap m_Heap;
 
-	int m_LastVote; //H-Client
-	int m_State; //H-Client
+	// H-Client
+	int m_LastVote;
+	int m_State;
+	int m_VoteTargetClientID;
+	//
 
 	static void ConCallvote(IConsole::IResult *pResult, void *pUserData);
 	static void ConVote(IConsole::IResult *pResult, void *pUserData);
@@ -28,6 +31,8 @@ class CVoting : public CComponent
 	void AddOption(const char *pDescription);
 	void ClearOptions();
 	void Callvote(const char *pType, const char *pValue, const char *pReason);
+
+	void TryFindTargetClientID(); // H-Client
 
 public:
 	enum {
@@ -70,9 +75,9 @@ public:
 	int GetLastVote() const { return m_LastVote; }
 	void SetState(int state) { m_State = state; }
 	int GetState() const { return m_State; }
+	int GetTargetClientID() const { return m_VoteTargetClientID; }
 
     int GetNumVotes(int type) const { if (type==1) { return m_Yes; } else if (type==2) { return m_No; } else { return m_Pass; } }
-
 	//
 };
 

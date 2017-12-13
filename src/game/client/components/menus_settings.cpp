@@ -1089,13 +1089,15 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
     PanelR.VSplitLeft(10.0f, 0x0, &PanelR);
 
 	//TODO: Need be change...
-	float splitTop = 260.0f;
+	float splitTop = 280.0f;
     /*if (g_Config.m_hcLaserCustomColor)
         splitTop += 105.0f;
     if (g_Config.m_hcAutoDownloadSkins)
     	splitTop += 20.0f;*/
     if (g_Config.m_hcGoreStyle)
         splitTop += 40.0f;
+    if (g_Config.m_hcAutoDownloadSkins)
+    	splitTop += 20.0f;
 
     //PanelL.HSplitTop(splitTop, &StandartGame, &DDRaceGame);
     StandartGame = PanelL;
@@ -1135,6 +1137,16 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcDisableChatSoundNotification, Localize("Disable chat sound notification"), g_Config.m_hcDisableChatSoundNotification, &HUDItem))
             g_Config.m_hcDisableChatSoundNotification ^= 1;
+
+        //Auto Vote No Action
+		StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+		if(DoButton_CheckBox(&g_Config.m_hcAutoVoteNoAction, Localize("Auto-Vote no for yourself actions"), g_Config.m_hcAutoVoteNoAction, &HUDItem))
+			g_Config.m_hcAutoVoteNoAction ^= 1;
+
+		//Auto Vote No Action
+		StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+		if(DoButton_CheckBox(&g_Config.m_hcMarkVoteTarget, Localize("Highlight vote target"), g_Config.m_hcMarkVoteTarget, &HUDItem))
+			g_Config.m_hcMarkVoteTarget ^= 1;
 
         //Show Player Info
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
@@ -1342,6 +1354,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 
     // Colors
     {
+    	Colors.HSplitTop(20.0f, 0x0, &Colors);
     	Colors.HSplitTop(ms_ListheaderHeight, &HUDItem, &Colors);
 		RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
 		HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);

@@ -180,6 +180,7 @@ void CVoting::OnReset()
 	m_LastVote = 0;
 	m_State = STATE_NORMAL;
 	m_offSetX = 0.0f;
+	m_VoteTargetClientID = -1;
 	//
 }
 
@@ -193,16 +194,23 @@ void CVoting::OnMessage(int MsgType, void *pRawMsg)
 {
 	if(MsgType == NETMSGTYPE_SV_VOTESET)
 	{
+		OnReset();
+
 		CNetMsg_Sv_VoteSet *pMsg = (CNetMsg_Sv_VoteSet *)pRawMsg;
 		if(pMsg->m_Timeout)
 		{
-			OnReset();
 			str_copy(m_aDescription, pMsg->m_pDescription, sizeof(m_aDescription));
 			str_copy(m_aReason, pMsg->m_pReason, sizeof(m_aReason));
 			m_Closetime = time_get() + time_freq() * pMsg->m_Timeout;
+
+			// H-Client
+			TryFindTargetClientID();
+			if (g_Config.m_hcAutoVoteNoAction && m_VoteTargetClientID == m_pClient->m_Snap.m_LocalClientID)
+			{
+				m_LastVote = -1;
+				Vote(m_LastVote);
+			}
 		}
-		else
-			OnReset();
 	}
 	else if(MsgType == NETMSGTYPE_SV_VOTESTATUS)
 	{
@@ -281,8 +289,34 @@ void CVoting::OnMessage(int MsgType, void *pRawMsg)
 	}
 }
 
+// H-Client
+void CVoting::TryFindTargetClientID()
+{
+	for (int i=0; i<MAX_CLIENTS; i++)
+	{
+		if (!m_pClient->m_aClients[i].m_Active)
+			continue;
+
+		const char *pHL = str_find_nocase(m_aDescription, m_pClient->m_aClients[i].m_aName);
+		if (!pHL)
+			pHL = str_find_nocase(m_aReason, m_pClient->m_aClients[i].m_aName);
+
+		if (pHL)
+		{
+			m_VoteTargetClientID = i;
+			break;
+		}
+	}
+}
+//
+
 void CVoting::OnRender()
 {
+	/*if (g_Config.m_hcAutoVoteNoAction && m_Closetime > 0 && m_LastVote == 0 && m_VoteTargetClientID == m_pClient->m_Snap.m_LocalClientID)
+	{ // H-Client
+		m_LastVote = -1;
+		Vote(m_LastVote);
+	}*/
 }
 
 

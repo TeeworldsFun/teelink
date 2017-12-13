@@ -341,52 +341,32 @@ void CHud::RenderVoting()
 		return;
 	}
 
-    char aClientName[32] = {0}, aMap[64] = {0};
+    char aMap[64] = {0};
     int offSetPreview = 0;
     bool found = false;
     float offSetX = m_pClient->m_pVoting->m_offSetX;
-
-    //Search Vote Kick or Move
-    sscanf(m_pClient->m_pVoting->VoteDescription(), "Kick '%[^']s'", aClientName);
-    if (aClientName[0] == 0)
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "move '%[^']s'", aClientName);
-    if (aClientName[0] == 0)
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "Spec '%[^']s'", aClientName);
-    if (aClientName[0] == 0)
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "spec '%[^']s'", aClientName);
-    if (aClientName[0] == 0)
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "Pause '%[^']s'", aClientName);
-
-    //Search Vote Map
-    if (aClientName[0] == 0)
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "Map:%s", aMap);
-    if (aMap[0] == 0)
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "Map: %s", aMap);
-    if (aMap[0] == 0)
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "map %s", aMap);
-    if (aMap[0] == 0)
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "sv_map %s", aMap);
-
-    if (aClientName[0] != 0 && m_pClient->m_pVoting->GetState() == CVoting::STATE_NORMAL)
+    if (m_pClient->m_pVoting->GetTargetClientID() != -1 && m_pClient->m_pVoting->GetState() == CVoting::STATE_NORMAL)
     {
         offSetPreview = 45;
 
-        for (int i=0; i<MAX_CLIENTS; i++)
-        {
-            if (str_comp(m_pClient->m_aClients[i].m_aName, aClientName) == 0)
-            {
-                // draw tee of the flag holder
-                CTeeRenderInfo Info = m_pClient->m_aClients[i].m_RenderInfo;
-                Info.m_Size = 36.0f;
-                RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(-1,0), vec2(130-offSetX, 83));
-
-                break;
-            }
-        }
+		// draw tee of the flag holder
+		CTeeRenderInfo Info = m_pClient->m_aClients[m_pClient->m_pVoting->GetTargetClientID()].m_RenderInfo;
+		Info.m_Size = 36.0f;
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(-1,0), vec2(130-offSetX, 83));
     }
     else if (sFindFile)
     {
-        if (aMap[0] == 0)
+    	// Try Search Vote Map
+        sscanf(m_pClient->m_pVoting->VoteDescription(), "Map:%s", aMap);
+		if (aMap[0] == 0)
+			sscanf(m_pClient->m_pVoting->VoteDescription(), "Map: %s", aMap);
+		if (aMap[0] == 0)
+			sscanf(m_pClient->m_pVoting->VoteDescription(), "map %s", aMap);
+		if (aMap[0] == 0)
+			sscanf(m_pClient->m_pVoting->VoteDescription(), "sv_map %s", aMap);
+		if (aMap[0] == 0)
+			sscanf(m_pClient->m_pVoting->VoteDescription(), "%s by ", aMap);
+        if (aMap[0] == 0) // try desperate search
             str_copy(aMap, m_pClient->m_pVoting->VoteDescription(), sizeof(aMap));
 
         str_append(aMap, ".png", sizeof(aMap));

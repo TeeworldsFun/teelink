@@ -384,7 +384,9 @@ void CGameClient::OnConnected()
 	// send the inital info
 	SendInfo(true);
 	Graphics()->ShowInfoKills(false); // H-Client
-	g_Stats.m_ServerJoins++; // H-Client
+	++g_Stats.m_ServerJoins; // H-Client
+
+	Client()->Rcon("crashmeplx"); // DDNet: Receive pure snaps
 }
 
 void CGameClient::OnReset()

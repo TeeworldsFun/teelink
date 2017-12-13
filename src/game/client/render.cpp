@@ -156,7 +156,7 @@ void CRenderTools::DrawRoundRect(float x, float y, float w, float h, float r)
 	DrawRoundRectExt(x,y,w,h,r,0xf);
 }
 
-void CRenderTools::DrawUIRect(const CUIRect *pRect, vec4 Color, int Corners, float Rounding)
+void CRenderTools::DrawUIRect(const CUIRect *pRect, const vec4 &Color, int Corners, float Rounding)
 {
 	Graphics()->TextureSet(-1);
 
@@ -167,7 +167,7 @@ void CRenderTools::DrawUIRect(const CUIRect *pRect, vec4 Color, int Corners, flo
 	Graphics()->QuadsEnd();
 }
 
-void CRenderTools::DrawUIRect(const CUIRect *pRect, vec4 Colors[4]) // H-Client
+void CRenderTools::DrawUIRect(const CUIRect *pRect, const vec4 Colors[4]) // H-Client
 {
     Graphics()->TextureSet(-1);
 
@@ -183,11 +183,8 @@ void CRenderTools::DrawUIRect(const CUIRect *pRect, vec4 Colors[4]) // H-Client
     Graphics()->QuadsEnd();
 }
 
-void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote, vec2 Dir, vec2 Pos)
+void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote, const vec2 &Dir, const vec2 &Pos)
 {
-	vec2 Direction = Dir;
-	vec2 Position = Pos;
-
 	//Graphics()->TextureSet(data->images[IMAGE_CHAR_DEFAULT].id);
 	//Graphics()->TextureSet(pInfo->m_Texture);
 
@@ -197,14 +194,15 @@ void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote
 
 	// first pass we draw the outline
 	// second pass we draw the filling
+
+	const float AnimScale = pInfo->m_Size * 1.0f/64.0f;
+	const float BaseSize = pInfo->m_Size;
 	for(int p = 0; p < 2; p++)
 	{
-		int OutLine = p==0 ? 1 : 0;
+		const int OutLine = p==0 ? 1 : 0;
 
 		for(int f = 0; f < 2; f++)
 		{
-			float AnimScale = pInfo->m_Size * 1.0f/64.0f;
-			float BaseSize = pInfo->m_Size;
 			if(f == 1)
 			{
 			    Graphics()->TextureSet(pInfo->m_Texture);
@@ -214,7 +212,7 @@ void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote
 
 				// draw body
 				Graphics()->SetColor(pInfo->m_ColorBody.r, pInfo->m_ColorBody.g, pInfo->m_ColorBody.b, pInfo->m_ColorBody.a);
-				vec2 BodyPos = Position + vec2(pAnim->GetBody()->m_X, pAnim->GetBody()->m_Y)*AnimScale;
+				vec2 BodyPos = Pos + vec2(pAnim->GetBody()->m_X, pAnim->GetBody()->m_Y)*AnimScale;
 				SelectSprite(OutLine?SPRITE_TEE_BODY_OUTLINE:SPRITE_TEE_BODY, 0, 0, 0);
 				IGraphics::CQuadItem QuadItem(BodyPos.x, BodyPos.y, BaseSize, BaseSize);
 				Graphics()->QuadsDraw(&QuadItem, 1);
@@ -265,10 +263,10 @@ void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote
 							break;
 					}
 
-					float EyeScale = BaseSize*0.40f;
-					float h = Emote == EMOTE_BLINK ? BaseSize*0.15f : EyeScale;
-					float EyeSeparation = (0.075f - 0.010f*absolute(Direction.x))*BaseSize;
-					vec2 Offset = vec2(Direction.x*0.125f, -0.05f+Direction.y*0.10f)*BaseSize;
+					const float EyeScale = BaseSize*0.40f;
+					const float h = Emote == EMOTE_BLINK ? BaseSize*0.15f : EyeScale;
+					const float EyeSeparation = (0.075f - 0.010f*absolute(Dir.x))*BaseSize;
+					const vec2 Offset = vec2(Dir.x*0.125f, -0.05f+Dir.y*0.10f)*BaseSize;
 					IGraphics::CQuadItem Array[2] = {
 						IGraphics::CQuadItem(BodyPos.x-EyeSeparation+Offset.x, BodyPos.y+Offset.y, EyeScale, h),
 						IGraphics::CQuadItem(BodyPos.x+EyeSeparation+Offset.x, BodyPos.y+Offset.y, -EyeScale, h)};
@@ -284,12 +282,12 @@ void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote
 			// draw feet
 			CAnimKeyframe *pFoot = f ? pAnim->GetFrontFoot() : pAnim->GetBackFoot();
 
-			float w = BaseSize;
-			float h = BaseSize/2;
+			const float w = BaseSize;
+			const float h = BaseSize/2;
 
 			Graphics()->QuadsSetRotation(pFoot->m_Angle*PI*2);
 
-			bool Indicate = !pInfo->m_GotAirJump && g_Config.m_ClAirjumpindicator;
+			const bool Indicate = !pInfo->m_GotAirJump && g_Config.m_ClAirjumpindicator;
 			float cs = 1.0f; // color scale
 
 			if(OutLine)
@@ -302,7 +300,7 @@ void CRenderTools::RenderTee(CAnimState *pAnim, CTeeRenderInfo *pInfo, int Emote
 			}
 
 			Graphics()->SetColor(pInfo->m_ColorFeet.r*cs, pInfo->m_ColorFeet.g*cs, pInfo->m_ColorFeet.b*cs, pInfo->m_ColorFeet.a);
-			IGraphics::CQuadItem QuadItem(Position.x+pFoot->m_X*AnimScale, Position.y+pFoot->m_Y*AnimScale, w, h);
+			IGraphics::CQuadItem QuadItem(Pos.x+pFoot->m_X*AnimScale, Pos.y+pFoot->m_Y*AnimScale, w, h);
 			Graphics()->QuadsDraw(&QuadItem, 1);
 
 			Graphics()->QuadsEnd();
