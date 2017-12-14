@@ -7,12 +7,12 @@ install:
   - ps: |
       $bamExists = Test-Path C:\projects\bam-0.5.0
       if ($bamExists -ne $True) {
-        cd C:\projects
-        iex "curl -LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip"
-        iex "7z x bam.zip"
-        cd bam-0.5.0\
-        iex "make_win64_msvc.bat"
-        cd C:\projects\hclient
+        Push-Location C:\projects
+        & "curl -LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip"
+        & "7z x bam.zip"
+        Push-Location bam-0.5.0\
+        & "make_win64_msvc.bat"
+        Push-Location C:\projects\hclient
       }
       
 cache:
