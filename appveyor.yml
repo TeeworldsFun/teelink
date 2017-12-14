@@ -2,7 +2,6 @@ image: Visual Studio 2015
 
 install:
   - cmd: |
-      %comspec% /k "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64
       cd C:\projects
       curl -LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip
       7z x bam.zip
@@ -10,8 +9,12 @@ install:
       cd C:\projects\hclient
 
 build_script:
-  - cmd: ..\bam-0.5.0\bam.exe client_release
-  - cmd: ..\bam-0.5.0\bam.exe server_release
+  - cmd: |
+      InitVCEnv.bat
+      ..\bam-0.5.0\bam.exe client_release
+  - cmd: |
+      InitVCEnv.bat
+      ..\bam-0.5.0\bam.exe server_release
 
 artifacts:
   - path: teeworlds*
