@@ -6,6 +6,7 @@ install:
       curl -LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip
       7z x bam.zip
       cd bam-0.5.0\ & make_win64_msvc.bat
+      cd C:\projects\hclient
 
 build_script:
   - cmd: ..\bam-0.5.0\bam.exe client_release
