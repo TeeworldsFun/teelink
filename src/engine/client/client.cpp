@@ -662,7 +662,7 @@ void CClient::DisconnectWithReason(const char *pReason)
 	m_RecivedSnapshots = 0;
 
 	// Download Maps
-	if (m_DownloadMapStatus.m_Status != CHttpDownloader::DOWNLOADED || m_DownloadMapStatus.m_Status != CHttpDownloader::ERROR)
+	if (m_DownloadMapStatus.m_Status != HTTP_STATE_DOWNLOADED || m_DownloadMapStatus.m_Status != HTTP_STATE_ERROR)
 	{
 		net_tcp_close(m_DownloadMapStatus.m_Socket);
 		m_DownloadMapStatus.m_ForceStop = true;

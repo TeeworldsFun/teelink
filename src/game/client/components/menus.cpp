@@ -1052,7 +1052,7 @@ int CMenus::Render()
 			pTitle = Localize("Connecting to");
 			pExtraText = g_Config.m_UiServerAddress; // TODO: query the client about the address
 			pButtonText = Localize("Abort");
-			if(Client()->MapDownloadTotalsize() > 0 || Client()->DownloadMapStatus()->m_Status == CHttpDownloader::DOWNLOADING)
+			if(Client()->MapDownloadTotalsize() > 0 || Client()->DownloadMapStatus()->m_Status == HTTP_STATE_DOWNLOADING)
 			{
 				pTitle = Localize("Downloading map");
 				pExtraText = "";
@@ -1482,7 +1482,7 @@ int CMenus::Render()
 
 			const int MapDownloadTotalSize = Client()->MapDownloadTotalsize();
 			int MapDownloadAmount = Client()->MapDownloadAmount();
-			if (Client()->DownloadMapStatus()->m_Status == CHttpDownloader::DOWNLOADING)
+			if (Client()->DownloadMapStatus()->m_Status == HTTP_STATE_DOWNLOADING)
 				MapDownloadAmount = Client()->DownloadMapStatus()->m_Received;
 
 			if(MapDownloadTotalSize > 0)

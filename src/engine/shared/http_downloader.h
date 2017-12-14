@@ -4,19 +4,18 @@
 #include <string>
 #include <base/system.h>
 
+enum
+{
+	HTTP_STATE_UNNUSED=0,
+	HTTP_STATE_DOWNLOADED,
+	HTTP_STATE_CONNECTING,
+	HTTP_STATE_DOWNLOADING,
+	HTTP_STATE_ERROR,
+};
 
 class CHttpDownloader
 {
 public:
-	enum
-	{
-		UNNUSED=0,
-		DOWNLOADED,
-		CONNECTING,
-		DOWNLOADING,
-		ERROR,
-	};
-
 	struct NETURL
 	{
 		char m_aProtocol[8];
@@ -41,7 +40,7 @@ public:
 			mem_zero(&m_NAddr, sizeof(m_NAddr));
 			mem_zero(&m_BindAddr, sizeof(m_BindAddr));
 			m_BindAddr.type = NETTYPE_IPV4; // Forced
-			m_Status = UNNUSED;
+			m_Status = HTTP_STATE_UNNUSED;
 		}
 
 		bool m_ForceStop;

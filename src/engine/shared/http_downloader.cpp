@@ -17,7 +17,7 @@ bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOADIN
 			if(!dstFile)
 			{
 				dbg_msg("HttpDownloader", "Error creating '%s'...", dest);
-				pNetDownload->m_Status = ERROR;
+				pNetDownload->m_Status = HTTP_STATE_ERROR;
 				return false;
 			}
 			if (!io_write(dstFile, pFileData, pNetDownload->m_FileSize))
@@ -26,21 +26,21 @@ bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOADIN
 				io_close(dstFile);
 				fs_remove(dest);
 				mem_free(pFileData);
-				pNetDownload->m_Status = ERROR;
+				pNetDownload->m_Status = HTTP_STATE_ERROR;
 				return false;
 			}
 			io_close(dstFile);
-			pNetDownload->m_Status = DOWNLOADED;
+			pNetDownload->m_Status = HTTP_STATE_DOWNLOADED;
 		}
 		else
-			pNetDownload->m_Status = ERROR;
+			pNetDownload->m_Status = HTTP_STATE_ERROR;
 
 		mem_free(pFileData);
 	}
 	else
-		pNetDownload->m_Status = ERROR;
+		pNetDownload->m_Status = HTTP_STATE_ERROR;
 
-	return pNetDownload->m_Status != ERROR;
+	return pNetDownload->m_Status != HTTP_STATE_ERROR;
 }
 
 unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pNetDownload, unsigned timeOut, unsigned downloadSpeed, bool onlyInfo)
@@ -54,7 +54,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
     if (net_host_lookup(pNetDownload->m_NetURL.m_aHost, &pNetDownload->m_NAddr, NETTYPE_IPV4) != 0)
     {
         dbg_msg("HttpDownloader", "Error can't found '%s'...", pNetDownload->m_NetURL.m_aHost);
-        pNetDownload->m_Status = ERROR;
+        pNetDownload->m_Status = HTTP_STATE_ERROR;
         return 0x0;
     }
     pNetDownload->m_NAddr.port = pNetDownload->m_NetURL.m_Port;
@@ -64,12 +64,12 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
     {
         dbg_msg("HttpDownloader", "Error can't connect with '%s'...", pNetDownload->m_NetURL.m_aHost);
         net_tcp_close(pNetDownload->m_Socket);
-        pNetDownload->m_Status = ERROR;
+        pNetDownload->m_Status = HTTP_STATE_ERROR;
         return 0x0;
     }
 
     net_socket_rcv_timeout(pNetDownload->m_Socket, timeOut);
-    pNetDownload->m_Status = CONNECTING;
+    pNetDownload->m_Status = HTTP_STATE_CONNECTING;
 
     char aBuff[512] = {0};
     str_format(aBuff, sizeof(aBuff), "GET %s HTTP/1.1\r\nHost: %s\r\n\r\n", pNetDownload->m_NetURL.m_aFullPath, pNetDownload->m_NetURL.m_aHost);
@@ -118,7 +118,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
                         if (NetData.find("404 not found") != std::string::npos)
                         {
                             dbg_msg("HttpDownloader", "ERROR 404: '%s' not found...", pNetDownload->m_NetURL.m_aFile);
-                            pNetDownload->m_Status = ERROR;
+                            pNetDownload->m_Status = HTTP_STATE_ERROR;
                             break;
                         }
                         else if (NetData.find("content-length:") != std::string::npos)
@@ -133,7 +133,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
 								if (pNetDownload->m_FileSize <= 0)
 								{
 								   dbg_msg("HttpDownloader", "Error downloading '%s'...", pNetDownload->m_NetURL.m_aFile);
-								   pNetDownload->m_Status = ERROR;
+								   pNetDownload->m_Status = HTTP_STATE_ERROR;
 								   break;
 								}
 
@@ -141,7 +141,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
 								if (!pData)
 								{
 									dbg_msg("HttpDownloader", "Error allocating memory for download '%s'...", pNetDownload->m_NetURL.m_aFile);
-									pNetDownload->m_Status = ERROR;
+									pNetDownload->m_Status = HTTP_STATE_ERROR;
 									break;
 								}
 							}
@@ -154,18 +154,18 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
 						isHeader = false;
 						if (onlyInfo)
 						{
-							pNetDownload->m_Status = DOWNLOADED;
+							pNetDownload->m_Status = HTTP_STATE_DOWNLOADED;
 							break;
 						}
 
 						if (!pData)
 						{
 							dbg_msg("HttpDownloader", "Unexpected http error, 'content-length' not found!");
-							pNetDownload->m_Status = ERROR;
+							pNetDownload->m_Status = HTTP_STATE_ERROR;
 							break;
 						}
 
-						pNetDownload->m_Status = DOWNLOADING;
+						pNetDownload->m_Status = HTTP_STATE_DOWNLOADING;
 					}
 				}
 				else if (aNetBuff[i] != '\r')
@@ -179,7 +179,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
 				if (pNetDownload->m_Received+numBytes > pNetDownload->m_FileSize)
 				{
 					dbg_msg("HttpDownloader", "Unexpected error... server try send more bytes that declared in 'content-length'!");
-					pNetDownload->m_Status = ERROR;
+					pNetDownload->m_Status = HTTP_STATE_ERROR;
 					mem_free(pData);
 					pData = 0x0;
 					break;
@@ -189,7 +189,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
 				pNetDownload->m_Received += numBytes;
 				if (pNetDownload->m_Received == pNetDownload->m_FileSize)
 				{
-					pNetDownload->m_Status = DOWNLOADED;
+					pNetDownload->m_Status = HTTP_STATE_DOWNLOADED;
 					break;
 				}
 				i += CurrentRecv;
