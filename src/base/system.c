@@ -374,11 +374,19 @@ int mem_check_imp()
 // H-Client
 IOHANDLE io_popen(const char *filename, const char *flags)
 {
+#ifdef CONF_FAMILY_WINDOWS
+	return (IOHANDLE)_popen(filename, flags);
+#else
 	return (IOHANDLE)popen(filename, flags);
+#endif
 }
 void io_pclose(IOHANDLE io)
 {
+#ifdef CONF_FAMILY_WINDOWS
+	_pclose((FILE*)io);
+#else
 	pclose((FILE*)io);
+#endif
 }
 //
 
