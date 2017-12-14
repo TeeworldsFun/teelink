@@ -5,6 +5,7 @@
 #include <game/generated/protocol.h>
 #include <base/vmath.h>
 #include <game/client/render.h>
+#include <cstdio> // H-Client: sscanf
 #include "voting.h"
 
 void CVoting::ConCallvote(IConsole::IResult *pResult, void *pUserData)

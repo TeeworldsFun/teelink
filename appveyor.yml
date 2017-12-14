@@ -1,0 +1,15 @@
+image: Visual Studio 2015
+
+install:
+  - cmd: |
+      git clone -b 0.5 https://github.com/matricks/bam.git C:\projects\bam --depth=1
+      cd bam & make_win64_msvc.bat & cd ..
+
+build_script:
+  - cmd: ..\bam\bam.exe client_release
+  - cmd: ..\bam\bam.exe server_release
+
+artifacts:
+  - path: .
+    name: teeworlds
+    name: teeworlds_srv
