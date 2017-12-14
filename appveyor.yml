@@ -3,7 +3,7 @@ image: Visual Studio 2015
 install:
   - cmd: |
       git clone -b 0.5 https://github.com/matricks/bam.git C:\projects\bam --depth=1
-      C:\projects\bam\make_win64_msvc.bat
+      cd C:\projects\bam\ & make_win64_msvc.bat
 
 build_script:
   - cmd: ..\bam\bam.exe client_release
