@@ -10,9 +10,10 @@ install:
         iex cd C:\projects
         iex curl -LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip
         iex 7z x bam.zip
-        iex cd bam-0.5.0\ & make_win64_msvc.bat
+        iex cd bam-0.5.0\
+        iex make_win64_msvc.bat
         iex cd C:\projects\hclient
-      )
+      }
       
 cache:
   - C:\projects\bam-0.5.0
