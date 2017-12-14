@@ -10,6 +10,5 @@ build_script:
   - cmd: ..\bam\bam.exe server_release
 
 artifacts:
-  - path: .
-    name: teeworlds
-    name: teeworlds_srv
+  - path: teeworlds*
+    name: H-Client
