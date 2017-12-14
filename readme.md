@@ -1,4 +1,4 @@
-# H-Client README [![Circle CI](https://circleci.com/gh/Tardo/HClient.png)](https://circleci.com/gh/Tardo/HClient)
+# H-Client README [![Circle CI](https://circleci.com/gh/Tardo/HClient.png)](https://circleci.com/gh/Tardo/HClient) [![Build status](https://ci.appveyor.com/api/projects/status/yxun2pnof296a6ke?svg=true)](https://ci.appveyor.com/project/Tardo/hclient)
 H-Client its a mod for the game Teeworlds created and maintained by unsigned char*.
 
 Please visit http://hclient.wordpress.com for up-to-date information about 

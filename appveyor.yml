@@ -1,17 +1,26 @@
 image: Visual Studio 2015
 
+init:
+  - cmd: call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+  
 install:
   - cmd: |
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
-      cd C:\projects
-      curl -LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip
-      7z x bam.zip
-      cd bam-0.5.0\ & make_win64_msvc.bat
-      cd C:\projects\hclient
+      IF NOT EXIST C:\projects\bam-0.5.0 (
+        cd C:\projects
+        curl -LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip
+        7z x bam.zip
+        cd bam-0.5.0\ & make_win64_msvc.bat
+        cd C:\projects\hclient
+      )
+      
+cache:
+  - C:\projects\bam-0.5.0
 
 build_script:
   - cmd: ..\bam-0.5.0\bam.exe client_release
   - cmd: ..\bam-0.5.0\bam.exe server_release
+  - cmd: ..\bam-0.5.0\bam.exe client_debug
+  - cmd: ..\bam-0.5.0\bam.exe server_debug
 
 artifacts:
   - path: teeworlds*
