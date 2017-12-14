@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/shared/config.h>
-
+#include <engine/storage.h> //H-Client
 #include <game/generated/protocol.h>
 #include <base/vmath.h>
 #include <game/client/render.h>
@@ -181,6 +181,8 @@ void CVoting::OnReset()
 	m_State = STATE_NORMAL;
 	m_offSetX = 0.0f;
 	m_VoteTargetClientID = -1;
+	m_VoteType = TYPE_NONE;
+	mem_zero(m_aVoteTargetMapName, sizeof(m_aVoteTargetMapName));
 	//
 }
 
@@ -204,7 +206,8 @@ void CVoting::OnMessage(int MsgType, void *pRawMsg)
 			m_Closetime = time_get() + time_freq() * pMsg->m_Timeout;
 
 			// H-Client
-			TryFindTargetClientID();
+			AnalizeVote();
+
 			if (g_Config.m_hcAutoVoteNoAction && m_VoteTargetClientID == m_pClient->m_Snap.m_LocalClientID)
 			{
 				m_LastVote = -1;
@@ -290,34 +293,96 @@ void CVoting::OnMessage(int MsgType, void *pRawMsg)
 }
 
 // H-Client
-void CVoting::TryFindTargetClientID()
+void CVoting::AnalizeVote()
 {
+	const char aKickTypes[][6] = { "kick\0", "ban\0", "move\0" };
+	const int numKickTypes = sizeof(aKickTypes)/sizeof(*aKickTypes);
+	const char aStrMaps[][32] = {
+		"Map:%s\0",
+		"Map: %s\0",
+		"map %s\0",
+		"sv_map %s\0",
+		"%s by \0"
+	};
+	const int numStrMaps = sizeof(aStrMaps)/sizeof(*aStrMaps);
+
 	for (int i=0; i<MAX_CLIENTS; i++)
 	{
 		if (!m_pClient->m_aClients[i].m_Active)
 			continue;
 
+		// Has a player target?
 		const char *pHL = str_find_nocase(m_aDescription, m_pClient->m_aClients[i].m_aName);
-		if (!pHL)
-			pHL = str_find_nocase(m_aReason, m_pClient->m_aClients[i].m_aName);
-
 		if (pHL)
-		{
+		{ // Ok, is for a player...
 			m_VoteTargetClientID = i;
+
+			// But... what type is? Kick, Ban or Spec?
+			for (int e=0; e<numKickTypes; e++)
+			{
+				pHL = str_find_nocase(m_aDescription, aKickTypes[e]);
+				if (pHL)
+				{
+					m_VoteType = e + 1; // Array of words coincide with enum order
+					break;
+				}
+			}
+			if (m_VoteType == TYPE_NONE)
+				m_VoteType = TYPE_OTHER;
+
 			break;
 		}
+	}
+
+	if (m_VoteTargetClientID == -1)
+	{ // Umm... perhaps is a vote for change the map?
+		const char *pHL = str_find_nocase(m_aDescription, "map");
+		if (pHL)
+		{ // Yeah! it's a map vote... but... what map?
+			char aMap[128] = {0};
+			for (int i=0; i<numStrMaps; i++)
+			{
+				sscanf(m_aDescription, aStrMaps[i], aMap);
+				if (aMap[0] != 0)
+					break;
+			}
+			if (aMap[0] == 0) // try desperate search
+				str_copy(aMap, m_aDescription, sizeof(aMap));
+
+			str_append(aMap, ".png", sizeof(aMap));
+
+			//Search a Preview
+			bool found = false;
+			char aBuf[512];
+			if(Storage()->FindFile(aMap, "mappreviews", IStorage::TYPE_ALL, aBuf, sizeof(aBuf)))
+				found = true;
+
+			if(!found) //Try other way...
+			{
+				//Normalize map name
+				for (int i=0; i<str_length(aMap); i++)
+				{
+					if(aMap[i] == 32)
+						aMap[i] = '_';
+				}
+
+				found = Storage()->FindFile(aMap, "mappreviews", IStorage::TYPE_ALL, aBuf, sizeof(aBuf));
+			}
+
+			if(found)
+				str_copy(m_aVoteTargetMapName, aMap, str_length(aMap)-4); //Clean ".png" extension
+
+			m_VoteType = TYPE_MAP;
+		}
+
+		if (m_aVoteTargetMapName[0] == 0)
+			m_VoteType = TYPE_OTHER;
 	}
 }
 //
 
 void CVoting::OnRender()
-{
-	/*if (g_Config.m_hcAutoVoteNoAction && m_Closetime > 0 && m_LastVote == 0 && m_VoteTargetClientID == m_pClient->m_Snap.m_LocalClientID)
-	{ // H-Client
-		m_LastVote = -1;
-		Vote(m_LastVote);
-	}*/
-}
+{ }
 
 
 void CVoting::RenderBars(CUIRect Bars, bool Text)

@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/textrender.h>
+#include <engine/graphics.h> // H-Client
 #include <engine/shared/config.h>
 #include <engine/serverbrowser.h> //H-Client
 #include <game/generated/protocol.h>
@@ -8,8 +9,80 @@
 
 #include <game/client/gameclient.h>
 #include <game/client/animstate.h>
+#include <game/client/components/voting.h>
 #include "nameplates.h"
 #include "controls.h"
+
+// H-Client
+void CNamePlates::RenderWarnings(
+	const CNetObj_Character *pPrevChar,
+	const CNetObj_Character *pPlayerChar,
+	const CNetObj_PlayerInfo *pPlayerInfo
+	)
+{
+	if (g_Config.m_hcMarkVoteTarget && m_pClient->m_pVoting->GetTargetClientID() == pPlayerInfo->m_ClientID)
+	{
+		const float IntraTick = Client()->IntraGameTick();
+		const vec2 Position = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pPlayerChar->m_X, pPlayerChar->m_Y), IntraTick);
+
+		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.5f);
+		TextRender()->TextColor(1.0f, 0.5f, 0.5f, 1.0f); // Red
+
+		const float FontSize = 18.0f + 20.0f * 0.7f;
+		if (m_pClient->m_pVoting->GetVoteType() == CVoting::TYPE_KICK)
+		{
+			const float tw = TextRender()->TextWidth(0, FontSize, "VOTED FOR KICK", -1);
+			TextRender()->Text(0, Position.x-tw/2.0f, Position.y-FontSize-60.0f, FontSize, "VOTED FOR KICK", -1);
+		} else if (m_pClient->m_pVoting->GetVoteType() == CVoting::TYPE_BAN)
+		{
+			const float tw = TextRender()->TextWidth(0, FontSize, "VOTED FOR BAN", -1);
+			TextRender()->Text(0, Position.x-tw/2.0f, Position.y-FontSize-60.0f, FontSize, "VOTED FOR BAN", -1);
+		} else if (m_pClient->m_pVoting->GetVoteType() == CVoting::TYPE_SPEC)
+		{
+			const float tw = TextRender()->TextWidth(0, FontSize, "VOTED FOR SPECTATE", -1);
+			TextRender()->Text(0, Position.x-tw/2.0f, Position.y-FontSize-60.0f, FontSize, "VOTED FOR SPECTATE", -1);
+		} else
+		{
+			const float tw = TextRender()->TextWidth(0, FontSize, "VOTED FOR SOMETHING", -1);
+			TextRender()->Text(0, Position.x-tw/2.0f, Position.y-FontSize-60.0f, FontSize, "VOTED FOR SOMETHING", -1);
+		}
+	}
+}
+
+void CNamePlates::RenderPlayerDirections(
+	const CNetObj_Character *pPrevChar,
+	const CNetObj_Character *pPlayerChar,
+	const CNetObj_PlayerInfo *pPlayerInfo
+	)
+{
+	// Tee Direction Info
+	if (g_Config.m_ddrShowTeeDirection && !pPlayerInfo->m_Local)
+	{
+		const float IntraTick = Client()->IntraGameTick();
+		const vec2 Position = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pPlayerChar->m_X, pPlayerChar->m_Y), IntraTick);
+
+		if (pPlayerChar->m_Direction != 0)
+		{
+			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ARROW].m_Id);
+			Graphics()->QuadsBegin();
+			IGraphics::CQuadItem QuadItem(Position.x-15, Position.y - 70, 22, 22);
+			if (pPlayerChar->m_Direction == -1)
+				Graphics()->QuadsSetRotation(GetAngle(vec2(1,0))+PI);
+			Graphics()->QuadsDraw(&QuadItem, 1);
+			Graphics()->QuadsEnd();
+		}
+		if (pPlayerChar->m_Jumped&1)
+		{
+			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ARROW].m_Id);
+			Graphics()->QuadsBegin();
+			IGraphics::CQuadItem QuadItem(Position.x+15, Position.y - 70, 22, 22);
+			Graphics()->QuadsSetRotation(GetAngle(vec2(0,1))+PI);
+			Graphics()->QuadsDraw(&QuadItem, 1);
+			Graphics()->QuadsEnd();
+		}
+	}
+}
+//
 
 void CNamePlates::RenderNameplate(
 	const CNetObj_Character *pPrevChar,
@@ -18,24 +91,23 @@ void CNamePlates::RenderNameplate(
 	)
 {
 	float IntraTick = Client()->IntraGameTick();
-
 	vec2 Position = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pPlayerChar->m_X, pPlayerChar->m_Y), IntraTick);
+	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplatesSize / 100.0f;
 
-	float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplatesSize / 100.0f;
 	// render name plate
 	if(!pPlayerInfo->m_Local)
 	{
-		float a = 1;
+		float a = 1.0f;
 		if(g_Config.m_ClNameplatesAlways == 0)
 			a = clamp(1-powf(distance(m_pClient->m_pControls->m_TargetPos, Position)/200.0f,16.0f), 0.0f, 1.0f);
 
 		const char *pName = m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_aName;
-		float tw = TextRender()->TextWidth(0, FontSize, pName, -1);
+		const float tw = TextRender()->TextWidth(0, FontSize, pName, -1);
 
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.5f*a);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, a);
 
-		if(g_Config.m_ClNameplatesTeamcolors && m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS)
+		if(g_Config.m_ClNameplatesTeamcolors && m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS))
 		{
 			if(pPlayerInfo->m_Team == TEAM_RED)
 				TextRender()->TextColor(1.0f, 0.5f, 0.5f, a);
@@ -63,13 +135,11 @@ void CNamePlates::RenderNameplate(
 	else if (g_Config.m_hcUseHUD && Client()->IsServerType("ddrace") && m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_FreezedState.m_Freezed)
     {
 		// H-Client
-        CNetObj_Character Prev;
-        CNetObj_Character Player;
-        Prev = *pPrevChar;
-        Player = *pPlayerChar;
+        CNetObj_Character Prev = *pPrevChar;
+        CNetObj_Character Player = *pPlayerChar;
 
         // use preditect players if needed
-        if((pPlayerInfo->m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK) && !(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
+        if((pPlayerInfo->m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK) && !(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
         {
             // apply predicted results
             m_pClient->m_PredictedChar.Write(&Player);
@@ -108,6 +178,16 @@ void CNamePlates::OnRender()
 		if(pInfo)
 		{
 			RenderNameplate(
+				&m_pClient->m_Snap.m_aCharacters[i].m_Prev,
+				&m_pClient->m_Snap.m_aCharacters[i].m_Cur,
+				(const CNetObj_PlayerInfo *)pInfo);
+
+			RenderPlayerDirections(
+				&m_pClient->m_Snap.m_aCharacters[i].m_Prev,
+				&m_pClient->m_Snap.m_aCharacters[i].m_Cur,
+				(const CNetObj_PlayerInfo *)pInfo);
+
+			RenderWarnings(
 				&m_pClient->m_Snap.m_aCharacters[i].m_Prev,
 				&m_pClient->m_Snap.m_aCharacters[i].m_Cur,
 				(const CNetObj_PlayerInfo *)pInfo);

@@ -171,6 +171,7 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(&gs_MapLayersForeGround);
 	m_All.Add(&m_pParticles->m_RenderHClientBlood); //H-Client
 	m_All.Add(&m_pParticles->m_RenderHClientBloodBody); //H-Client
+	m_All.Add(&m_pParticles->m_RenderHClientFreeze); //H-Client
 	m_All.Add(&m_pParticles->m_RenderExplosions);
 	m_All.Add(&gs_NamePlates);
 	m_All.Add(&m_pParticles->m_RenderGeneral);
@@ -773,7 +774,9 @@ void CGameClient::ProcessEvents()
 		else if(Item.m_Type == NETEVENTTYPE_EXPLOSION)
 		{
 			CNetEvent_Explosion *ev = (CNetEvent_Explosion *)pData;
-			g_GameClient.m_pEffects->Explosion(vec2(ev->m_X, ev->m_Y));
+			const vec2 EventPos = vec2(ev->m_X, ev->m_Y);
+			g_GameClient.m_pEffects->Explosion(EventPos);
+			g_GameClient.m_pEffects->ExplosionDebris(EventPos);
 		}
 		else if(Item.m_Type == NETEVENTTYPE_HAMMERHIT)
 		{

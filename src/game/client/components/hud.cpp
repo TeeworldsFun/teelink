@@ -33,6 +33,8 @@ CHud::CHud()
 {
 	// won't work if zero
 	m_AverageFPS = 1.0f;
+
+	OnReset();
 }
 
 void CHud::OnReset()
@@ -334,16 +336,10 @@ void CHud::RenderTeambalanceWarning()
 
 void CHud::RenderVoting()
 {
-    static bool sFindFile = true;
 	if(!m_pClient->m_pVoting->IsVoting() || Client()->State() == IClient::STATE_DEMOPLAYBACK)
-	{
-        sFindFile = true;
 		return;
-	}
 
-    char aMap[64] = {0};
     int offSetPreview = 0;
-    bool found = false;
     float offSetX = m_pClient->m_pVoting->m_offSetX;
     if (m_pClient->m_pVoting->GetTargetClientID() != -1 && m_pClient->m_pVoting->GetState() == CVoting::STATE_NORMAL)
     {
@@ -354,51 +350,9 @@ void CHud::RenderVoting()
 		Info.m_Size = 36.0f;
 		RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(-1,0), vec2(130-offSetX, 83));
     }
-    else if (sFindFile)
+    else if (m_pClient->m_pVoting->GetTargetMapName()[0] != 0)
     {
-    	// Try Search Vote Map
-        sscanf(m_pClient->m_pVoting->VoteDescription(), "Map:%s", aMap);
-		if (aMap[0] == 0)
-			sscanf(m_pClient->m_pVoting->VoteDescription(), "Map: %s", aMap);
-		if (aMap[0] == 0)
-			sscanf(m_pClient->m_pVoting->VoteDescription(), "map %s", aMap);
-		if (aMap[0] == 0)
-			sscanf(m_pClient->m_pVoting->VoteDescription(), "sv_map %s", aMap);
-		if (aMap[0] == 0)
-			sscanf(m_pClient->m_pVoting->VoteDescription(), "%s by ", aMap);
-        if (aMap[0] == 0) // try desperate search
-            str_copy(aMap, m_pClient->m_pVoting->VoteDescription(), sizeof(aMap));
-
-        str_append(aMap, ".png", sizeof(aMap));
-
-        //Search a Preview
-        found=false;
-        char aBuf[512];
-        if(Storage()->FindFile(aMap, "mappreviews", IStorage::TYPE_ALL, aBuf, sizeof(aBuf)))
-            found = true;
-
-        if(!found) //Try other way...
-        {
-            //Normalize map name
-            for (int i=0; i<str_length(aMap); i++)
-            {
-                if(aMap[i] == 32)
-                    aMap[i] = '_';
-            }
-
-            if (Storage()->FindFile(aMap, "mappreviews", IStorage::TYPE_ALL, aBuf, sizeof(aBuf)))
-                found = true;
-        }
-        else
-        {
-            //Clean ".png" extension
-            for (int i=4; i>0; i--)
-                aMap[str_length(aMap)-1]=0;
-
-            offSetPreview = 45;
-        }
-
-        sFindFile = false;
+    	offSetPreview = 45;
     }
 
     float WidthBox = 100.0f+10.0f+4.0f+5.0f+offSetPreview;
@@ -481,9 +435,9 @@ void CHud::RenderVoting()
         str_format(aBuf, sizeof(aBuf), "%s - %s", Localize("Vote no"), aNoKey);
         UI()->DoLabel(&Base, aBuf, 6.0f, 1);
 
-        if(found)
+        if(m_pClient->m_pVoting->GetTargetMapName()[0] != 0)
         {
-            int preview = m_pClient->m_pMenus->GetImageMapPreview(aMap);
+            int preview = m_pClient->m_pMenus->GetImageMapPreview(m_pClient->m_pVoting->GetTargetMapName());
             IGraphics::CQuadItem QuadItem(108.f-offSetX, 61.0f, 42.0f, 40.0f);
             Graphics()->TextureSet(preview);
             Graphics()->QuadsBegin();

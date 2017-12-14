@@ -142,9 +142,38 @@ void CParticles::Update(float TimePassed)
                 m_aParticles[i].m_LastPos = m_aParticles[i].m_Pos;
 			}
 			else
-                Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, 0.1f+0.9f*frandom(), NULL);
+			{
+				// FIXME: Spaghetti Code! Workaround for collision stuck
+				// If something goes wrong with particles collisions... the problem is here!
+				const float Elasticity = 0.1f+0.9f*frandom();
+				int collide = 0;
+				Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, Elasticity, NULL, &collide);
+                if (collide)
+                {
+                	vec2 offset = vec2(16.0f, 16.0f);
+					Collision()->MovePoint(&m_aParticles[i].m_Pos, &offset, Elasticity, NULL, &collide);
+					int collideB = 0;
+					offset = vec2(-16.0f, 16.0f);
+					Collision()->MovePoint(&m_aParticles[i].m_Pos, &offset, Elasticity, NULL, &collideB);
+					if (!collide && !collideB)
+					{
+						offset = vec2(0.0f, -16.0f);
+						Collision()->MovePoint(&m_aParticles[i].m_Pos, &offset, Elasticity, NULL, &collide);
+						if (collide)
+						{
+							offset = vec2(-16.0f, 0.0f);
+							Collision()->MovePoint(&m_aParticles[i].m_Pos, &offset, Elasticity, NULL, &collide);
+							if (collide)
+							{
+								offset = vec2(16.0f, 0.0f);
+								Collision()->MovePoint(&m_aParticles[i].m_Pos, &offset, Elasticity, NULL, &collide);
+							}
+						}
+                	}
+                }
+			}
 
-			m_aParticles[i].m_Vel = Vel* (1.0f/TimePassed);
+			m_aParticles[i].m_Vel = Vel * (1.0f/TimePassed);
 
 			m_aParticles[i].m_Life += TimePassed;
 			m_aParticles[i].m_Rot += TimePassed * m_aParticles[i].m_Rotspeed;

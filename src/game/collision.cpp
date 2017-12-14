@@ -273,9 +273,11 @@ void CCollision::MovePoint(vec2 *pInoutPos, vec2 *pInoutVel, float Elasticity, i
 {
 	if(pBounces)
 		*pBounces = 0;
+	if (pCollide)
+		*pCollide = 0;
 
-	vec2 Pos = *pInoutPos;
-	vec2 Vel = *pInoutVel;
+	const vec2 &Pos = *pInoutPos;
+	const vec2 &Vel = *pInoutVel;
 	if(CheckPoint(Pos + Vel))
 	{
 		int Affected = 0;
@@ -296,7 +298,7 @@ void CCollision::MovePoint(vec2 *pInoutPos, vec2 *pInoutVel, float Elasticity, i
 				++(*pBounces);
 			++Affected;
 
-			if (pCollide) *pCollide = 1; //H-Client
+			if (pCollide) *pCollide = 2; //H-Client
 		}
 
 		if(Affected == 0)
@@ -419,27 +421,29 @@ int CCollision::GetPureMapIndex(const vec2 &Pos)
 
 bool CCollision::IsThrough(int x, int y, int xoff, int yoff, const vec2 &pos0, const vec2 &pos1)
 {
-	const int Nx = clamp(x/32, 0, m_Width-1);
-	const int Ny = clamp(y/32, 0, m_Height-1);
-	const int ItemIndex = Ny*m_Width+Nx;
-	if(m_pFront && (m_pFront[ItemIndex].m_Index == TILE_THROUGH_ALL || m_pFront[ItemIndex].m_Index == TILE_THROUGH_CUT))
+	int pos = GetPureMapIndex(x, y);
+	if(m_pFront && (m_pFront[pos].m_Index == TILE_THROUGH_ALL || m_pFront[pos].m_Index == TILE_THROUGH_CUT))
 		return true;
-	if(m_pFront && m_pFront[ItemIndex].m_Index == TILE_THROUGH_DIR && (
-		(m_pFront[ItemIndex].m_Flags == ROTATION_0   && pos0.y > pos1.y) ||
-		(m_pFront[ItemIndex].m_Flags == ROTATION_90  && pos0.x < pos1.x) ||
-		(m_pFront[ItemIndex].m_Flags == ROTATION_180 && pos0.y < pos1.y) ||
-		(m_pFront[ItemIndex].m_Flags == ROTATION_270 && pos0.x > pos1.x) ))
+	if(m_pFront && m_pFront[pos].m_Index == TILE_THROUGH_DIR && (
+		(m_pFront[pos].m_Flags == ROTATION_0   && pos0.y > pos1.y) ||
+		(m_pFront[pos].m_Flags == ROTATION_90  && pos0.x < pos1.x) ||
+		(m_pFront[pos].m_Flags == ROTATION_180 && pos0.y < pos1.y) ||
+		(m_pFront[pos].m_Flags == ROTATION_270 && pos0.x > pos1.x) ))
 		return true;
-
-	if(m_pTiles[ItemIndex].m_Index == TILE_THROUGH || (m_pFront && m_pFront[ItemIndex].m_Index == TILE_THROUGH))
-		return true;
-	int ItemIndexOffset = (Ny+yoff)*m_Width+(Nx+xoff);
-	if(m_pTiles[ItemIndexOffset].m_Index == TILE_THROUGH || (m_pFront && m_pFront[ItemIndexOffset].m_Index == TILE_THROUGH))
+	int offpos = GetPureMapIndex(x+xoff, y+yoff);
+	if(m_pTiles[offpos].m_Index == TILE_THROUGH || (m_pFront && m_pFront[offpos].m_Index == TILE_THROUGH))
 		return true;
 	return false;
 }
 
-void ThroughOffset(vec2 Pos0, vec2 Pos1, int *Ox, int *Oy)
+inline int CCollision::GetPureMapIndex(float x, float y) const
+{
+	int Nx = clamp((int)round(x)/32, 0, m_Width-1);
+	int Ny = clamp((int)round(y)/32, 0, m_Height-1);
+	return Ny*m_Width+Nx;
+}
+
+inline void CCollision::ThroughOffset(vec2 Pos0, vec2 Pos1, int *Ox, int *Oy)
 {
 	const vec2 VDiff = Pos0-Pos1;
 	if (fabs(VDiff.x) > fabs(VDiff.y))
@@ -651,15 +655,12 @@ std::list<int> CCollision::GetMapIndices(const vec2 &PrevPos, const vec2 &Pos, u
 			Nx = clamp((int)Tmp.x / 32, 0, m_Width - 1);
 			Ny = clamp((int)Tmp.y / 32, 0, m_Height - 1);
 			Index = Ny * m_Width + Nx;
-			//dbg_msg("lastindex","%d",LastIndex);
-			//dbg_msg("index","%d",Index);
 			if(TileExists(Index) && LastIndex != Index)
 			{
 				if(MaxIndices && Indices.size() > MaxIndices)
 					return Indices;
 				Indices.push_back(Index);
 				LastIndex = Index;
-				//dbg_msg("pushed","%d",Index);
 			}
 		}
 

@@ -12,6 +12,20 @@ class CNamePlates : public CComponent
 		const CNetObj_PlayerInfo *pPlayerInfo
 	);
 
+	// H-Client
+	void RenderPlayerDirections(
+		const CNetObj_Character *pPrevChar,
+		const CNetObj_Character *pPlayerChar,
+		const CNetObj_PlayerInfo *pPlayerInfo
+	);
+
+	void RenderWarnings(
+		const CNetObj_Character *pPrevChar,
+		const CNetObj_Character *pPlayerChar,
+		const CNetObj_PlayerInfo *pPlayerInfo
+	);
+	//
+
 public:
 	virtual void OnRender();
 };

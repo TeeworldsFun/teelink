@@ -24,7 +24,7 @@ CEffects::CEffects()
 	m_Add100hz = false;
 }
 
-void CEffects::AirJump(vec2 Pos)
+void CEffects::AirJump(const vec2 &Pos)
 {
 	CParticle p;
 	p.SetDefault();
@@ -47,12 +47,12 @@ void CEffects::AirJump(vec2 Pos)
 	m_pClient->m_pSounds->PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_AIRJUMP, 1.0f, Pos);
 }
 
-void CEffects::DamageIndicator(vec2 Pos, vec2 Dir)
+void CEffects::DamageIndicator(const vec2 &Pos, const vec2 &Dir)
 {
 	m_pClient->m_pDamageind->Create(Pos, Dir);
 }
 
-void CEffects::PowerupShine(vec2 Pos, vec2 size)
+void CEffects::PowerupShine(const vec2 &Pos, const vec2 &size)
 {
 	if(!m_Add50hz)
 		return;
@@ -73,7 +73,7 @@ void CEffects::PowerupShine(vec2 Pos, vec2 size)
 	m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 }
 
-void CEffects::SmokeTrail(vec2 Pos, vec2 Vel, const vec4 &color)
+void CEffects::SmokeTrail(const vec2 &Pos, const vec2 &Vel, const vec4 &color)
 {
 	if(!m_Add50hz)
 		return;
@@ -96,7 +96,7 @@ void CEffects::SmokeTrail(vec2 Pos, vec2 Vel, const vec4 &color)
 }
 
 
-void CEffects::SkidTrail(vec2 Pos, vec2 Vel)
+void CEffects::SkidTrail(const vec2 &Pos, const vec2 &Vel)
 {
 	if(!m_Add100hz)
 		return;
@@ -117,7 +117,7 @@ void CEffects::SkidTrail(vec2 Pos, vec2 Vel)
 	m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 }
 
-void CEffects::BulletTrail(vec2 Pos, const vec4 &color)
+void CEffects::BulletTrail(const vec2 &Pos, const vec4 &color)
 {
 	if(!m_Add100hz)
 		return;
@@ -134,7 +134,7 @@ void CEffects::BulletTrail(vec2 Pos, const vec4 &color)
 	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
-void CEffects::PlayerSpawn(vec2 Pos)
+void CEffects::PlayerSpawn(const vec2 &Pos)
 {
 	for(int i = 0; i < 32; i++)
 	{
@@ -159,7 +159,7 @@ void CEffects::PlayerSpawn(vec2 Pos)
 	m_pClient->m_pSounds->PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_SPAWN, 1.0f, Pos);
 }
 
-void CEffects::PlayerDeath(vec2 Pos, int ClientID)
+void CEffects::PlayerDeath(const vec2 &Pos, int ClientID)
 {
     if (!g_Config.m_hcGoreStyle || (g_Config.m_hcGoreStyle && ClientID < 0)) //H-Client
     {
@@ -205,7 +205,7 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientID)
 }
 
 // H-Client
-void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
+void CEffects::Blood(const vec2 &Pos, const vec2 &Dir, int Type, int ClientID)
 {
     vec3 BloodColor(1.0f, 0.0f, 0.0f);
     vec3 TeeColor(1.0f, 1.0f, 1.0f);
@@ -406,7 +406,7 @@ void CEffects::Blood(vec2 Pos, vec2 Dir, int Type, int ClientID)
 }
 //
 
-void CEffects::Explosion(vec2 Pos)
+void CEffects::Explosion(const vec2 &Pos)
 {
 	// add to flow
 	for(int y = -8; y <= 8; y++)
@@ -452,7 +452,7 @@ void CEffects::Explosion(vec2 Pos)
 }
 
 
-void CEffects::HammerHit(vec2 Pos)
+void CEffects::HammerHit(const vec2 &Pos)
 {
 	// add the explosion
 	CParticle p;
@@ -489,7 +489,7 @@ void CEffects::HammerHit(vec2 Pos)
 }
 
 // H-Client
-void CEffects::LaserTrail(vec2 Pos, vec2 Vel, vec4 color)
+void CEffects::LaserTrail(const vec2 &Pos, const vec2 &Vel, const vec4 &color)
 {
 	if(!m_Add50hz)
 		return;
@@ -510,7 +510,7 @@ void CEffects::LaserTrail(vec2 Pos, vec2 Vel, vec4 color)
 	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
-void CEffects::Unfreeze(vec2 Pos, vec2 Dir, float alpha)
+void CEffects::Unfreeze(const vec2 &Pos, const vec2 &Dir, float alpha)
 {
     const int Sprites[] = {SPRITE_PART_UNFREEZE01, SPRITE_PART_UNFREEZE02, SPRITE_PART_UNFREEZE03, SPRITE_PART_UNFREEZE04};
 
@@ -536,6 +536,27 @@ void CEffects::Unfreeze(vec2 Pos, vec2 Dir, float alpha)
         p.m_Color = vec4(1.0f, 1.0f, 1.0f, alpha);
         m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_FREEZE, &p);
     }
+}
+
+void CEffects::ExplosionDebris(const vec2 &Pos)
+{
+	CParticle p;
+	for(int i = 0; i < 8; i++)
+	{
+		p.SetDefault();
+		p.m_Spr = SPRITE_PART_UNFREEZE01;
+		p.m_Color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		p.m_Pos = Pos;
+		p.m_LifeSpan = 1.75f;
+		p.m_EndSize = vec2(0.0f, 0.0f);
+		p.m_Gravity = 2500.0f;
+		p.m_Friction = 0.9f;
+		p.m_StartSize = vec2(4.0f, 4.0f);
+		p.m_Rot = 0.0f;
+		p.m_Collide = true;
+		p.m_Vel = RandomDir() * (powf(frandom(), 3)*2000.0f);
+		m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_FREEZE, &p);
+	}
 }
 //
 

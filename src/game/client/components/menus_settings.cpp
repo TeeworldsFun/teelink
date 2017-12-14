@@ -1143,7 +1143,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
 		if(DoButton_CheckBox(&g_Config.m_hcAutoVoteNoAction, Localize("Auto-Vote no for yourself actions"), g_Config.m_hcAutoVoteNoAction, &HUDItem))
 			g_Config.m_hcAutoVoteNoAction ^= 1;
 
-		//Auto Vote No Action
+		//Auto Vote Highlight
 		StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
 		if(DoButton_CheckBox(&g_Config.m_hcMarkVoteTarget, Localize("Highlight vote target"), g_Config.m_hcMarkVoteTarget, &HUDItem))
 			g_Config.m_hcMarkVoteTarget ^= 1;

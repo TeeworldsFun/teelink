@@ -40,6 +40,10 @@ class CCollision
 	int IsSpeedUp(int Index);
 	void InitTeleports();
 	void InitSwitchers();
+
+
+	inline int GetPureMapIndex(float x, float y) const; //H-Client: DDRace
+	inline void ThroughOffset(vec2 Pos0, vec2 Pos1, int *Ox, int *Oy); //H-Client: DDRace
 	//
 
 public:
@@ -100,7 +104,5 @@ public:
 
     void CreateTile(const vec2 &pos, int group, int layer, int index, int flags); // Android
 };
-
-void ThroughOffset(vec2 Pos0, vec2 Pos1, int *Ox, int *Oy); //H-Client: DDRace
 
 #endif

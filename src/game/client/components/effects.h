@@ -13,21 +13,22 @@ public:
 
 	virtual void OnRender();
 
-	void BulletTrail(vec2 Pos, const vec4 &color); // H-Client: Color
-	void SmokeTrail(vec2 Pos, vec2 Vel, const vec4 &color); // H-Client: Color
-	void SkidTrail(vec2 Pos, vec2 Vel);
-	void Explosion(vec2 Pos);
-	void HammerHit(vec2 Pos);
-	void AirJump(vec2 Pos);
-	void DamageIndicator(vec2 Pos, vec2 Dir);
-	void PlayerSpawn(vec2 Pos);
-	void PlayerDeath(vec2 Pos, int ClientID);
-	void PowerupShine(vec2 Pos, vec2 Size);
+	void BulletTrail(const vec2 &Pos, const vec4 &color); // H-Client: Color
+	void SmokeTrail(const vec2 &Pos, const vec2 &Vel, const vec4 &color); // H-Client: Color
+	void SkidTrail(const vec2 &Pos, const vec2 &Vel);
+	void Explosion(const vec2 &Pos);
+	void HammerHit(const vec2 &Pos);
+	void AirJump(const vec2 &Pos);
+	void DamageIndicator(const vec2 &Pos, const vec2 &Dir);
+	void PlayerSpawn(const vec2 &Pos);
+	void PlayerDeath(const vec2 &Pos, int ClientID);
+	void PowerupShine(const vec2 &Pos, const vec2 &Size);
 
 	// H-Client
-	void LaserTrail(vec2 Pos, vec2 Vel, vec4 color);
-	void Blood(vec2 Pos, vec2 Dir, int Type, int ClientID = -1);
-	void Unfreeze(vec2 Pos, vec2 Dir, float alpha);
+	void LaserTrail(const vec2 &Pos, const vec2 &Vel, const vec4 &color);
+	void Blood(const vec2 &Pos, const vec2 &Dir, int Type, int ClientID = -1);
+	void Unfreeze(const vec2 &Pos, const vec2 &Dir, float alpha);
+	void ExplosionDebris(const vec2 &Pos);
     //
 
 	void Update();

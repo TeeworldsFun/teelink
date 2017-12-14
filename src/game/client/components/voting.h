@@ -17,6 +17,8 @@ class CVoting : public CComponent
 	int m_LastVote;
 	int m_State;
 	int m_VoteTargetClientID;
+	int m_VoteType;
+	char m_aVoteTargetMapName[128];
 	//
 
 	static void ConCallvote(IConsole::IResult *pResult, void *pUserData);
@@ -32,12 +34,19 @@ class CVoting : public CComponent
 	void ClearOptions();
 	void Callvote(const char *pType, const char *pValue, const char *pReason);
 
-	void TryFindTargetClientID(); // H-Client
+	void AnalizeVote(); // H-Client
 
 public:
 	enum {
         STATE_NORMAL=0,
-        STATE_SMALL
+        STATE_SMALL,
+
+		TYPE_NONE=0,
+		TYPE_KICK,
+		TYPE_BAN,
+		TYPE_SPEC,
+		TYPE_MAP,
+		TYPE_OTHER,
 	};
 
 	int m_NumVoteOptions;
@@ -76,6 +85,8 @@ public:
 	void SetState(int state) { m_State = state; }
 	int GetState() const { return m_State; }
 	int GetTargetClientID() const { return m_VoteTargetClientID; }
+	const char* GetTargetMapName() const { return m_aVoteTargetMapName; }
+	int GetVoteType() const { return m_VoteType; }
 
     int GetNumVotes(int type) const { if (type==1) { return m_Yes; } else if (type==2) { return m_No; } else { return m_Pass; } }
 	//

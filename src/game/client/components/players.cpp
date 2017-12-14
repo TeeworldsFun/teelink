@@ -581,34 +581,6 @@ void CPlayers::RenderPlayer(
 	RenderInfo.m_ColorBody.a = 1.0f;
 	RenderInfo.m_ColorFeet.a = 1.0f;
 
-    //H-Client: DDRace Stuff
-	if (Client()->IsServerType("ddrace"))
-	{
-        // Tee Direction Info
-        if (g_Config.m_ddrShowTeeDirection && !PlayerInfo.m_Local)
-        {
-            if (Player.m_Direction != 0)
-            {
-                Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ARROW].m_Id);
-                Graphics()->QuadsBegin();
-                IGraphics::CQuadItem QuadItem(Position.x-15, Position.y - 70, 22, 22);
-                if (Player.m_Direction == -1)
-                    Graphics()->QuadsSetRotation(GetAngle(vec2(1,0))+PI);
-                Graphics()->QuadsDraw(&QuadItem, 1);
-                Graphics()->QuadsEnd();
-            }
-            if (Player.m_Jumped&1)
-            {
-                Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ARROW].m_Id);
-                Graphics()->QuadsBegin();
-                IGraphics::CQuadItem QuadItem(Position.x+15, Position.y - 70, 22, 22);
-                Graphics()->QuadsSetRotation(GetAngle(vec2(0,1))+PI);
-                Graphics()->QuadsDraw(&QuadItem, 1);
-                Graphics()->QuadsEnd();
-            }
-        }
-	}
-
 	// H-Client: Render Tee (Is Freezed?)
 	m_RenderFreezeInfo.m_GotAirJump = RenderInfo.m_GotAirJump;
 
