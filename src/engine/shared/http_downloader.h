@@ -14,7 +14,7 @@ public:
 		DOWNLOADED,
 		CONNECTING,
 		DOWNLOADING,
-		ERROR
+		ERROR,
 	};
 
 	struct NETURL
