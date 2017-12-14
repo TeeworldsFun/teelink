@@ -4,7 +4,7 @@ install:
   - cmd: |
       cd C:\projects
       curl -fsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.tar.gz
-      7zip x bam.zip
+      7z x bam.zip
       make_win64_msvc.bat
 
 build_script:
