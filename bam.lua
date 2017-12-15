@@ -159,7 +159,7 @@ function build(settings)
 	if config.compiler.driver == "cl" then
 		settings.cc.flags:Add("/wd4244", "/EHsc")
 	else
-		settings.cc.flags:Add("-fexceptions", "-O3")
+		settings.cc.flags:Add("-fexceptions", "-O2")
 		if family == "windows" then
 			-- disable visibility attribute support for gcc on windows
 			settings.cc.flags:Add("-s")
@@ -301,8 +301,8 @@ function build(settings)
 		engine, client, game_editor, zlib, pnglite, wavpack, jsonparser,
                 client_link_other, client_osxlaunch, client_notification, md5)
 
-	server_exe = Link(server_settings, "teeworlds_srv", engine, server,
-		game_shared, game_server, zlib, md5, server_link_other)
+	server_exe = Link(server_settings, "teeworlds_srv", game_shared, game_server,
+        engine, server, zlib, md5, server_link_other)
 
 	serverlaunch = {}
 	if platform == "macosx" then
