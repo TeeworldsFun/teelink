@@ -4,7 +4,7 @@ init:
   - cmd: call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
   
 install:
-  - IF NOT EXISTS "C:\projects\bam-0.5.0" (
+  - IF NOT EXIST C:\projects\bam-0.5.0 (
     cd C:\projects &&
     curl -LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip &&
     7z x bam.zip &&
