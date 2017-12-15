@@ -884,11 +884,8 @@ void CGameClient::OnNewSnapshot()
 
                 // H-Client
 				// find new skin
-				if (str_comp(m_aClients[ClientID].m_aSkinName, tmpSkinName) != 0)
-                    m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(tmpSkinName, true); // Try Download Skin
-
+                m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(tmpSkinName, str_comp(m_aClients[ClientID].m_aSkinName, tmpSkinName) != 0); // Try Download Skin
                 str_copy(m_aClients[ClientID].m_aSkinName, tmpSkinName, sizeof(m_aClients[ClientID].m_aSkinName));
-                m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(m_aClients[ClientID].m_aSkinName);
                 if(m_aClients[ClientID].m_SkinID < 0)
                 {
                     m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find("default");
@@ -1058,6 +1055,13 @@ void CGameClient::OnNewSnapshot()
                 m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();
             m_aClients[i].m_FreezedState.m_Freezed = true;
             m_aClients[i].m_Predicted.m_Freezes = true;
+        }
+        else if (Client()->IsServerType("fng") && m_Snap.m_aCharacters[i].m_Cur.m_Weapon == WEAPON_NINJA)
+        {
+        	if (!m_aClients[i].m_FreezedState.m_Freezed)
+				m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();
+			m_aClients[i].m_FreezedState.m_Freezed = true;
+			m_aClients[i].m_Predicted.m_Freezes = true;
         }
         else
         {

@@ -27,7 +27,7 @@ public:
 	// H-Client
 	void LaserTrail(const vec2 &Pos, const vec2 &Vel, const vec4 &color);
 	void Blood(const vec2 &Pos, const vec2 &Dir, int Type, int ClientID = -1);
-	void Unfreeze(const vec2 &Pos, const vec2 &Dir, float alpha);
+	void Unfreeze(const vec2 &Pos, const vec2 &Dir, const vec4 &Color, float alpha);
 	void ExplosionDebris(const vec2 &Pos);
     //
 

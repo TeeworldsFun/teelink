@@ -11,3 +11,9 @@
 - Add font support for chinese, japanese, korean. {original code by awaysoft, ddnet team}
 - Improved ffmpeg front-end: added variables and new options (Perhaps now works on all supported systems by ffmpeg?)
 - Improved HTTP Downloader: less usage of write calls and refactored source
+- Added freezed effect to "FNG" gametype
+- Improved Votes: Auto-Vote No when you are the target, Show indicator on target, refactored some code...
+- Added AppVeyor support (automated builds for windows) {original idea by necropotame, ddnet team}
+- Added some particles to explosion effect
+- Reduced the number of blood particles
+- Removed corrupted skins

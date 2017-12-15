@@ -586,39 +586,55 @@ void CPlayers::RenderPlayer(
 
 	if (m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Freezed)
 	{
-		if (m_RenderFreezeInfo.m_Texture != -1 && Client()->GameTick() - m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_TimerFreeze > Client()->GameTickSpeed() * 0.5f && m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha < 1.0f)
+		if (Client()->IsServerType("fng"))
 		{
-			m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha = min(m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha+0.01f, 1.0f);
-			m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
-		}
+			m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha = 1.0f;
+			m_RenderFreezeInfo.m_ColorBody.a = 1.0f;
+			m_RenderFreezeInfo.m_ColorFeet = RenderInfo.m_ColorFeet;
+			m_RenderFreezeInfo.m_ColorBody = RenderInfo.m_ColorBody;
+			m_RenderFreezeInfo.m_ColorHand = RenderInfo.m_ColorHand;
+			RenderTools()->RenderTee(&State, &m_RenderFreezeInfo, Player.m_Emote, Direction, Position);
+		} else
+		{
+			if (Client()->GameTick() - m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_TimerFreeze > Client()->GameTickSpeed() * 0.5f && m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha < 1.0f)
+			{
+				m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha = min(m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha+0.01f, 1.0f);
+				m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
+			}
 
-		if (m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha < 1.0f)
-		{
-			RenderInfo.m_ColorBody.a = RenderInfo.m_ColorFeet.a = 1.0f - m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha;
-			RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
-		}
+			if (m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha < 1.0f)
+			{
+				RenderInfo.m_ColorBody.a = RenderInfo.m_ColorFeet.a = 1.0f - m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha;
+				RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
+			}
 
-		if (m_RenderFreezeInfo.m_Texture != -1)
-		{
 			m_RenderFreezeInfo.m_ColorBody.a = m_RenderFreezeInfo.m_ColorFeet.a = m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha;
 			RenderTools()->RenderTee(&State, &m_RenderFreezeInfo, Player.m_Emote, Direction, Position);
 		}
 	}
 	else
 	{
-		if (Client()->GameTick() - m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_TimerFreeze > Client()->GameTickSpeed() * 0.12f && m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha > 0.0f)
+		if (Client()->IsServerType("fng"))
 		{
-			m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha = max(0.0f, m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha-0.01f);
-			m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
-		}
-
-		RenderInfo.m_ColorBody.a = RenderInfo.m_ColorFeet.a = 1.0f - m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha;
-		RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
-
-		if (m_RenderFreezeInfo.m_Texture != -1 && m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha > 0.0f)
+			m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha = 0.0f;
+			RenderInfo.m_ColorBody.a = 1.0f;
+			RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
+		} else
 		{
-			m_RenderFreezeInfo.m_ColorBody.a = m_RenderFreezeInfo.m_ColorFeet.a = m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha;
-			RenderTools()->RenderTee(&State, &m_RenderFreezeInfo, Player.m_Emote, Direction, Position);
+			if (Client()->GameTick() - m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_TimerFreeze > Client()->GameTickSpeed() * 0.12f && m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha > 0.0f)
+			{
+				m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha = max(0.0f, m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha-0.01f);
+				m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_TimerFreeze = Client()->GameTick();
+			}
+
+			RenderInfo.m_ColorBody.a = RenderInfo.m_ColorFeet.a = 1.0f - m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha;
+			RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
+
+			if ( m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha > 0.0f)
+			{
+				m_RenderFreezeInfo.m_ColorBody.a = m_RenderFreezeInfo.m_ColorFeet.a = m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha;
+				RenderTools()->RenderTee(&State, &m_RenderFreezeInfo, Player.m_Emote, Direction, Position);
+			}
 		}
 	}
 	//

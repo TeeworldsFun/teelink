@@ -228,7 +228,7 @@ void CEffects::Blood(const vec2 &Pos, const vec2 &Dir, int Type, int ClientID)
     if (Type == 0)
     {
         int SubType = 0;
-        for(int i = 0; i < 25; i++)
+        for(int i = 0; i < 12; i++)
         {
         	float StartSize = 10.0f + frandom()*16.0f;
 
@@ -238,7 +238,7 @@ void CEffects::Blood(const vec2 &Pos, const vec2 &Dir, int Type, int ClientID)
             if (!SubType)
             {
                 p.m_Spr = SPRITE_BLOOD_BODY_PART;
-                p.m_Vel = Dir * (powf(frandom(), 3)*600.0f);
+                p.m_Vel = Dir * (powf(frandom(), 3)*200.0f);
             }
             else
             {
@@ -265,7 +265,7 @@ void CEffects::Blood(const vec2 &Pos, const vec2 &Dir, int Type, int ClientID)
     else if (Type == 1)
     {
     	// Blood
-        for(int i = 0; i < 64; i++)
+        for(int i = 0; i < 25; i++)
         {
         	float StartSize = 5.0f + frandom()*16.0f;
 
@@ -479,7 +479,7 @@ void CEffects::HammerHit(const vec2 &Pos)
         if (Dist < 86.0f)
         {
             vec2 dir = normalize(Pos - CharPos);
-            Unfreeze(CharPos, dir, m_pClient->m_aClients[i].m_FreezedState.m_Alpha);
+            Unfreeze(CharPos, dir, m_pClient->m_aClients[i].m_RenderInfo.m_ColorBody, m_pClient->m_aClients[i].m_FreezedState.m_Alpha);
             m_pClient->m_aClients[i].m_FreezedState.Reset();
 
             break;
@@ -510,7 +510,7 @@ void CEffects::LaserTrail(const vec2 &Pos, const vec2 &Vel, const vec4 &color)
 	m_pClient->m_pParticles->Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
-void CEffects::Unfreeze(const vec2 &Pos, const vec2 &Dir, float alpha)
+void CEffects::Unfreeze(const vec2 &Pos, const vec2 &Dir, const vec4 &Color, float alpha)
 {
     const int Sprites[] = {SPRITE_PART_UNFREEZE01, SPRITE_PART_UNFREEZE02, SPRITE_PART_UNFREEZE03, SPRITE_PART_UNFREEZE04};
 
@@ -533,7 +533,7 @@ void CEffects::Unfreeze(const vec2 &Pos, const vec2 &Dir, float alpha)
         p.m_Rotspeed = frandom();
         p.m_Gravity = 2500.0f;
         p.m_Friction = 0.95f;
-        p.m_Color = vec4(1.0f, 1.0f, 1.0f, alpha);
+        p.m_Color = vec4(Color.r, Color.g, Color.b, alpha);
         m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_FREEZE, &p);
     }
 }
