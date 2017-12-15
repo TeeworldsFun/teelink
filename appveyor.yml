@@ -8,10 +8,10 @@ install:
       $bamExists = Test-Path C:\projects\bam-0.5.0
       if ($bamExists -ne $True) {
         Push-Location C:\projects
-        & "curl" "-LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip"
-        & "7z" "x bam.zip"
+        Start-Process -FilePath "curl.exe" -ArgumentList "-LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip"
+        Start-Process -FilePath "7z.exe" -ArgumentList "x bam.zip"
         Push-Location bam-0.5.0\
-        & "make_win64_msvc.bat"
+        Start-Process -FilePath ".\make_win64_msvc.bat"
         Push-Location C:\projects\hclient
       }
       
