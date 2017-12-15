@@ -308,7 +308,7 @@ void CGameClient::OnInit()
 
     m_TakeInitScreenShot = false;
     m_DDRaceMsgSent = false;
-    m_LastDDRaceShowOthers = false;
+    m_LastDDRaceShowOthers = 0;
 
 	if(g_Config.m_ddrTimeoutHash[0] == 0)
 		for (size_t i = 0; i < sizeof(g_Config.m_ddrTimeoutHash)-1; g_Config.m_ddrTimeoutHash[i++] = (rand() % 26) + 97);
@@ -409,7 +409,7 @@ void CGameClient::OnReset()
 
     m_Teams.Reset(); // H-Client: DDNet
     m_DDRaceMsgSent = false;
-    m_LastDDRaceShowOthers = false;
+    m_LastDDRaceShowOthers = 0;
 	m_TakeInitScreenShot = false; // H-Client
 
     // H-Client
@@ -745,7 +745,7 @@ void CGameClient::OnStartGame()
 
     m_TakeInitScreenShot = true;
     m_DDRaceMsgSent = false; // H-Client: DDRace
-    m_LastDDRaceShowOthers = false;
+    m_LastDDRaceShowOthers = 0;
     Graphics()->ShowInfoKills(false);  // H-Client
 }
 

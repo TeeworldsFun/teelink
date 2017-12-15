@@ -1123,7 +1123,7 @@ int CMenus::Render()
         else if(m_Popup == POPUP_UPDATER)
         {
             pTitle = Localize("Auto-Update");
-            pExtraText = Localize("New H-Client v\%s available!");
+            pExtraText = Localize("New H-Client v%%s available!");
             char aBuff[32];
             str_format(aBuff, sizeof(aBuff), pExtraText, Updater()->GetNewVersion());
             pExtraText = aBuff;
@@ -1229,7 +1229,7 @@ int CMenus::Render()
             if (Updater()->NeedUpdateClient()) numItems++;
             if (Updater()->NeedUpdateServer()) numItems++;
 
-            str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), numItems);
+            str_format(aBuff, sizeof(aBuff), Localize("%%d in total"), numItems);
             UiDoListboxStart(&s_DownloadList, &ListDownload, 24.0f, "TO DOWNLOAD", aBuff, numItems, 1, -1, s_ScrollDownloadValue);
 
             if (Updater()->NeedUpdateClient())
@@ -1260,7 +1260,7 @@ int CMenus::Render()
 
             UiDoListboxEnd(&s_ScrollDownloadValue, 0);
 
-            str_format(aBuff, sizeof(aBuff), Localize("\%d in total"), Updater()->GetFilesToRemove().size());
+            str_format(aBuff, sizeof(aBuff), Localize("%%d in total"), Updater()->GetFilesToRemove().size());
             UiDoListboxStart(&s_RemoveList, &ListRemove, 24.0f, "TO REMOVE", aBuff, Updater()->GetFilesToRemove().size(), 1, -1, s_ScrollRemoveValue);
 
             for(int i=0; i<Updater()->GetFilesToRemove().size(); i++)

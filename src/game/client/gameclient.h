@@ -328,7 +328,7 @@ public:
 
 private:
 	bool m_DDRaceMsgSent; //H-Client: DDRace
-	bool m_LastDDRaceShowOthers; //H-Client: DDRace
+	int m_LastDDRaceShowOthers; //H-Client: DDRace
 };
 
 

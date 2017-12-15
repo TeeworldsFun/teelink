@@ -210,7 +210,7 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 	// check for activity
 	if(NewInput->m_Direction || m_LatestActivity.m_TargetX != NewInput->m_TargetX ||
 		m_LatestActivity.m_TargetY != NewInput->m_TargetY || NewInput->m_Jump ||
-		NewInput->m_Fire&1 || NewInput->m_Hook)
+		(NewInput->m_Fire&1) || NewInput->m_Hook)
 	{
 		m_LatestActivity.m_TargetX = NewInput->m_TargetX;
 		m_LatestActivity.m_TargetY = NewInput->m_TargetY;

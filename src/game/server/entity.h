@@ -13,7 +13,8 @@
 	{ \
 		void *p = mem_alloc(Size, 1); \
 		/*dbg_msg("", "++ %p %d", p, size);*/ \
-		mem_zero(p, Size); \
+		if (p) \
+			mem_zero(p, Size); \
 		return p; \
 	} \
 	void operator delete(void *pPtr) \
@@ -41,9 +42,9 @@
 		mem_zero(ms_PoolData##POOLTYPE[id], Size); \
 		return ms_PoolData##POOLTYPE[id]; \
 	} \
-	void POOLTYPE::operator delete(void *p) \
+	void POOLTYPE::operator delete(void *pPtr) \
 	{ \
-		int id = (POOLTYPE*)p - (POOLTYPE*)ms_PoolData##POOLTYPE; \
+		const int id = (POOLTYPE*)pPtr - (POOLTYPE*)ms_PoolData##POOLTYPE; \
 		dbg_assert(ms_PoolUsed##POOLTYPE[id], "not used"); \
 		/*dbg_msg("pool", "-- %s %d", #POOLTYPE, id);*/ \
 		ms_PoolUsed##POOLTYPE[id] = 0; \
