@@ -9,7 +9,7 @@ install:
       if ($bamExists -ne $True) {
         Start-Process -FilePath "curl.exe" -ArgumentList "-LfsS -o bam.zip https://github.com/matricks/bam/archive/v0.5.0.zip" -WorkingDirectory "C:\projects"
         Start-Process -FilePath "7z.exe" -ArgumentList "x bam.zip" -WorkingDirectory "C:\projects"
-        Start-Process -FilePath ".\make_win64_msvc.bat" -WorkingDirectory "C:\projects\bam-0.5.0"
+        Start-Process -FilePath "make_win64_msvc.bat" -WorkingDirectory "C:\projects\bam-0.5.0"
       }
       
 cache:
