@@ -25,14 +25,14 @@ dependencies:
 ## Artifacts
 general:
   artifacts:
-    - "H-Client-0.4.1-linux86_64.tar.gz"
+    - "H-Client-$HCLIENT_VERSION-linux86_64.tar.gz"
     - "teeworlds"
     - "teeworlds_srv"
     - "teeworlds_d"
     - "teeworlds_srv_d"
 
 ## Customize test commands
-compile:
+test:
   override:
     - ~/bam-0.5.0/bam release
     - ~/bam-0.5.0/bam debug
