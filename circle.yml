@@ -4,6 +4,8 @@ machine:
   pre:
     - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 10
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 10
+  environment:
+    HCLIENT_VERSION: 0.4.1
 
 # To Build Teeworlds
 dependencies:
@@ -34,5 +36,5 @@ compile:
   override:
     - ~/bam-0.5.0/bam release
     - ~/bam-0.5.0/bam debug
-    - scripts/make_release.py 0.4.1 linux86_64
+    - python2 scripts/make_release.py $HCLIENT_VERSION linux86_64
 

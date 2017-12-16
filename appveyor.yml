@@ -23,7 +23,7 @@ build_script:
   - cmd: ..\bam-0.5.0\bam.exe debug
   - cmd: ..\bam-0.5.0\bam.exe debug
   
-on_success:
+after_build:
   - "SET PATH=C:\\Python27-x64;C:\\Python27-x64\\Scripts;%PATH%"
   - python scripts\make_release.py %HCLIENT_VERSION% win32
  
