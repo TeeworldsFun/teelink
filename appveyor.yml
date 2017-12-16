@@ -1,7 +1,7 @@
 image: Visual Studio 2015
 
 environment:
-  HCLIENT_VERSION: 0.4.1
+  HCLIENT_VERSION: 4.0.1
 
 init:
   - cmd: call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
@@ -27,6 +27,7 @@ after_build:
   - python scripts\make_release.py %HCLIENT_VERSION% win32
  
 artifacts:
-  - path: H-Client-*
-          teeworlds*
+  - path: H-Client-*.zip
+          teeworlds*.exe
+          teeworlds*.pdb
     name: H-Client Win32
