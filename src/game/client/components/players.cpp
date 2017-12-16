@@ -769,21 +769,13 @@ void CPlayers::OnRender()
 					}
 					else
 					{
-						if (g_Config.m_AntiPing)
-							RenderPlayer(
-									&PrevChar,
-									&CurChar,
-									(const CNetObj_PlayerInfo *)pPrevInfo,
-									(const CNetObj_PlayerInfo *)pInfo,
-									PLAYERFLAG_ANTIPING
-								);
-						else
-							RenderPlayer(
-									&PrevChar,
-									&CurChar,
-									(const CNetObj_PlayerInfo *)pPrevInfo,
-									(const CNetObj_PlayerInfo *)pInfo
-								);
+						RenderPlayer(
+								&PrevChar,
+								&CurChar,
+								(const CNetObj_PlayerInfo *)pPrevInfo,
+								(const CNetObj_PlayerInfo *)pInfo,
+								(g_Config.m_AntiPing)?PLAYERFLAG_ANTIPING:0
+							);
 					}
 				}
 			}

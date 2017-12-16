@@ -273,6 +273,12 @@ void CUIRect::HMargin(float Cut, CUIRect *pOtherRect) const
 	pOtherRect->h = r.h - 2*Cut;
 }
 
+// H-Client
+bool CUIRect::Contains(float _x, float _y) const
+{
+	return (_x >= x && _x <= w && _y >= y && _y <= h);
+}
+
 int CUI::DoButtonLogic(const void *pID, const char *pText, int Checked, const CUIRect *pRect)
 {
 	// logic

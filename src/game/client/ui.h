@@ -21,6 +21,7 @@ public:
 	void VMargin(float Cut, CUIRect *pOtherRect) const;
 	void HMargin(float Cut, CUIRect *pOtherRect) const;
 
+	bool Contains(float _x, float _y) const;
 };
 
 class CUI

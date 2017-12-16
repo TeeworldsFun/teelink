@@ -17,3 +17,5 @@
 - Added some particles to explosion effect
 - Reduced the number of blood particles
 - Removed corrupted skins
+- Removed redundant compiler settings in bam.lua (Settings that I change in the past)
+- Added option for show off-screen players

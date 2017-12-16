@@ -112,10 +112,10 @@ MACRO_CONFIG_INT(hcGoreStyleTeeColors, hc_gore_style_tee_colors, 0, 0, 1, CFGFLA
 MACRO_CONFIG_INT(hcGoreStyleDropWeapons, hc_gore_style_drop_weapons, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Drop Weapons in Gore Style!")
 
 MACRO_CONFIG_INT(hcLaserCustomColor, hc_laser_custom_color, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Custom Laser Color")
-MACRO_CONFIG_INT(hcLaserColorHue, hc_laser_color_hue, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color hue")
-MACRO_CONFIG_INT(hcLaserColorSat, hc_laser_color_sat, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color saturation")
-MACRO_CONFIG_INT(hcLaserColorLht, hc_laser_color_lht, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color lightness")
-MACRO_CONFIG_INT(hcLaserColorAlpha, hc_laser_color_alpha, 190, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser alpha")
+MACRO_CONFIG_INT(hcLaserColorHue, hc_laser_color_hue, 247, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color hue")
+MACRO_CONFIG_INT(hcLaserColorSat, hc_laser_color_sat, 148, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color saturation")
+MACRO_CONFIG_INT(hcLaserColorLht, hc_laser_color_lht, 0, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color lightness")
+MACRO_CONFIG_INT(hcLaserColorAlpha, hc_laser_color_alpha, 255, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser alpha")
 
 MACRO_CONFIG_INT(hcSmokeCustomColor, hc_smoke_custom_color, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Custom Smoke Color")
 MACRO_CONFIG_INT(hcSmokeColorHue, hc_smoke_color_hue, 191, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color hue")
@@ -125,6 +125,7 @@ MACRO_CONFIG_INT(hcSmokeColorAlpha, hc_smoke_color_alpha, 255, 0, 255, CFGFLAG_C
 
 MACRO_CONFIG_INT(hcDisableChatSoundNotification, hc_disable_chat_sound_notification, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Disable Chat Sound Notification")
 MACRO_CONFIG_INT(hcPlayerInfo, hc_player_info, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Player Info")
+MACRO_CONFIG_INT(hcShowOffScreenPlayers, hc_show_offscreen_players, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Off-Screen Players")
 MACRO_CONFIG_INT(hcShowPreviewMap, hc_show_preview_map, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Preview Map")
 MACRO_CONFIG_INT(hcPreviewMapMaxWidth, hc_preview_map_max_width, 600, 1, 999999, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Preview Map Max Width")
 MACRO_CONFIG_INT(hcPreviewMapMaxHeight, hc_preview_map_max_height, 600, 1, 999999, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Preview Map Max Height")

@@ -939,7 +939,7 @@ void CGameClient::OnNewSnapshot()
 
 				// calculate team-balance
 				if(pInfo->m_Team != TEAM_SPECTATORS)
-					m_Snap.m_aTeamSize[pInfo->m_Team]++;
+					++m_Snap.m_aTeamSize[pInfo->m_Team];
 			}
 			else if(Item.m_Type == NETOBJTYPE_CHARACTER)
 			{
@@ -963,7 +963,7 @@ void CGameClient::OnNewSnapshot()
 							g_Stats.m_TotalDamage += HealthDiff;
 
 						if (m_Snap.m_aCharacters[Item.m_ID].m_Cur.m_Weapon != m_Snap.m_aCharacters[Item.m_ID].m_Prev.m_Weapon)
-							g_Stats.m_WeaponChanges++;
+							++g_Stats.m_WeaponChanges;
 					}
 					//
 				}

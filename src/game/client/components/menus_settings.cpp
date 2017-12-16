@@ -1089,7 +1089,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
     PanelR.VSplitLeft(10.0f, 0x0, &PanelR);
 
 	//TODO: Need be change...
-	float splitTop = 280.0f;
+	float splitTop = 300.0f;
     /*if (g_Config.m_hcLaserCustomColor)
         splitTop += 105.0f;
     if (g_Config.m_hcAutoDownloadSkins)
@@ -1152,6 +1152,11 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcPlayerInfo, Localize("Show player info"), g_Config.m_hcPlayerInfo, &HUDItem))
             g_Config.m_hcPlayerInfo ^= 1;
+
+        //Show Off-Screen Players
+		StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
+		if(DoButton_CheckBox(&g_Config.m_hcShowOffScreenPlayers, Localize("Show off-screen players"), g_Config.m_hcShowOffScreenPlayers, &HUDItem))
+			g_Config.m_hcShowOffScreenPlayers ^= 1;
 
         //Show Map Preview
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);

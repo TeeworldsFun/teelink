@@ -547,12 +547,11 @@ void CEffects::ExplosionDebris(const vec2 &Pos)
 		p.m_Spr = SPRITE_PART_UNFREEZE01;
 		p.m_Color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		p.m_Pos = Pos;
-		p.m_LifeSpan = 1.75f;
-		p.m_EndSize = vec2(0.0f, 0.0f);
+		p.m_LifeSpan = 0.75f;
 		p.m_Gravity = 2500.0f;
 		p.m_Friction = 0.9f;
-		p.m_StartSize = vec2(4.0f, 4.0f);
-		p.m_Rot = 0.0f;
+		p.m_EndSize = p.m_StartSize = vec2(rand()%3+2, rand()%3+2);
+		p.m_Rot = rand()%20+20;
 		p.m_Collide = true;
 		p.m_Vel = RandomDir() * (powf(frandom(), 3)*2000.0f);
 		m_pClient->m_pParticles->Add(CParticles::GROUP_HCLIENT_FREEZE, &p);

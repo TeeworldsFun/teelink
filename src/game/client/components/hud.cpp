@@ -671,6 +671,8 @@ void CHud::OnRender()
 	if(!m_pClient->m_Snap.m_pGameInfoObj)
 		return;
 
+	Graphics()->GetScreen(&m_PlayableZone.x, &m_PlayableZone.y, &m_PlayableZone.w, &m_PlayableZone.h);
+
 	m_Width = 300.0f*Graphics()->ScreenAspect();
 	m_Height = 300.0f;
 	Graphics()->MapScreen(0.0f, 0.0f, m_Width, m_Height);
@@ -700,6 +702,7 @@ void CHud::OnRender()
 			RenderConnectionWarning();
 		RenderTeambalanceWarning();
 		RenderVoting();
+		RenderPlayersOffScreen();
 
 		if (!m_pClient->m_pMenus->IsActive())
             RenderRecord(); //H-Client: DDRace
@@ -1011,4 +1014,97 @@ void CHud::RenderPlayerInfo()
         }
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
     }
+}
+
+void CHud::RenderPlayersOffScreen()
+{
+	if (!g_Config.m_hcShowOffScreenPlayers)
+		return;
+
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		// only render active characters
+		if(!m_pClient->m_Snap.m_aCharacters[i].m_Active)
+			continue;
+
+		const void *pPrevInfo = Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_PLAYERINFO, i);
+		const void *pInfo = Client()->SnapFindItem(IClient::SNAP_CURRENT, NETOBJTYPE_PLAYERINFO, i);
+
+		if(pPrevInfo && pInfo)
+		{
+			const CNetObj_PlayerInfo &PlayerInfo = *(const CNetObj_PlayerInfo *)pInfo;
+			if (PlayerInfo.m_Local)
+				continue;
+
+			const CNetObj_Character &PrevChar = m_pClient->m_Snap.m_aCharacters[i].m_Prev;
+			const CNetObj_Character &CurChar = m_pClient->m_Snap.m_aCharacters[i].m_Cur;
+
+			CTeeRenderInfo RenderInfo = m_pClient->m_aClients[i].m_RenderInfo;
+
+			const float IntraTick = Client()->IntraGameTick();
+			const float Angle = mix((float)PrevChar.m_Angle, (float)CurChar.m_Angle, IntraTick)/256.0f;
+			const vec2 Direction = GetDirection((int)(Angle*256.0f));
+			const vec2 Position = mix(vec2(PrevChar.m_X, PrevChar.m_Y), vec2(CurChar.m_X, CurChar.m_Y), IntraTick);
+			const vec2 Vel = mix(vec2(PrevChar.m_VelX/256.0f, PrevChar.m_VelY/256.0f), vec2(CurChar.m_VelX/256.0f, CurChar.m_VelY/256.0f), IntraTick);
+
+			if (m_PlayableZone.Contains(Position.x, Position.y))
+				continue;
+
+			Graphics()->MapScreen(m_PlayableZone.x, m_PlayableZone.y, m_PlayableZone.w, m_PlayableZone.h);
+
+			vec2 Center;
+			Center.x = clamp(Position.x, m_PlayableZone.x, m_PlayableZone.w);
+			Center.y = clamp(Position.y, m_PlayableZone.y, m_PlayableZone.h);
+			Graphics()->BlendNormal();
+
+			Graphics()->TextureSet(-1);
+			Graphics()->QuadsBegin();
+			if (m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS))
+			{
+				if (PlayerInfo.m_Team == TEAM_BLUE)
+					Graphics()->SetColor(0,0,1.0f,0.3f);
+				else
+					Graphics()->SetColor(1.0f,0,0.0f,0.3f);
+			}
+			else
+				Graphics()->SetColor(0,0,0.0f,0.3f);
+			DrawCircle(Center.x, Center.y, 32.0f, 24);
+			Graphics()->QuadsEnd();
+
+			Graphics()->MapScreen(0.0f, 0.0f, m_Width, m_Height);
+		}
+	}
+}
+
+// FIXME: Duplicated method from "emoticon" class
+void CHud::DrawCircle(float x, float y, float r, int Segments)
+{
+	IGraphics::CFreeformItem Array[32];
+	int NumItems = 0;
+	float FSegments = (float)Segments;
+	for(int i = 0; i < Segments; i+=2)
+	{
+		float a1 = i/FSegments * 2*PI;
+		float a2 = (i+1)/FSegments * 2*PI;
+		float a3 = (i+2)/FSegments * 2*PI;
+		float Ca1 = cosf(a1);
+		float Ca2 = cosf(a2);
+		float Ca3 = cosf(a3);
+		float Sa1 = sinf(a1);
+		float Sa2 = sinf(a2);
+		float Sa3 = sinf(a3);
+
+		Array[NumItems++] = IGraphics::CFreeformItem(
+			x, y,
+			x+Ca1*r, y+Sa1*r,
+			x+Ca3*r, y+Sa3*r,
+			x+Ca2*r, y+Sa2*r);
+		if(NumItems == 32)
+		{
+			m_pClient->Graphics()->QuadsDrawFreeform(Array, 32);
+			NumItems = 0;
+		}
+	}
+	if(NumItems)
+		m_pClient->Graphics()->QuadsDrawFreeform(Array, NumItems);
 }
