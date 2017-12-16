@@ -17,5 +17,6 @@
 - Added some particles to explosion effect
 - Reduced the number of blood particles
 - Removed corrupted skins
-- Removed redundant compiler settings in bam.lua (Settings that I change in the past)
+- Removed redundant compiler settings and fix some builds in bam.lua (Settings that I change in the past)
+- Improved CircleCI (automated builds for linux) builds & package {original idea by def-, ddnet teamm}
 - Added option for show off-screen players

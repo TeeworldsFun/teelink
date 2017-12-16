@@ -6,12 +6,14 @@ machine:
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 10
   environment:
     HCLIENT_VERSION: 4.0.1
+  python:
+    version: 2.7.5
 
 # To Build Teeworlds
 dependencies:
   pre:
     - |
-        sudo apt-get update && sudo apt-get install -y libsdl1.2-dev zlib1g-dev libfreetype6-dev python2.7 libnotify-dev libopus-dev
+        sudo apt-get update && sudo apt-get install -y libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev
 
         if [ ! -x ~/bam-0.5.0/bam ]; then
           wget -O ~/bamv0.5.0.tar.gz https://github.com/matricks/bam/archive/v0.5.0.tar.gz
@@ -32,4 +34,3 @@ test:
   post:
     - mv teeworlds* $CIRCLE_ARTIFACTS
     - mv H-Client-*.tar.gz $CIRCLE_ARTIFACTS
-
