@@ -1,5 +1,8 @@
 image: Visual Studio 2015
 
+environment:
+  HCLIENT_VERSION: 0.4.1
+
 init:
   - cmd: call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
   
@@ -16,11 +19,15 @@ cache:
   - C:\projects\bam-0.5.0
 
 build_script:
-  - cmd: ..\bam-0.5.0\bam.exe client_release
-  - cmd: ..\bam-0.5.0\bam.exe server_release
-  - cmd: ..\bam-0.5.0\bam.exe client_debug
-  - cmd: ..\bam-0.5.0\bam.exe server_debug
-
+  - cmd: ..\bam-0.5.0\bam.exe release
+  - cmd: ..\bam-0.5.0\bam.exe debug
+  - cmd: ..\bam-0.5.0\bam.exe debug
+  
+on_success:
+  - "SET PATH=C:\\Python27-x64;C:\\Python27-x64\\Scripts;%PATH%"
+  - python scripts\make_release.py %HCLIENT_VERSION% win32
+ 
 artifacts:
-  - path: teeworlds*
-    name: H-Client
+  - path: H-Client-*
+          teeworlds*
+    name: H-Client Win32

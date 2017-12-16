@@ -51,7 +51,7 @@ def copydir(src, dst, excl=[]):
 			if name[0] != '.':
 				shutil.copy(os.path.join(root, name), os.path.join(dst, root, name))
 				
-package = "%s-%s-%s" %(name, version, platform)
+package = "H-Client-%s-%s" %(version, platform)
 package_dir = package
 
 print("cleaning target")
@@ -70,6 +70,12 @@ if include_data and not use_bundle:
 		shutil.copy("other/config_directory.bat", package_dir)
 		shutil.copy("SDL.dll", package_dir)
 		shutil.copy("freetype.dll", package_dir)
+		shutil.copy("libogg.dll", package_dir)
+		shutil.copy("libopus.dll", package_dir)
+		shutil.copy("libopusfile.dll", package_dir)
+		shutil.copy("libwinpthread-1.dll", package_dir)
+	if platform == "win32":
+		shutil.copy("libgcc_s_sjlj-1.dll", package_dir)
 
 if include_exe and not use_bundle:
 	shutil.copy(name+exe_ext, package_dir)
