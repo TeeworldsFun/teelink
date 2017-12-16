@@ -21,7 +21,6 @@ cache:
 build_script:
   - cmd: ..\bam-0.5.0\bam.exe release
   - cmd: ..\bam-0.5.0\bam.exe debug
-  - cmd: ..\bam-0.5.0\bam.exe debug
   
 after_build:
   - "SET PATH=C:\\Python27-x64;C:\\Python27-x64\\Scripts;%PATH%"
