@@ -54,7 +54,7 @@ public:
 	};
 
 	static bool GetToFile(const char *url, const char *dest, NETDOWNLOADINFO *pNetDownload, unsigned timeOut = 3, unsigned downloadSpeed = 0);
-	static unsigned char* GetToMemory(const char *url, NETDOWNLOADINFO *pNetDownload, unsigned timeOut = 3, unsigned downloadSpeed = 0, bool onlyInfo = false);
+	static unsigned char* GetToMemory(const char *url, NETDOWNLOADINFO *pNetDownload, unsigned timeOut = 3, unsigned downloadSpeed = 0, bool onlyInfo = false, int finishState = HTTP_STATE_DOWNLOADED);
 
 private:
 	static NETURL CreateUrl(std::string url);

@@ -112,15 +112,15 @@ MACRO_CONFIG_INT(hcGoreStyleTeeColors, hc_gore_style_tee_colors, 0, 0, 1, CFGFLA
 MACRO_CONFIG_INT(hcGoreStyleDropWeapons, hc_gore_style_drop_weapons, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Drop Weapons in Gore Style!")
 
 MACRO_CONFIG_INT(hcLaserCustomColor, hc_laser_custom_color, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Custom Laser Color")
-MACRO_CONFIG_INT(hcLaserColorHue, hc_laser_color_hue, 247, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color hue")
-MACRO_CONFIG_INT(hcLaserColorSat, hc_laser_color_sat, 148, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color saturation")
-MACRO_CONFIG_INT(hcLaserColorLht, hc_laser_color_lht, 0, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color lightness")
-MACRO_CONFIG_INT(hcLaserColorAlpha, hc_laser_color_alpha, 255, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser alpha")
+MACRO_CONFIG_INT(hcLaserColorHue, hc_laser_color_hue, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color hue")
+MACRO_CONFIG_INT(hcLaserColorSat, hc_laser_color_sat, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color saturation")
+MACRO_CONFIG_INT(hcLaserColorLht, hc_laser_color_lht, 127, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser color lightness")
+MACRO_CONFIG_INT(hcLaserColorAlpha, hc_laser_color_alpha, 190, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Laser alpha")
 
 MACRO_CONFIG_INT(hcSmokeCustomColor, hc_smoke_custom_color, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Custom Smoke Color")
-MACRO_CONFIG_INT(hcSmokeColorHue, hc_smoke_color_hue, 191, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color hue")
-MACRO_CONFIG_INT(hcSmokeColorSat, hc_smoke_color_sat, 191, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color saturation")
-MACRO_CONFIG_INT(hcSmokeColorLht, hc_smoke_color_lht, 191, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color lightness")
+MACRO_CONFIG_INT(hcSmokeColorHue, hc_smoke_color_hue, 247, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color hue")
+MACRO_CONFIG_INT(hcSmokeColorSat, hc_smoke_color_sat, 148, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color saturation")
+MACRO_CONFIG_INT(hcSmokeColorLht, hc_smoke_color_lht, 0, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke color lightness")
 MACRO_CONFIG_INT(hcSmokeColorAlpha, hc_smoke_color_alpha, 255, 0, 255, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Smoke alpha")
 
 MACRO_CONFIG_INT(hcDisableChatSoundNotification, hc_disable_chat_sound_notification, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Disable Chat Sound Notification")

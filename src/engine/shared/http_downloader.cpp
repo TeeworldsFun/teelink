@@ -7,7 +7,7 @@
 
 bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOADINFO *pNetDownload, unsigned timeOut, unsigned downloadSpeed)
 {
-	unsigned char *pFileData = GetToMemory(url, pNetDownload, timeOut, downloadSpeed);
+	unsigned char *pFileData = GetToMemory(url, pNetDownload, timeOut, downloadSpeed, false, HTTP_STATE_DOWNLOADING);
 
 	if (pFileData)
 	{
@@ -43,7 +43,7 @@ bool CHttpDownloader::GetToFile(const char *url, const char *dest, NETDOWNLOADIN
 	return pNetDownload->m_Status != HTTP_STATE_ERROR;
 }
 
-unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pNetDownload, unsigned timeOut, unsigned downloadSpeed, bool onlyInfo)
+unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pNetDownload, unsigned timeOut, unsigned downloadSpeed, bool onlyInfo, int finishState)
 {
 	unsigned char *pData = 0x0;
 	int64 downloadTime = time_get();
@@ -153,7 +153,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
 						isHeader = false;
 						if (onlyInfo)
 						{
-							pNetDownload->m_Status = HTTP_STATE_DOWNLOADED;
+							pNetDownload->m_Status = finishState;
 							break;
 						}
 
@@ -188,7 +188,7 @@ unsigned char* CHttpDownloader::GetToMemory(const char *url, NETDOWNLOADINFO *pN
 				pNetDownload->m_Received += numBytes;
 				if (pNetDownload->m_Received == pNetDownload->m_FileSize)
 				{
-					pNetDownload->m_Status = HTTP_STATE_DOWNLOADED;
+					pNetDownload->m_Status = finishState;
 					break;
 				}
 				i += CurrentRecv;
