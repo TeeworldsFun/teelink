@@ -31,5 +31,5 @@ test:
   ## Artifacts
   post:
     - mv teeworlds* $CIRCLE_ARTIFACTS
-    - mv H-CLIENT-* $CIRCLE_ARTIFACTS
+    - mv H-Client-* $CIRCLE_ARTIFACTS
 
