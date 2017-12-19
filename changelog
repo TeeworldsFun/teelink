@@ -1,3 +1,7 @@
++ v4.0.2
+==========
+- Improved >16 players support (now works on all servers not only ddrace)
+
 + v4.0.1
 ==========
 - Now only take preview's of new maps

@@ -343,7 +343,7 @@ Messages = [
 	
 	### HClient messages (Server & Client)
 	# DDRace Compatibility
-	NetMessage("Cl_IsDDNet", []),
+	NetMessage("Cl_IsHClient", []),
 	
 	NetMessage("Sv_DDRaceTime", [
 		NetIntAny("m_Time"),

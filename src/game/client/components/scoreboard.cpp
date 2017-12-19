@@ -228,7 +228,7 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
 	if(Team == TEAM_SPECTATORS)
 		return;
 
-    bool isDDRace = Client()->IsServerType("ddrace");
+    bool isDDRace = Client()->IsServerType(SERVER_GAMETYPE_DDRACE);
 
     float h = 760.0f;
 	CUIRect area;
@@ -243,22 +243,60 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
 	area.HSplitTop(60.0f, &rTitle, &area);
 	float TitleFontsize = 40.0f;
 
-    if(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)
-        pTitle = Localize("Game over");
-    else
-        pTitle = Localize("Score board");
+	if(!pTitle)
+	{
+		if(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)
+			pTitle = Localize("Game over");
+		else
+			pTitle = Localize("Score board");
 
-    RenderTools()->DrawUIRect(&rTitle, HexToVec4(g_Config.m_hcContainerHeaderBackgroundColor), CUI::CORNER_T, 10.0f);
-
+        RenderTools()->DrawUIRect(&rTitle, HexToVec4(g_Config.m_hcContainerHeaderBackgroundColor), CUI::CORNER_T, 10.0f);
+	}
+	else
+	{
+	    if (Team == TEAM_RED)
+            RenderTools()->DrawUIRect(&rTitle, vec4(1.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_T, 10.0f);
+	    if (Team == TEAM_BLUE)
+            RenderTools()->DrawUIRect(&rTitle, vec4(0.0f, 0.0f, 1.0f, 0.5f), CUI::CORNER_T, 10.0f);
+	}
 
 	rTitle.Margin(10.0f, &rTitle);
 
+    CUIRect parts[4];
+    area.VSplitMid(&parts[0], &parts[2]);
+    parts[0].VSplitMid(&parts[0], &parts[1]);
+    parts[2].VSplitMid(&parts[2], &parts[3]);
+
 	char aBuf[128] = {0};
-    if(m_pClient->m_Snap.m_pGameDataObj)
-    {
-        int Score = Team == TEAM_RED ? m_pClient->m_Snap.m_pGameDataObj->m_TeamscoreRed : m_pClient->m_Snap.m_pGameDataObj->m_TeamscoreBlue;
-        str_format(aBuf, sizeof(aBuf), "%d", Score);
-    }
+	const bool isTeamGame = m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS;
+	if(isTeamGame)
+	{
+	    area.VSplitMid(&parts[0], &parts[1]);
+
+		if(m_pClient->m_Snap.m_pGameDataObj)
+		{
+			int Score = Team == TEAM_RED ? m_pClient->m_Snap.m_pGameDataObj->m_TeamscoreRed : m_pClient->m_Snap.m_pGameDataObj->m_TeamscoreBlue;
+			str_format(aBuf, sizeof(aBuf), "%d", Score);
+		}
+	}
+	else
+	{
+	    area.VSplitMid(&parts[0], &parts[2]);
+	    parts[0].VSplitMid(&parts[0], &parts[1]);
+	    parts[2].VSplitMid(&parts[2], &parts[3]);
+
+		if(m_pClient->m_Snap.m_SpecInfo.m_Active && m_pClient->m_Snap.m_SpecInfo.m_SpectatorID != SPEC_FREEVIEW &&
+			m_pClient->m_Snap.m_paPlayerInfos[m_pClient->m_Snap.m_SpecInfo.m_SpectatorID])
+		{
+			int Score = m_pClient->m_Snap.m_paPlayerInfos[m_pClient->m_Snap.m_SpecInfo.m_SpectatorID]->m_Score;
+			str_format(aBuf, sizeof(aBuf), "%d", Score);
+		}
+		else if(m_pClient->m_Snap.m_pLocalInfo)
+		{
+			int Score = m_pClient->m_Snap.m_pLocalInfo->m_Score;
+			str_format(aBuf, sizeof(aBuf), "%d", Score);
+		}
+	}
 
 	float tw = TextRender()->TextWidth(0, TitleFontsize, aBuf, -1);
 	CUIRect rTitlePoints;
@@ -273,11 +311,6 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
     int part = 0;
     CTextCursor Cursor;
 
-    CUIRect parts[4];
-    area.VSplitMid(&parts[0], &parts[2]);
-    parts[0].VSplitMid(&parts[0], &parts[1]);
-    parts[2].VSplitMid(&parts[2], &parts[3]);
-
     float ScoreOffset, ScoreLength;
     float TeeOffset, TeeLength;
     float NameOffset, NameLength;
@@ -285,14 +318,16 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
     float CountryOffset, CountryLength;
     float ClanOffset, ClanLength;
 
+    const unsigned MaxPlayersPerColumn = !isTeamGame?16:32;
+
     int nPlayers = 0;
     bool fi = false;
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-	    if (!fi || (i%16) == 0)
+	    if (!fi || (i%MaxPlayersPerColumn) == 0)
 	    {
 	        if (fi)
-                part++;
+                ++part;
 
             x = parts[part].x;
             y = parts[part].y;
@@ -326,7 +361,7 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
 
             int corner = 0;
             if (part==0) corner = CUI::CORNER_BL;
-            else if (part==3) corner = CUI::CORNER_BR;
+            else if ((isTeamGame && part==1) || (!isTeamGame && part==3)) corner = CUI::CORNER_BR;
             vec4 baColor = HexToVec4(g_Config.m_hcContainerBackgroundColor);
             RenderTools()->DrawUIRect(&parts[part], vec4(baColor.r, baColor.g, baColor.b, part%2==0?0.5f:0.65f), corner, 10.0f);
 
@@ -335,10 +370,10 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
 
 		// make sure that we render the correct team
 		const CNetObj_PlayerInfo *pInfo = m_pClient->m_Snap.m_paInfoByDDTeam[i];
-		if(!pInfo)
+		if(!pInfo || pInfo->m_Team != Team)
 			continue;
 
-        nPlayers++;
+        ++nPlayers;
 
 		// background so it's easy to find the local player or the followed one in spectator mode
 		if(pInfo->m_Local || (m_pClient->m_Snap.m_SpecInfo.m_Active && pInfo->m_ClientID == m_pClient->m_Snap.m_SpecInfo.m_SpectatorID))
@@ -693,11 +728,12 @@ void CScoreboard::OnRender()
 
 	if(m_pClient->m_Snap.m_pGameInfoObj)
 	{
+		// H-Client: >16 players support
+		CServerInfo SInfo;
+		Client()->GetServerInfo(&SInfo);
 		if(!(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS))
 		{
-            // H-Client: DDNet
-            CServerInfo SInfo;
-            Client()->GetServerInfo(&SInfo);
+            // H-Client: >16 players support
 		    if (SInfo.m_MaxPlayers > 16)
                 RenderScoreboard64(10.0f, 270.0f, Width-20.0f, 0, 0);
             else
@@ -777,8 +813,16 @@ void CScoreboard::OnRender()
 			else if (!(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER) && !s_NeedUpdate)
                 s_NeedUpdate = true;
 
-			RenderScoreboard(Width/2-w-5.0f, 270.0f, w, TEAM_RED, pRedClanName ? pRedClanName : Localize("Red team"));
-			RenderScoreboard(Width/2+5.0f, 270.0f, w, TEAM_BLUE, pBlueClanName ? pBlueClanName : Localize("Blue team"));
+			// H-Client: >16 players support
+			if (SInfo.m_MaxPlayers > 16)
+			{
+				RenderScoreboard64(10.0f, 270.0f, Width/2-15.0f, TEAM_RED, pRedClanName ? pRedClanName : Localize("Red team"));
+				RenderScoreboard64(Width/2+5.0f, 270.0f, Width/2-15.0f, TEAM_BLUE, pBlueClanName ? pBlueClanName : Localize("Blue team"));
+			} else
+			{
+				RenderScoreboard(Width/2-w-5.0f, 270.0f, w, TEAM_RED, pRedClanName ? pRedClanName : Localize("Red team"));
+				RenderScoreboard(Width/2+5.0f, 270.0f, w, TEAM_BLUE, pBlueClanName ? pBlueClanName : Localize("Blue team"));
+			}
 		}
 	}
 

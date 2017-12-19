@@ -220,8 +220,8 @@ int CControls::SnapInput(int *pData)
 		if(time_get() > LastSendTime + time_freq()/10)
 			Send = true;
 
-		// H-Client: DDNet
-		if(Client()->IsServerType("ddrace") && m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == WEAPON_NINJA && (m_InputData.m_Direction || m_InputData.m_Jump || m_InputData.m_Hook))
+		// H-Client: Force Send input when freezed in DDNet
+		if(Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == WEAPON_NINJA && (m_InputData.m_Direction || m_InputData.m_Jump || m_InputData.m_Hook))
 			Send = true;
 
 		// H-Client: Stats

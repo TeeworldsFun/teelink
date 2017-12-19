@@ -7,7 +7,7 @@
 #define GAME_NETVERSION "0.6 " GAME_NETVERSION_HASH
 static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
 
-#define DDRACE_VERSIONNR 308
+#define DDRACE_VERSIONNR 308 // Old DDRace Version only for >16 players support
 /*
 1 - 3.5
 2 - 3.5.1
@@ -22,7 +22,8 @@ static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
 11 - 3.9.1
 12 - 4.0 [Final]
 13 - 4.0.1
+14 - 4.0.2
 */
-#define HCLIENT_VERSION_CODE 13
-#define HCLIENT_VERSION "4.0.1"
+#define HCLIENT_VERSION_CODE 14
+#define HCLIENT_VERSION "4.0.2"
 #endif

@@ -483,7 +483,7 @@ void CCharacterCore::Tick(bool UseInput)
 		}
 
 		// Only in DDRace (Special Weapons) // FIXME: Use vanilla weapons causes mistakes!
-		if (str_find_nocase(m_pWorld->m_aGameType, "ddrace"))
+		if (str_find_nocase(m_pWorld->m_aGameType, SERVER_GAMETYPE_DDRACE))
 		{
 			// jetpack and ninjajetpack prediction
 			if(!InTileFreeze && UseInput && (m_Input.m_Fire&1) && (m_ActiveWeapon == WEAPON_GUN || m_ActiveWeapon == WEAPON_NINJA))

@@ -1542,7 +1542,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 					}
 
 					// H-Client: DDRace: Send Timeout Hash (50 is a magic number :/)
-					if(!m_TimeoutCodeSent && m_RecivedSnapshots == 50 && IsServerType("ddrace"))
+					if(!m_TimeoutCodeSent && m_RecivedSnapshots == 50 && IsServerType(SERVER_GAMETYPE_DDRACE))
 					{
 						m_TimeoutCodeSent = true;
 						CNetMsg_Cl_Say Msg;

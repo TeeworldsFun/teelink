@@ -24,6 +24,9 @@
 #endif
 //
 
+#define SERVER_GAMETYPE_DDRACE 	"ddrace"
+#define SERVER_GAMETYPE_FNG		"fng"
+
 class CTuneParam
 {
 	int m_Value;

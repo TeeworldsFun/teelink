@@ -132,7 +132,7 @@ void CNamePlates::RenderNameplate(
         TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 	}
-	else if (g_Config.m_hcUseHUD && Client()->IsServerType("ddrace") && m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_FreezedState.m_Freezed)
+	else if (g_Config.m_hcUseHUD && Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_FreezedState.m_Freezed)
     {
 		// H-Client
         CNetObj_Character Prev = *pPrevChar;

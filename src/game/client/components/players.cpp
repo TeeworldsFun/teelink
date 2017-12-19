@@ -586,7 +586,7 @@ void CPlayers::RenderPlayer(
 
 	if (m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Freezed)
 	{
-		if (Client()->IsServerType("fng"))
+		if (Client()->IsServerType(SERVER_GAMETYPE_FNG))
 		{
 			m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha = 1.0f;
 			m_RenderFreezeInfo.m_ColorBody.a = 1.0f;
@@ -614,7 +614,7 @@ void CPlayers::RenderPlayer(
 	}
 	else
 	{
-		if (Client()->IsServerType("fng"))
+		if (Client()->IsServerType(SERVER_GAMETYPE_FNG))
 		{
 			m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Alpha = 0.0f;
 			RenderInfo.m_ColorBody.a = 1.0f;
@@ -640,7 +640,7 @@ void CPlayers::RenderPlayer(
 	//
 
 	//H-Client: Gore
-    if (g_Config.m_hcGoreStyle && !Client()->IsServerType("ddrace") && Prev.m_Emote == EMOTE_NORMAL && Player.m_Emote == EMOTE_PAIN)
+    if (g_Config.m_hcGoreStyle && !Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && Prev.m_Emote == EMOTE_NORMAL && Player.m_Emote == EMOTE_PAIN)
         m_pClient->m_pEffects->Blood(Position, Direction, 0);
     //
 

@@ -104,7 +104,7 @@ void CEmoticon::OnRender()
 		{
             if (m_SelectedEmote != -1)
                 Emote(m_SelectedEmote);
-            else if (Client()->IsServerType("ddrace") && m_SelectedEyes != -1)
+            else if (Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && m_SelectedEyes != -1)
                 Eyes(m_SelectedEyes);
         }
 		m_WasActive = false;
@@ -132,7 +132,7 @@ void CEmoticon::OnRender()
 	{
         m_SelectedEyes = -1;
 		m_SelectedEmote = (int)(SelectedAngle / (2*PI) * NUM_EMOTICONS);
-    } else if (Client()->IsServerType("ddrace") && mouselen > 50.0f && mouselen < 110.0f) // H-Client
+    } else if (Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && mouselen > 50.0f && mouselen < 110.0f) // H-Client
     {
         m_SelectedEmote = -1;
 		m_SelectedEyes = (int)(SelectedAngle / (2*PI) * NUM_EMOTES);
@@ -155,7 +155,7 @@ void CEmoticon::OnRender()
 	Graphics()->QuadsEnd();
 
     // H-Client
-    if (Client()->IsServerType("ddrace"))
+    if (Client()->IsServerType(SERVER_GAMETYPE_DDRACE))
     {
         Graphics()->TextureSet(-1);
         Graphics()->QuadsBegin();
@@ -186,7 +186,7 @@ void CEmoticon::OnRender()
 	}
     Graphics()->QuadsEnd();
 
-    if (Client()->IsServerType("ddrace"))
+    if (Client()->IsServerType(SERVER_GAMETYPE_DDRACE))
     {
         for (int i = 0; i < NUM_EMOTES; i++)
         {

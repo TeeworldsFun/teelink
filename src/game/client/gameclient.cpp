@@ -1049,14 +1049,14 @@ void CGameClient::OnNewSnapshot()
 			m_aClients[i].m_Friend = true;
 
         // H-Client: update freeze state
-        if (Client()->IsServerType("ddrace") && (Collision()->CheckPointFreeze(m_aClients[i].m_Predicted.m_Pos) || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
+        if (Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && (Collision()->CheckPointFreeze(m_aClients[i].m_Predicted.m_Pos) || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
         {
             if (!m_aClients[i].m_FreezedState.m_Freezed)
                 m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();
             m_aClients[i].m_FreezedState.m_Freezed = true;
             m_aClients[i].m_Predicted.m_Freezes = true;
         }
-        else if (Client()->IsServerType("fng") && m_Snap.m_aCharacters[i].m_Cur.m_Weapon == WEAPON_NINJA)
+        else if (Client()->IsServerType(SERVER_GAMETYPE_FNG) && m_Snap.m_aCharacters[i].m_Cur.m_Weapon == WEAPON_NINJA)
         {
         	if (!m_aClients[i].m_FreezedState.m_Freezed)
 				m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();
@@ -1124,24 +1124,22 @@ void CGameClient::OnNewSnapshot()
 			m_ServerMode = SERVERMODE_PUREMOD;
 	}
 
-    //H-Client: DDNet
-	if (Client()->IsServerType("ddrace"))
+    //H-Client: >16 players support
+	if ((Client()->IsServerType(SERVER_GAMETYPE_DDRACE) || CurrentServerInfo.m_MaxClients > 16) && !m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
 	{
-		if(!m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
-		{
-			CMsgPacker Msg(NETMSGTYPE_CL_ISDDNET); // <-- NO, THIS IS H-CLIENT BITCH! (Used for get some net messages)
-			Msg.AddInt(DDRACE_VERSIONNR);
-			Client()->SendMsg(&Msg, MSGFLAG_VITAL);
-			m_DDRaceMsgSent = true;
-		}
+		CMsgPacker Msg(NETMSGTYPE_CL_ISHCLIENT); // <-- DDNet Servers & derivatives (>16 players support & other minor ddrace stuff)
+		Msg.AddInt(DDRACE_VERSIONNR);
+		Client()->SendMsg(&Msg, MSGFLAG_VITAL);
+		m_DDRaceMsgSent = true;
+	}
 
-		if (m_LastDDRaceShowOthers != g_Config.m_ddrShowOthers)
-		{
-			m_LastDDRaceShowOthers = g_Config.m_ddrShowOthers;
-			CNetMsg_Cl_ShowOthers Msg;
-			Msg.m_Show = m_LastDDRaceShowOthers;
-			Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
-		}
+	 //H-Client: DDNet Show Others
+	if (Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && m_LastDDRaceShowOthers != g_Config.m_ddrShowOthers)
+	{
+		m_LastDDRaceShowOthers = g_Config.m_ddrShowOthers;
+		CNetMsg_Cl_ShowOthers Msg;
+		Msg.m_Show = m_LastDDRaceShowOthers;
+		Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 	}
     //
 
