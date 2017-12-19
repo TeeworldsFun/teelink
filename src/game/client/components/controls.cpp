@@ -197,8 +197,8 @@ int CControls::SnapInput(int *pData)
 		const float PhysSize = 28.0f;
 		const vec2 &LocalCharPos = m_pClient->m_PredictedChar.m_Pos;
 		if (m_pClient->m_pControls->m_SafeWalk && (m_pClient->Collision()->CheckPoint(LocalCharPos.x+PhysSize/2, LocalCharPos.y+PhysSize/2+5) || m_pClient->Collision()->CheckPoint(LocalCharPos.x-PhysSize/2, LocalCharPos.y+PhysSize/2+5)) &&
-				((m_InputData.m_Direction == -1 && !m_pClient->Collision()->GetCollisionAt(m_pClient->m_PredictedChar.m_Pos.x-32.0f, m_pClient->m_PredictedChar.m_Pos.y+32.0f)) ||
-				(m_InputData.m_Direction == 1 && !m_pClient->Collision()->GetCollisionAt(m_pClient->m_PredictedChar.m_Pos.x+32.0f, m_pClient->m_PredictedChar.m_Pos.y+32.0f))))
+				((m_InputData.m_Direction == -1 && !m_pClient->Collision()->CheckPoint(m_pClient->m_PredictedChar.m_Pos.x-32.0f, m_pClient->m_PredictedChar.m_Pos.y+32.0f)) ||
+				(m_InputData.m_Direction == 1 && !m_pClient->Collision()->CheckPoint(m_pClient->m_PredictedChar.m_Pos.x+32.0f, m_pClient->m_PredictedChar.m_Pos.y+32.0f))))
 		{
 			m_InputData.m_Direction = 0;
 		}
