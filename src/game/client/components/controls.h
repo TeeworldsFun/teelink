@@ -16,6 +16,7 @@ public:
 	int m_InputDirectionLeft;
 	int m_InputDirectionRight;
 	bool m_ShowHookColl; // H-Client
+	bool m_SafeWalk; // H-Client
 
 	CControls();
 

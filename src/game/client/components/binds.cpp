@@ -120,6 +120,7 @@ void CBinds::SetDefaults()
 
 	Bind('q', "+showhookcoll"); // H-Client
 	Bind('m', "switch_camera_mode"); // H-Client
+	Bind('s', "+safewalk"); // H-Client
 }
 
 void CBinds::OnConsoleInit()

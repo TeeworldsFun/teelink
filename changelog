@@ -1,6 +1,7 @@
 + v4.0.2
 ==========
 - Improved >16 players support (now works on all servers not only ddrace)
+- Added "Safe Walk" feature (+safewalk)
 
 + v4.0.1
 ==========

@@ -99,6 +99,7 @@ MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")
 #endif
 
 //MACRO_CONFIG_INT(hc3DRender, hc_3d_render, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enables/Disable 3D Render")
+MACRO_CONFIG_STR(hcAutoUpdateServer, hc_auto_update_server,	256, "http://hclient-updater.redneboa.es/", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update http server")
 MACRO_CONFIG_INT(hcAutoUpdate, hc_auto_update, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Update")
 MACRO_CONFIG_INT(hcAutoDownloadSkins, hc_auto_download_skins, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins from DDNet Database")
 MACRO_CONFIG_STR(hcAutoDownloadSkinsSpeed, hc_auto_download_skins_speed, 5, "1", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins Speed (KiBps)")
@@ -148,6 +149,7 @@ MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SA
 MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")
 MACRO_CONFIG_INT(ddrPreventPrediction, ddr_prevent_prediction, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Prevent Predection When Freeze")
 MACRO_CONFIG_STR(ddrTimeoutHash, ddrace_timeout_hash, 16, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "DDRace Timeout Hash")
+MACRO_CONFIG_STR(ddrAutoJumpDamage, ddrace_auto_jump_damage, 16, "", CFGFLAG_SAVE|CFGFLAG_CLIENT, "DDRace Auto-Jump Damage")
 
 MACRO_CONFIG_INT(UiSubPage, ui_subpage, 13, 0, 13, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Interface Subpage") //H-Client
 

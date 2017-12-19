@@ -439,6 +439,7 @@ static CKeyInfo gs_aKeys[] =
 	{ "Fire", "+fire", 0 },
 	{ "Hook", "+hook", 0 },
 	{ "Hook Collisions", "+showhookcoll", 0 },
+	{ "Safe Walk", "+safeWalk", 0 },
 	{ "Hammer", "+weapon1", 0 },
 	{ "Pistol", "+weapon2", 0 },
 	{ "Shotgun", "+weapon3", 0 },
@@ -525,7 +526,7 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 	// movement settings
 	{
 	    CUIRect rTitle;
-		MovementSettings.HSplitTop(MainView.h/3+60.0f, &MovementSettings, &WeaponSettings);
+		MovementSettings.HSplitTop(MainView.h/3+80.0f, &MovementSettings, &WeaponSettings);
 	    MovementSettings.HSplitTop(22.0f, &rTitle, &MovementSettings);
 		RenderTools()->DrawUIRect(&rTitle, HexToVec4(g_Config.m_hcSubcontainerHeaderBackgroundColor), CUI::CORNER_T, 10.0f);
 		RenderTools()->DrawUIRect(&MovementSettings, HexToVec4(g_Config.m_hcSubcontainerBackgroundColor), 0, 0.0f);
@@ -545,7 +546,7 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 			MovementSettings.HSplitTop(20.0f, 0, &MovementSettings);
 		}
 
-		UiDoGetButtons(0, 6, MovementSettings);
+		UiDoGetButtons(0, 7, MovementSettings);
 
 	}
 
@@ -562,7 +563,7 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 		TextRender()->Text(0, rTitle.x, rTitle.y-3.0f, 14.0f*UI()->Scale(), Localize("Weapon"), -1);
         WeaponSettings.Margin(10.0f, &WeaponSettings);
 
-		UiDoGetButtons(6, 13, WeaponSettings);
+		UiDoGetButtons(7, 13, WeaponSettings);
 	}
 
 	// defaults

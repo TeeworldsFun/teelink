@@ -117,6 +117,7 @@ void CControls::OnConsoleInit()
 	Console()->Register("+fire", "", CFGFLAG_CLIENT, ConKeyInputCounter, &m_InputData.m_Fire, "Fire");
 
 	Console()->Register("+showhookcoll", "", CFGFLAG_CLIENT, ConKeyInputState, &m_ShowHookColl, "Show Hook Collision"); // H-Client
+	Console()->Register("+safewalk", "", CFGFLAG_CLIENT, ConKeyInputState, &m_SafeWalk, "Safe Walk"); // H-Client
 
 	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 1}; Console()->Register("+weapon1", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to hammer"); }
 	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 2}; Console()->Register("+weapon2", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to gun"); }
@@ -191,6 +192,16 @@ int CControls::SnapInput(int *pData)
 			m_InputData.m_Direction = -1;
 		if(!m_InputDirectionLeft && m_InputDirectionRight)
 			m_InputData.m_Direction = 1;
+
+		// H-Client: Safe Walk
+		const float PhysSize = 28.0f;
+		const vec2 &LocalCharPos = m_pClient->m_PredictedChar.m_Pos;
+		if (m_pClient->m_pControls->m_SafeWalk && (m_pClient->Collision()->CheckPoint(LocalCharPos.x+PhysSize/2, LocalCharPos.y+PhysSize/2+5) || m_pClient->Collision()->CheckPoint(LocalCharPos.x-PhysSize/2, LocalCharPos.y+PhysSize/2+5)) &&
+				((m_InputData.m_Direction == -1 && !m_pClient->Collision()->GetCollisionAt(m_pClient->m_PredictedChar.m_Pos.x-32.0f, m_pClient->m_PredictedChar.m_Pos.y+32.0f)) ||
+				(m_InputData.m_Direction == 1 && !m_pClient->Collision()->GetCollisionAt(m_pClient->m_PredictedChar.m_Pos.x+32.0f, m_pClient->m_PredictedChar.m_Pos.y+32.0f))))
+		{
+			m_InputData.m_Direction = 0;
+		}
 
 		// stress testing
 		if(g_Config.m_DbgStress)

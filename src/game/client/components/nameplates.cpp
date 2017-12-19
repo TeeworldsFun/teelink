@@ -22,8 +22,29 @@ void CNamePlates::RenderWarnings(
 {
 	if (g_Config.m_hcMarkVoteTarget && m_pClient->m_pVoting->GetTargetClientID() == pPlayerInfo->m_ClientID)
 	{
-		const float IntraTick = Client()->IntraGameTick();
-		const vec2 Position = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pPlayerChar->m_X, pPlayerChar->m_Y), IntraTick);
+		vec2 Position;
+
+		if (pPlayerInfo->m_Local)
+		{
+			float IntraTick = Client()->IntraGameTick();
+			// H-Client
+	        CNetObj_Character Prev = *pPrevChar;
+	        CNetObj_Character Player = *pPlayerChar;
+
+	        // use preditect players if needed
+	        if((pPlayerInfo->m_Local && g_Config.m_ClPredict && Client()->State() != IClient::STATE_DEMOPLAYBACK) && !(m_pClient->m_Snap.m_pGameInfoObj && (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)))
+	        {
+	            // apply predicted results
+	            m_pClient->m_PredictedChar.Write(&Player);
+	            m_pClient->m_PredictedPrevChar.Write(&Prev);
+	            IntraTick = Client()->PredIntraGameTick();
+	        }
+
+	        Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), IntraTick);
+		} else
+		{
+			Position = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pPlayerChar->m_X, pPlayerChar->m_Y), Client()->IntraGameTick());
+		}
 
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.5f);
 		TextRender()->TextColor(1.0f, 0.5f, 0.5f, 1.0f); // Red
