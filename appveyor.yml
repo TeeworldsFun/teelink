@@ -31,6 +31,7 @@ build_script:
   
 after_build:
   - signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /f "sign.pfx" /p %SEC_FILE_PWD% "teeworlds.exe"
+  - signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /f "sign.pfx" /p %SEC_FILE_PWD% "teeworlds_srv.exe"
   - "SET PATH=C:\\Python27-x64;C:\\Python27-x64\\Scripts;%PATH%"
   - python scripts\make_release.py %HCLIENT_VERSION% win32
  
