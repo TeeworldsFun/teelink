@@ -1,10 +1,9 @@
 /* (c) unsigned char*. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at https://github.com/CytraL/HClient */
+/* If you are missing that file, acquire a complete release at https://github.com/Tardo/HClient */
 #include <base/math.h>
 #include <base/system.h>
 #include <game/version.h>
 #include <game/client/components/menus.h>
-#include <engine/shared/config.h>
 #include <engine/external/json-parser/json.h>
 #include <engine/shared/http_downloader.h>
 #include <engine/client/updater.h>
@@ -16,6 +15,8 @@
 #include <cstring>
 #include <cstdio>
 
+#define UPDATES_HOST            "hclient-updater.redneboa.es"
+#define UPDATES_BASE_PATH       "/"
 #define UPDATES_MANIFEST_FILE   "updates.json"
 
 static LOCK m_UpdatesLock = 0;
@@ -100,9 +101,7 @@ void CUpdater::CheckUpdates(CMenus *pMenus)
 {
 	dbg_msg("autoupdate", "Checking for updates...");
 	CHttpDownloader::NETDOWNLOADINFO DownloadStatus;
-	char aFullURL[512] = {0};
-	str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, UPDATES_MANIFEST_FILE);
-	if (!CHttpDownloader::GetToFile(aFullURL, UPDATES_MANIFEST_FILE, &DownloadStatus))
+	if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH UPDATES_MANIFEST_FILE, UPDATES_MANIFEST_FILE, &DownloadStatus))
 	{
 		dbg_msg("autoupdate", "Error downloading updates manifest :/");
 		return;
@@ -189,28 +188,22 @@ void CUpdater::DoUpdates(CMenus *pMenus)
     }
     m_vToDownload.clear();
 
-    char aFullURL[512] = {0};
     if (m_NeedUpdateClient)
     {
     	DownloadStatus.Reset();
         #ifdef CONF_FAMILY_WINDOWS
             #ifdef CONF_PLATFORM_WIN64
-    			str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds64.exe");
-                if (!CHttpDownloader::GetToFile(aFullURL, "tw_tmp", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds64.exe", "tw_tmp", &DownloadStatus))
             #else
-                str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds.exe");
-                if (!CHttpDownloader::GetToFile(aFullURL, "tw_tmp", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds.exe", "tw_tmp", &DownloadStatus))
             #endif
         #elif defined(CONF_FAMILY_UNIX)
             #ifdef CONF_PLATFORM_MACOSX
-                str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds_mac");
-                if (!CHttpDownloader::GetToFile(aFullURL, "tw_tmp", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_mac", "tw_tmp", &DownloadStatus))
             #elif defined(CONF_ARCH_IA64) || defined(CONF_ARCH_AMD64)
-                str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds64");
-                if (!CHttpDownloader::GetToFile(aFullURL, "tw_tmp", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds64", "tw_tmp", &DownloadStatus))
             #else
-                str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds");
-                if (!CHttpDownloader::GetToFile(aFullURL, "tw_tmp", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds", "tw_tmp", &DownloadStatus))
             #endif
         #endif
         {
@@ -223,22 +216,17 @@ void CUpdater::DoUpdates(CMenus *pMenus)
     	DownloadStatus.Reset();
         #ifdef CONF_FAMILY_WINDOWS
             #ifdef CONF_PLATFORM_WIN64
-    			str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds_srv64.exe");
-                if (!CHttpDownloader::GetToFile(aFullURL, "teeworlds_srv.exe", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv64.exe", "teeworlds_srv.exe", &DownloadStatus))
             #else
-                str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds_srv.exe");
-                if (!CHttpDownloader::GetToFile(aFullURL, "teeworlds_srv.exe", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv.exe", "teeworlds_srv.exe", &DownloadStatus))
             #endif
         #elif defined(CONF_FAMILY_UNIX)
             #ifdef CONF_PLATFORM_MACOSX
-                str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds_srv_mac");
-                if (!CHttpDownloader::GetToFile(aFullURL, "teeworlds_srv", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv_mac", "teeworlds_srv", &DownloadStatus))
             #elif defined(CONF_ARCH_IA64) || defined(CONF_ARCH_AMD64)
-                str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds_srv64");
-                if (!CHttpDownloader::GetToFile(aFullURL, "teeworlds_srv", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv64", "teeworlds_srv", &DownloadStatus))
             #else
-                str_format(aFullURL, sizeof(aFullURL), "%s%s", g_Config.m_hcAutoUpdateServer, "teeworlds_srv");
-                if (!CHttpDownloader::GetToFile(aFullURL, "teeworlds_srv", &DownloadStatus))
+                if (!CHttpDownloader::GetToFile("http://" UPDATES_HOST UPDATES_BASE_PATH "teeworlds_srv", "teeworlds_srv", &DownloadStatus))
             #endif
         #endif
         {
