@@ -19,7 +19,7 @@ install:
     cd bam-0.5.0\ && 
     make_win64_msvc.bat &&
     cd C:\projects\hclient)
-  - @echo off && echo %SEC_FILE% > sign.pfx
+  - cmd: @echo off && echo %SEC_FILE% > sign.pfx
       
 cache:
   - C:\projects\bam-0.5.0
