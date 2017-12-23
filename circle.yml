@@ -5,7 +5,7 @@ machine:
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 10
     
   environment:
-    HCLIENT_VERSION: 4.0.2
+    HCLIENT_VERSION: 4.0.3
     
   python:
     version: 2.7.14
@@ -24,8 +24,6 @@ dependencies:
 
   post:
     - |
-        tar -v
-        gcc -v
         uname -rsvpm
         lsb_release -a
 

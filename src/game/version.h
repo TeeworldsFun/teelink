@@ -23,7 +23,8 @@ static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
 12 - 4.0 [Final]
 13 - 4.0.1
 14 - 4.0.2
+15 - 4.0.3
 */
-#define HCLIENT_VERSION_CODE 14
-#define HCLIENT_VERSION "4.0.2"
+#define HCLIENT_VERSION_CODE 15
+#define HCLIENT_VERSION "4.0.3"
 #endif

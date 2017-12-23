@@ -1,7 +1,7 @@
 image: Visual Studio 2015
 
 environment:
-  HCLIENT_VERSION: 4.0.2
+  HCLIENT_VERSION: 4.0.3
 
 init:
   - cmd: call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86

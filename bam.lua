@@ -335,6 +335,10 @@ debug_settings.config_ext = "_d"
 debug_settings.debug = 1
 debug_settings.optimize = 0
 debug_settings.cc.defines:Add("CONF_DEBUG")
+if config.compiler.driver ~= "cl" then
+	debug_settings.cc.flags:Add("-ftest-coverage", "-fprofile-arcs")
+	debug_settings.link.libs:Add("gcov")
+end
 
 release_settings = NewSettings()
 release_settings.config_name = "release"
