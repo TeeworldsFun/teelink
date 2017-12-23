@@ -1,25 +1,33 @@
-
 # To use GCC and G++ 4.8
 machine:
   pre:
     - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 10
     - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 10
+    
   environment:
     HCLIENT_VERSION: 4.0.2
+    
   python:
-    version: 2.7.5
+    version: 2.7.14
 
 # To Build Teeworlds
 dependencies:
   pre:
     - |
-        sudo apt-get update && sudo apt-get install -y libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev
+        sudo apt-get update && sudo apt-get install -y libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev tar
 
         if [ ! -x ~/bam-0.5.0/bam ]; then
           wget -O ~/bamv0.5.0.tar.gz https://github.com/matricks/bam/archive/v0.5.0.tar.gz
           tar -zxvf ~/bamv0.5.0.tar.gz -C ~/
           cd ~/bam-0.5.0; ./make_unix.sh
         fi
+
+  post:
+    - |
+        tar -v
+        gcc -v
+        uname -rsvpm
+        lsb_release -a
 
   cache_directories:
     - "~/bam-0.5.0/"
@@ -30,6 +38,8 @@ test:
     - ~/bam-0.5.0/bam release
     - ~/bam-0.5.0/bam debug
     - python2 scripts/make_release.py $HCLIENT_VERSION linux86_64
+    - tar -tzf H-Client-$HCLIENT_VERSION-linux86_64.tar.gz >/dev/null
+    
   ## Artifacts
   post:
     - mv teeworlds* $CIRCLE_ARTIFACTS
