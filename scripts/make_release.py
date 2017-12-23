@@ -204,7 +204,7 @@ if use_zip:
 	
 if use_gz:
 	print("making tar.gz archive")
-	os.system("tar czf %s.tar.gz %s" % (package, package_dir))
+	os.system("tar -cvzf %s.tar.gz %s" % (package, package_dir))
 
 if use_dmg:
 	print("making disk image")
