@@ -1,3 +1,15 @@
++ v4.0.4
+==========
+- Added 'log_network_reader' tool
+- Refactored a bit the network packets (receive)
+
++ v4.0.3
+==========
+- Fixed linux packaging (thanks to Bolto for report it)
+- Fixed Windows defender false positive (thanks to CarmineZ for report it)
+- Added 'hc_safe_walk_margin' variable
+- Improved 'Safe Walk' feature... now detect "freezed" tiles
+
 + v4.0.2
 ==========
 - Improved >16 players support (now works on all servers not only ddrace)
