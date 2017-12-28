@@ -19,7 +19,6 @@ void CNetRecvUnpacker::Start(const NETADDR *pAddr, CNetConnection *pConnection, 
 	m_ClientID = ClientID;
 	m_CurrentChunk = 0;
 	m_Valid = true;
-	m_ChunkOffset = 0; // H-Client
 }
 
 // TODO: rename this function
@@ -37,10 +36,15 @@ int CNetRecvUnpacker::FetchChunk(CNetChunk *pChunk)
 			return 0;
 		}
 
-		// H-Client: unpack the header
-		unsigned char *pData = m_Data.m_aChunkData + m_ChunkOffset;
+		unsigned char *pData = m_Data.m_aChunkData;
+		for(int i = 0; i < m_CurrentChunk; i++)
+		{
+			pData = Header.Unpack(pData);
+			pData += Header.m_Size;
+		}
+
+		// unpack the header
 		pData = Header.Unpack(pData);
-		m_ChunkOffset += Header.m_Size;
 		++m_CurrentChunk;
 
 		if(pData+Header.m_Size > pEnd)

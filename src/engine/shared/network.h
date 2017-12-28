@@ -248,8 +248,6 @@ public:
 	CNetPacketConstruct m_Data;
 	unsigned char m_aBuffer[NET_MAX_PACKETSIZE];
 
-	unsigned int m_ChunkOffset;
-
 	CNetRecvUnpacker() { Clear(); }
 	void Clear();
 	void Start(const NETADDR *pAddr, CNetConnection *pConnection, int ClientID);

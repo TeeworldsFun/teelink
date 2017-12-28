@@ -1,7 +1,10 @@
+#include <base/system.h>
+#include <engine/shared/network.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <iomanip> // std::setprecision
+#include <map>
 
 class CLogNetworkReader
 {
@@ -34,12 +37,24 @@ class CLogNetworkReader
 	};
 
 	std::ifstream m_Stream;
-	unsigned int m_TotalSentCompress;
-	unsigned int m_TotalSent;
+
+	// ** Network Info
+	unsigned int m_TotalBytesPreProcessed;
+	unsigned int m_TotalBytesPostProcessed;
+	unsigned int m_NumInvalidPackets;
+	unsigned int m_FreqTable[256]; // Pre-Processed Packets
+
+	std::map<int, int> m_ConlessControlIds;
+	std::map<int, int> m_ControlIds;
 	unsigned int m_NumPacketsRead;
-	unsigned int m_TotalBlankLines;
-	unsigned int m_TotalBlankBytes;
-	unsigned int m_FreqTable[256];
+	unsigned int m_NumChunksRead;
+	unsigned int m_NumConnlessChunks;
+	unsigned int m_NumConnChunks;
+	unsigned int m_NumControlChunks;
+	unsigned int m_NumResendChunks;
+	unsigned int m_NumCompressionChunks;
+	unsigned int m_NumNoFlagChunks;
+
 
 	bool ReadPacketInfo(CLine *pDumpLine)
 	{
@@ -56,28 +71,35 @@ class CLogNetworkReader
 		return true;
 	}
 
-	bool IsBlankLine(const unsigned char *pData, int Size) const
-	{
-		for (int i=0; i<Size-1; i++)
-		{
-			if (pData[i] != 0x20)
-				return false;
-		}
-
-		return true;
-	}
-
 	void PrintInfo(const std::string &File) const
 	{
-		std::cout << "Log Network File: " << File << std::endl;
-		std::cout << "Num. Packets Read: " << m_NumPacketsRead << std::endl;
-		const int TotalBytes = m_TotalSent - m_TotalSentCompress;
-		const float Perc = 100.0f - (m_TotalSentCompress * 100.0f / m_TotalSent);
-		std::cout << "Total Bytes: " << m_TotalSent << std::endl;
-		std::cout << "Total Bytes Compressed: " << m_TotalSentCompress << std::endl;
-		std::cout << "Total Compression: " << std::fixed << std::setprecision(2) << Perc << "% (" << TotalBytes << " bytes)" << std::endl;
-		std::cout << "Total Blank Lines: " << m_TotalBlankLines << " (" << m_TotalBlankBytes << " bytes)" << std::endl << std::endl;
-		std::cout << "Frequency Table:" << std::endl;
+		std::cout << "Log Network File: " << File << std::endl << std::endl;
+		std::cout << "Num. Chunks Read: " << m_NumChunksRead << " (" << (m_NumPacketsRead - m_NumInvalidPackets)  << " packets)" << std::endl;
+		std::cout << " + Connless: " << m_NumConnlessChunks << std::endl;
+		std::map<int, int>::const_iterator cit = m_ConlessControlIds.cbegin();
+		while (cit != m_ConlessControlIds.end())
+		{
+			std::cout << "       " << (*cit).first << " \t" << (*cit).second << " times" << std::endl;
+			++cit;
+		}
+		std::cout << " + Conn: " << m_NumConnChunks << std::endl;
+		std::cout << "  - Control: " << m_NumControlChunks << std::endl;
+		cit = m_ControlIds.cbegin();
+		while (cit != m_ControlIds.end())
+		{
+			std::cout << "       " << (*cit).first << " \t" << (*cit).second << " times" << std::endl;
+			++cit;
+		}
+		std::cout << "  - Resend: " << m_NumResendChunks << std::endl;
+		std::cout << "  - Compression: " << m_NumCompressionChunks << std::endl;
+		std::cout << "  - No Flagged: " << m_NumNoFlagChunks << std::endl;
+		std::cout << "Num. Invalid Packets: " << m_NumInvalidPackets << std::endl << std::endl;
+		const int TotalBytes = m_TotalBytesPreProcessed - m_TotalBytesPostProcessed;
+		const float Perc = 100.0f - (m_TotalBytesPostProcessed * 100.0f / m_TotalBytesPreProcessed);
+		std::cout << "Total Bytes Pre-Processed: " << m_TotalBytesPreProcessed << std::endl;
+		std::cout << "Total Bytes Post-Processed: " << m_TotalBytesPostProcessed << std::endl;
+		std::cout << "Total Difference: " << std::fixed << std::setprecision(2) << Perc << "% (" << TotalBytes << " bytes)" << std::endl;
+		std::cout << std::endl << "Frequency Table (Pre-Processed Packets Data):" << std::endl;
 		for (int i=0; i<255; i++)
 		{
 			std::cout << "0x" << std::hex << m_FreqTable[i];
@@ -90,17 +112,26 @@ class CLogNetworkReader
 public:
 	void Reset()
 	{
-		m_TotalSentCompress = 0;
-		m_TotalSent = 0;
+		m_TotalBytesPostProcessed = 0;
+		m_TotalBytesPreProcessed = 0;
 		m_NumPacketsRead = 0;
-		m_TotalBlankLines = 0;
-		m_TotalBlankBytes = 0;
+		m_NumChunksRead = 0;
+		m_NumConnlessChunks = 0;
+		m_NumConnChunks = 0;
+		m_NumControlChunks = 0;
+		m_NumResendChunks = 0;
+		m_NumCompressionChunks = 0;
+		m_NumNoFlagChunks = 0;
+		m_NumInvalidPackets = 0;
+		m_ConlessControlIds.clear();
+		m_ControlIds.clear();
 		for (int i=0; i<256; m_FreqTable[i++]=0);
 	}
 
 	void Read(std::string File)
 	{
 		CLine DumpLine;
+		CNetChunkHeader Header;
 		m_Stream = std::ifstream(File, std::ios_base::in | std::ios_base::binary);
 		if (m_Stream.is_open())
 		{
@@ -109,19 +140,75 @@ public:
 			{
 				if (ReadPacketInfo(&DumpLine))
 				{
-					if (DumpLine.m_Type == 1)
-						m_TotalSent += DumpLine.m_Size;
-					else
-						m_TotalSentCompress += DumpLine.m_Size;
-
-					if (IsBlankLine(DumpLine.m_pData, DumpLine.m_Size))
+					if (DumpLine.m_Type == 0)
 					{
-						++m_TotalBlankLines;
-						m_TotalBlankBytes += DumpLine.m_Size;
+						m_TotalBytesPostProcessed += DumpLine.m_Size;
+
+						unsigned int CurrentChunk = 0;
+						CNetPacketConstruct PacketConstruct;
+						if (CNetBase::UnpackPacket(DumpLine.m_pData, DumpLine.m_Size, &PacketConstruct) == 0)
+						{
+							++m_NumPacketsRead;
+
+							const unsigned char *pEnd = PacketConstruct.m_aChunkData + PacketConstruct.m_DataSize;
+
+							while (1)
+							{
+								if (CurrentChunk >= PacketConstruct.m_NumChunks)
+									break;
+
+								unsigned char *pData = PacketConstruct.m_aChunkData;
+								for(int i = 0; i < CurrentChunk; i++)
+								{
+									pData = Header.Unpack(pData);
+									pData += Header.m_Size;
+								}
+
+								// unpack the header
+								pData = Header.Unpack(pData);
+								++CurrentChunk;
+
+								if(pData+Header.m_Size > pEnd)
+									break;
+
+								if (Header.m_Flags&NET_PACKETFLAG_CONNLESS)
+								{
+									++m_NumConnlessChunks;
+									std::map<int, int>::iterator it = m_ConlessControlIds.find(pData[0]);
+									if (it == m_ConlessControlIds.end())
+										m_ConlessControlIds.insert(std::make_pair(pData[0], 1));
+									else
+										++(*it).second;
+								} else
+								{
+									++m_NumConnChunks;
+
+									if (Header.m_Flags&NET_PACKETFLAG_CONTROL)
+									{
+										++m_NumControlChunks;
+										std::map<int, int>::iterator it = m_ControlIds.find(pData[0]);
+										if (it == m_ControlIds.end())
+											m_ControlIds.insert(std::make_pair(pData[0], 1));
+										else
+											++(*it).second;
+									}
+									if (Header.m_Flags&NET_PACKETFLAG_RESEND)
+										++m_NumResendChunks;
+									if (Header.m_Flags&NET_PACKETFLAG_COMPRESSION)
+										++m_NumCompressionChunks;
+									if (!Header.m_Flags)
+										++m_NumNoFlagChunks;
+								}
+
+								++m_NumChunksRead;
+							}
+						} else
+							++m_NumInvalidPackets;
 					}
+					else
+						m_TotalBytesPreProcessed += DumpLine.m_Size;
 
 					DumpLine.Reset();
-					++m_NumPacketsRead;
 				}
 			} while (!m_Stream.eof());
 			m_Stream.close();
