@@ -8,16 +8,16 @@
 
 class CLogNetworkReader
 {
-	class CLine
+	class CDumpRecord
 	{
 	public:
-		CLine()
+		CDumpRecord()
 		{
 			m_Type = -1;
 			m_Size = 0;
 			m_pData = nullptr;
 		}
-		~CLine()
+		~CDumpRecord()
 		{
 			Reset();
 		}
@@ -38,25 +38,27 @@ class CLogNetworkReader
 
 	std::ifstream m_Stream;
 
-	// ** Network Info
-	unsigned int m_TotalBytesPreProcessed;
-	unsigned int m_TotalBytesPostProcessed;
-	unsigned int m_NumInvalidPackets;
-	unsigned int m_FreqTable[256]; // Pre-Processed Packets
-
-	std::map<int, int> m_ConlessControlIds;
-	std::map<int, int> m_ControlIds;
+	unsigned int m_TotalDumpRecords;
 	unsigned int m_NumPacketsRead;
 	unsigned int m_NumChunksRead;
-	unsigned int m_NumConnlessChunks;
-	unsigned int m_NumConnChunks;
-	unsigned int m_NumControlChunks;
+
+	unsigned int m_TotalBytesPreProcessed;
+	unsigned int m_TotalBytesPostProcessed;
+	unsigned int m_FreqTable[256]; // Pre-Processed Packets
+
+	std::map<int, int> m_ControlIds;
+	unsigned int m_NumConnlessPackets;
+	unsigned int m_NumControlPackets;
+	unsigned int m_NumResendPackets;
+	unsigned int m_NumCompressionPackets;
+	unsigned int m_NumNoFlagPackets;
+	unsigned int m_NumInvalidPackets;
+
+	unsigned int m_NumVitalChunks;
 	unsigned int m_NumResendChunks;
-	unsigned int m_NumCompressionChunks;
-	unsigned int m_NumNoFlagChunks;
 
 
-	bool ReadPacketInfo(CLine *pDumpLine)
+	bool ReadDumpRegistry(CDumpRecord *pDumpLine)
 	{
 		m_Stream.read(reinterpret_cast<char*>(&pDumpLine->m_Type), sizeof(pDumpLine->m_Type));
 		m_Stream.read(reinterpret_cast<char*>(&pDumpLine->m_Size), sizeof(pDumpLine->m_Size));
@@ -74,26 +76,25 @@ class CLogNetworkReader
 	void PrintInfo(const std::string &File) const
 	{
 		std::cout << "Log Network File: " << File << std::endl << std::endl;
-		std::cout << "Num. Chunks Read: " << m_NumChunksRead << " (" << (m_NumPacketsRead - m_NumInvalidPackets)  << " packets)" << std::endl;
-		std::cout << " + Connless: " << m_NumConnlessChunks << std::endl;
-		std::map<int, int>::const_iterator cit = m_ConlessControlIds.cbegin();
-		while (cit != m_ConlessControlIds.end())
-		{
-			std::cout << "       " << (*cit).first << " \t" << (*cit).second << " times" << std::endl;
-			++cit;
-		}
-		std::cout << " + Conn: " << m_NumConnChunks << std::endl;
-		std::cout << "  - Control: " << m_NumControlChunks << std::endl;
-		cit = m_ControlIds.cbegin();
+		std::cout << "Total Dump Records: " << m_TotalDumpRecords << " (" << m_TotalDumpRecords/2 << ")" << std::endl << std::endl;
+		std::cout << "Num. Packets Read: " << m_NumPacketsRead << std::endl;
+		std::cout << "  - Connless: " << m_NumConnlessPackets << std::endl;
+		std::cout << "  - Control: " << m_NumControlPackets << std::endl;
+		std::map<int, int>::const_iterator cit = m_ControlIds.cbegin();
 		while (cit != m_ControlIds.end())
 		{
 			std::cout << "       " << (*cit).first << " \t" << (*cit).second << " times" << std::endl;
 			++cit;
 		}
+		std::cout << "  - Resend: " << m_NumResendPackets << std::endl;
+		std::cout << "  - Compression: " << m_NumCompressionPackets << std::endl;
+		std::cout << "  - No Flagged: " << m_NumNoFlagPackets << std::endl;
+		std::cout << "Num. Invalid Packets: " << m_NumInvalidPackets << std::endl;
+		std::cout << std::endl;
+		std::cout << "Num. Chunks Read: " << m_NumChunksRead << std::endl;
+		std::cout << "  - Vital: " << m_NumVitalChunks << std::endl;
 		std::cout << "  - Resend: " << m_NumResendChunks << std::endl;
-		std::cout << "  - Compression: " << m_NumCompressionChunks << std::endl;
-		std::cout << "  - No Flagged: " << m_NumNoFlagChunks << std::endl;
-		std::cout << "Num. Invalid Packets: " << m_NumInvalidPackets << std::endl << std::endl;
+		std::cout << std::endl;
 		const int TotalBytes = m_TotalBytesPreProcessed - m_TotalBytesPostProcessed;
 		const float Perc = 100.0f - (m_TotalBytesPostProcessed * 100.0f / m_TotalBytesPreProcessed);
 		std::cout << "Total Bytes Pre-Processed: " << m_TotalBytesPreProcessed << std::endl;
@@ -112,25 +113,26 @@ class CLogNetworkReader
 public:
 	void Reset()
 	{
-		m_TotalBytesPostProcessed = 0;
-		m_TotalBytesPreProcessed = 0;
-		m_NumPacketsRead = 0;
-		m_NumChunksRead = 0;
-		m_NumConnlessChunks = 0;
-		m_NumConnChunks = 0;
-		m_NumControlChunks = 0;
-		m_NumResendChunks = 0;
-		m_NumCompressionChunks = 0;
-		m_NumNoFlagChunks = 0;
-		m_NumInvalidPackets = 0;
-		m_ConlessControlIds.clear();
+		m_TotalBytesPostProcessed = 0u;
+		m_TotalBytesPreProcessed = 0u;
+		m_NumPacketsRead = 0u;
+		m_NumChunksRead = 0u;
+		m_NumConnlessPackets = 0u;
+		m_NumControlPackets = 0u;
+		m_NumResendPackets = 0u;
+		m_NumCompressionPackets = 0u;
+		m_NumNoFlagPackets = 0u;
+		m_NumInvalidPackets = 0u;
+		m_TotalDumpRecords = 0u;
+		m_NumVitalChunks = 0u;
+		m_NumResendChunks = 0u;
 		m_ControlIds.clear();
-		for (int i=0; i<256; m_FreqTable[i++]=0);
+		for (int i=0; i<256; m_FreqTable[i++]=0u);
 	}
 
 	void Read(std::string File)
 	{
-		CLine DumpLine;
+		CDumpRecord DumpLine;
 		CNetChunkHeader Header;
 		m_Stream = std::ifstream(File, std::ios_base::in | std::ios_base::binary);
 		if (m_Stream.is_open())
@@ -138,8 +140,10 @@ public:
 			Reset();
 			do
 			{
-				if (ReadPacketInfo(&DumpLine))
+				if (ReadDumpRegistry(&DumpLine))
 				{
+					++m_TotalDumpRecords;
+
 					if (DumpLine.m_Type == 0)
 					{
 						m_TotalBytesPostProcessed += DumpLine.m_Size;
@@ -148,10 +152,31 @@ public:
 						CNetPacketConstruct PacketConstruct;
 						if (CNetBase::UnpackPacket(DumpLine.m_pData, DumpLine.m_Size, &PacketConstruct) == 0)
 						{
+							// ** ANALIZE PACKET **
 							++m_NumPacketsRead;
 
-							const unsigned char *pEnd = PacketConstruct.m_aChunkData + PacketConstruct.m_DataSize;
+							if (PacketConstruct.m_Flags&NET_PACKETFLAG_CONTROL)
+							{
+								++m_NumControlPackets;
 
+								std::map<int, int>::iterator it = m_ControlIds.find(PacketConstruct.m_aChunkData[0]);
+								if (it == m_ControlIds.end())
+									m_ControlIds.insert(std::make_pair(PacketConstruct.m_aChunkData[0], 1));
+								else
+									++(*it).second;
+							}
+							if (PacketConstruct.m_Flags&NET_PACKETFLAG_CONNLESS)
+								++m_NumConnlessPackets;
+							if (PacketConstruct.m_Flags&NET_PACKETFLAG_RESEND)
+								++m_NumResendPackets;
+							if (PacketConstruct.m_Flags&NET_PACKETFLAG_COMPRESSION)
+								++m_NumCompressionPackets;
+							if (!PacketConstruct.m_Flags)
+								++m_NumNoFlagPackets;
+
+
+							// ** ANALIZE PACKET CHUNKS **
+							const unsigned char *pEnd = PacketConstruct.m_aChunkData + PacketConstruct.m_DataSize;
 							while (1)
 							{
 								if (CurrentChunk >= PacketConstruct.m_NumChunks)
@@ -171,34 +196,10 @@ public:
 								if(pData+Header.m_Size > pEnd)
 									break;
 
-								if (Header.m_Flags&NET_PACKETFLAG_CONNLESS)
-								{
-									++m_NumConnlessChunks;
-									std::map<int, int>::iterator it = m_ConlessControlIds.find(pData[0]);
-									if (it == m_ConlessControlIds.end())
-										m_ConlessControlIds.insert(std::make_pair(pData[0], 1));
-									else
-										++(*it).second;
-								} else
-								{
-									++m_NumConnChunks;
-
-									if (Header.m_Flags&NET_PACKETFLAG_CONTROL)
-									{
-										++m_NumControlChunks;
-										std::map<int, int>::iterator it = m_ControlIds.find(pData[0]);
-										if (it == m_ControlIds.end())
-											m_ControlIds.insert(std::make_pair(pData[0], 1));
-										else
-											++(*it).second;
-									}
-									if (Header.m_Flags&NET_PACKETFLAG_RESEND)
-										++m_NumResendChunks;
-									if (Header.m_Flags&NET_PACKETFLAG_COMPRESSION)
-										++m_NumCompressionChunks;
-									if (!Header.m_Flags)
-										++m_NumNoFlagChunks;
-								}
+								if (Header.m_Flags&NET_CHUNKFLAG_VITAL)
+									++m_NumVitalChunks;
+								if (Header.m_Flags&NET_CHUNKFLAG_RESEND)
+									++m_NumResendChunks;
 
 								++m_NumChunksRead;
 							}

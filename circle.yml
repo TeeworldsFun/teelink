@@ -1,9 +1,4 @@
-# To use GCC and G++ 4.8
-machine:
-  pre:
-    - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 10
-    - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 10
-    
+machine:    
   environment:
     HCLIENT_VERSION: 4.0.3
     
@@ -14,7 +9,7 @@ machine:
 dependencies:
   pre:
     - |
-        sudo apt-get update && sudo apt-get install -y libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev tar
+        sudo apt-get update && sudo apt-get install -y libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev tar gcc
 
         if [ ! -x ~/bam-0.5.0/bam ]; then
           wget -O ~/bamv0.5.0.tar.gz https://github.com/matricks/bam/archive/v0.5.0.tar.gz
