@@ -15,7 +15,7 @@ class CLogNetworkReader
 		{
 			m_Type = -1;
 			m_Size = 0;
-			m_pData = nullptr;
+			m_pData = 0x0;
 		}
 		~CDumpRecord()
 		{
@@ -27,7 +27,7 @@ class CLogNetworkReader
 			if (m_pData)
 			{
 				delete [] m_pData;
-				m_pData = nullptr;
+				m_pData = 0x0;
 			}
 		}
 
@@ -56,31 +56,28 @@ class CLogNetworkReader
 
 	unsigned int m_NumVitalChunks;
 	unsigned int m_NumResendChunks;
+	unsigned int m_NumNoFlagChunks;
 
 
-	bool ReadDumpRegistry(CDumpRecord *pDumpLine)
+	void ReadDumpRegistry(CDumpRecord *pDumpLine)
 	{
 		m_Stream.read(reinterpret_cast<char*>(&pDumpLine->m_Type), sizeof(pDumpLine->m_Type));
 		m_Stream.read(reinterpret_cast<char*>(&pDumpLine->m_Size), sizeof(pDumpLine->m_Size));
-		if (pDumpLine->m_Size == 0)
-			return false;
 		pDumpLine->m_pData = new unsigned char[pDumpLine->m_Size];
 		m_Stream.read(reinterpret_cast<char*>(pDumpLine->m_pData), pDumpLine->m_Size);
 
 		if (pDumpLine->m_Type == 1)
 			for (int i=0; i<pDumpLine->m_Size; ++m_FreqTable[pDumpLine->m_pData[i++]]);
-
-		return true;
 	}
 
 	void PrintInfo(const std::string &File) const
 	{
 		std::cout << "Log Network File: " << File << std::endl << std::endl;
-		std::cout << "Total Dump Records: " << m_TotalDumpRecords << " (" << m_TotalDumpRecords/2 << ")" << std::endl << std::endl;
+		std::cout << "Total Dump Records: " << m_TotalDumpRecords << " (" << m_TotalDumpRecords/2 << " unique)" << std::endl << std::endl;
 		std::cout << "Num. Packets Read: " << m_NumPacketsRead << std::endl;
 		std::cout << "  - Connless: " << m_NumConnlessPackets << std::endl;
 		std::cout << "  - Control: " << m_NumControlPackets << std::endl;
-		std::map<int, int>::const_iterator cit = m_ControlIds.cbegin();
+		std::map<int, int>::const_iterator cit = m_ControlIds.begin();
 		while (cit != m_ControlIds.end())
 		{
 			std::cout << "       " << (*cit).first << " \t" << (*cit).second << " times" << std::endl;
@@ -94,6 +91,7 @@ class CLogNetworkReader
 		std::cout << "Num. Chunks Read: " << m_NumChunksRead << std::endl;
 		std::cout << "  - Vital: " << m_NumVitalChunks << std::endl;
 		std::cout << "  - Resend: " << m_NumResendChunks << std::endl;
+		std::cout << "  - No Flagged: " << m_NumNoFlagChunks << std::endl;
 		std::cout << std::endl;
 		const int TotalBytes = m_TotalBytesPreProcessed - m_TotalBytesPostProcessed;
 		const float Perc = 100.0f - (m_TotalBytesPostProcessed * 100.0f / m_TotalBytesPreProcessed);
@@ -126,6 +124,7 @@ public:
 		m_TotalDumpRecords = 0u;
 		m_NumVitalChunks = 0u;
 		m_NumResendChunks = 0u;
+		m_NumNoFlagChunks = 0u;
 		m_ControlIds.clear();
 		for (int i=0; i<256; m_FreqTable[i++]=0u);
 	}
@@ -140,7 +139,7 @@ public:
 			Reset();
 			do
 			{
-				if (ReadDumpRegistry(&DumpLine))
+				ReadDumpRegistry(&DumpLine);
 				{
 					++m_TotalDumpRecords;
 
@@ -159,9 +158,10 @@ public:
 							{
 								++m_NumControlPackets;
 
-								std::map<int, int>::iterator it = m_ControlIds.find(PacketConstruct.m_aChunkData[0]);
+								const int MsgId = PacketConstruct.m_aChunkData[0];
+								std::map<int, int>::iterator it = m_ControlIds.find(MsgId);
 								if (it == m_ControlIds.end())
-									m_ControlIds.insert(std::make_pair(PacketConstruct.m_aChunkData[0], 1));
+									m_ControlIds.insert(std::make_pair(MsgId, 1));
 								else
 									++(*it).second;
 							}
@@ -200,6 +200,8 @@ public:
 									++m_NumVitalChunks;
 								if (Header.m_Flags&NET_CHUNKFLAG_RESEND)
 									++m_NumResendChunks;
+								if (!Header.m_Flags)
+									++m_NumNoFlagChunks;
 
 								++m_NumChunksRead;
 							}
@@ -229,6 +231,7 @@ int main(int argc, const char **argv)
 		return -1;
 	}
 
+	CNetBase::Init();
 	CLogNetworkReader LogNetReader;
 	for (int i=1; i<argc; LogNetReader.Read(argv[i++]));
 	return 0;
