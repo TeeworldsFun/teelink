@@ -60,7 +60,7 @@ class CLogNetworkReader
 	unsigned int m_NumNoFlagChunks;
 
 
-	void ReadDumpRegistry(CDumpRecord *pDumpLine)
+	void ReadNextDumpRecord(CDumpRecord *pDumpLine)
 	{
 		m_Stream.read(reinterpret_cast<char*>(&pDumpLine->m_Type), sizeof(pDumpLine->m_Type));
 		m_Stream.read(reinterpret_cast<char*>(&pDumpLine->m_Size), sizeof(pDumpLine->m_Size));
@@ -132,89 +132,88 @@ public:
 
 	void Read(const char *pFile)
 	{
-		CDumpRecord DumpLine;
+		CDumpRecord DumpRecord;
 		CNetChunkHeader Header;
-		m_Stream = std::ifstream(pFile, std::ios_base::in | std::ios_base::binary);
+		m_Stream.open(pFile, std::ios_base::in | std::ios_base::binary);
 		if (m_Stream.is_open())
 		{
 			Reset();
 			do
 			{
-				ReadDumpRegistry(&DumpLine);
-				{
-					++m_TotalDumpRecords;
+				ReadNextDumpRecord(&DumpRecord);
+				++m_TotalDumpRecords;
 
-					if (DumpLine.m_Type == 0)
+				if (DumpRecord.m_Type == 0)
+				{ // Is a Post-Processed Record (the information as it is sent/received through the network)
+					m_TotalBytesPostProcessed += DumpRecord.m_Size;
+
+					unsigned int CurrentChunk = 0;
+					CNetPacketConstruct PacketConstruct;
+					if (CNetBase::UnpackPacket(DumpRecord.m_pData, DumpRecord.m_Size, &PacketConstruct) == 0)
 					{
-						m_TotalBytesPostProcessed += DumpLine.m_Size;
+						// ** ANALIZE PACKET **
+						++m_NumPacketsRead;
 
-						unsigned int CurrentChunk = 0;
-						CNetPacketConstruct PacketConstruct;
-						if (CNetBase::UnpackPacket(DumpLine.m_pData, DumpLine.m_Size, &PacketConstruct) == 0)
+						if (PacketConstruct.m_Flags&NET_PACKETFLAG_CONTROL)
 						{
-							// ** ANALIZE PACKET **
-							++m_NumPacketsRead;
+							++m_NumControlPackets;
 
-							if (PacketConstruct.m_Flags&NET_PACKETFLAG_CONTROL)
+							const int MsgId = PacketConstruct.m_aChunkData[0];
+							std::map<int, int>::iterator it = m_ControlIds.find(MsgId);
+							if (it == m_ControlIds.end())
+								m_ControlIds.insert(std::make_pair(MsgId, 1));
+							else
+								++(*it).second;
+						}
+						if (PacketConstruct.m_Flags&NET_PACKETFLAG_CONNLESS)
+							++m_NumConnlessPackets;
+						if (PacketConstruct.m_Flags&NET_PACKETFLAG_RESEND)
+							++m_NumResendPackets;
+						if (PacketConstruct.m_Flags&NET_PACKETFLAG_COMPRESSION)
+							++m_NumCompressionPackets;
+						if (!PacketConstruct.m_Flags)
+							++m_NumNoFlagPackets;
+
+
+						// ** ANALIZE PACKET CHUNKS **
+						const unsigned char *pEnd = PacketConstruct.m_aChunkData + PacketConstruct.m_DataSize;
+						while (1)
+						{
+							if (CurrentChunk >= PacketConstruct.m_NumChunks)
+								break;
+
+							unsigned char *pData = PacketConstruct.m_aChunkData;
+							for(int i = 0; i < CurrentChunk; i++)
 							{
-								++m_NumControlPackets;
-
-								const int MsgId = PacketConstruct.m_aChunkData[0];
-								std::map<int, int>::iterator it = m_ControlIds.find(MsgId);
-								if (it == m_ControlIds.end())
-									m_ControlIds.insert(std::make_pair(MsgId, 1));
-								else
-									++(*it).second;
-							}
-							if (PacketConstruct.m_Flags&NET_PACKETFLAG_CONNLESS)
-								++m_NumConnlessPackets;
-							if (PacketConstruct.m_Flags&NET_PACKETFLAG_RESEND)
-								++m_NumResendPackets;
-							if (PacketConstruct.m_Flags&NET_PACKETFLAG_COMPRESSION)
-								++m_NumCompressionPackets;
-							if (!PacketConstruct.m_Flags)
-								++m_NumNoFlagPackets;
-
-
-							// ** ANALIZE PACKET CHUNKS **
-							const unsigned char *pEnd = PacketConstruct.m_aChunkData + PacketConstruct.m_DataSize;
-							while (1)
-							{
-								if (CurrentChunk >= PacketConstruct.m_NumChunks)
-									break;
-
-								unsigned char *pData = PacketConstruct.m_aChunkData;
-								for(int i = 0; i < CurrentChunk; i++)
-								{
-									pData = Header.Unpack(pData);
-									pData += Header.m_Size;
-								}
-
-								// unpack the header
 								pData = Header.Unpack(pData);
-								++CurrentChunk;
-
-								if(pData+Header.m_Size > pEnd)
-									break;
-
-								if (Header.m_Flags&NET_CHUNKFLAG_VITAL)
-									++m_NumVitalChunks;
-								if (Header.m_Flags&NET_CHUNKFLAG_RESEND)
-									++m_NumResendChunks;
-								if (!Header.m_Flags)
-									++m_NumNoFlagChunks;
-
-								++m_NumChunksRead;
+								pData += Header.m_Size;
 							}
-						} else
-							++m_NumInvalidPackets;
-					}
-					else
-						m_TotalBytesPreProcessed += DumpLine.m_Size;
 
-					DumpLine.Reset();
+							// unpack the header
+							pData = Header.Unpack(pData);
+							++CurrentChunk;
+
+							if(pData+Header.m_Size > pEnd)
+								break;
+
+							if (Header.m_Flags&NET_CHUNKFLAG_VITAL)
+								++m_NumVitalChunks;
+							if (Header.m_Flags&NET_CHUNKFLAG_RESEND)
+								++m_NumResendChunks;
+							if (!Header.m_Flags)
+								++m_NumNoFlagChunks;
+
+							++m_NumChunksRead;
+						}
+					} else
+						++m_NumInvalidPackets;
 				}
+				else
+					m_TotalBytesPreProcessed += DumpRecord.m_Size;
+
+				DumpRecord.Reset();
 			} while (!m_Stream.eof());
+
 			m_Stream.close();
 
 			PrintInfo(pFile);
