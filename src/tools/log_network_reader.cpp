@@ -1,3 +1,4 @@
+/* Alexandre Díaz - 2017 - TW Log Network Reader */
 #include <base/system.h>
 #include <engine/shared/network.h>
 #include <iostream>
