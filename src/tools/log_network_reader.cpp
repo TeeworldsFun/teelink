@@ -71,9 +71,9 @@ class CLogNetworkReader
 			for (int i=0; i<pDumpLine->m_Size; ++m_FreqTable[pDumpLine->m_pData[i++]]);
 	}
 
-	void PrintInfo(const std::string &File) const
+	void PrintInfo(const char *pFile) const
 	{
-		std::cout << "Log Network File: " << File << std::endl << std::endl;
+		std::cout << "Log Network File: " << pFile << std::endl << std::endl;
 		std::cout << "Total Dump Records: " << m_TotalDumpRecords << " (" << m_TotalDumpRecords/2 << " unique)" << std::endl << std::endl;
 		std::cout << "Num. Packets Read: " << m_NumPacketsRead << std::endl;
 		std::cout << "  - Connless: " << m_NumConnlessPackets << std::endl;
@@ -130,11 +130,11 @@ public:
 		for (int i=0; i<256; m_FreqTable[i++]=0u);
 	}
 
-	void Read(std::string File)
+	void Read(const char *pFile)
 	{
 		CDumpRecord DumpLine;
 		CNetChunkHeader Header;
-		m_Stream = std::ifstream(File, std::ios_base::in | std::ios_base::binary);
+		m_Stream = std::ifstream(pFile, std::ios_base::in | std::ios_base::binary);
 		if (m_Stream.is_open())
 		{
 			Reset();
@@ -217,10 +217,10 @@ public:
 			} while (!m_Stream.eof());
 			m_Stream.close();
 
-			PrintInfo(File);
+			PrintInfo(pFile);
 		}
 		else
-			std::cout << "Can't read '" << File << "'!" << std::endl;
+			std::cout << "Can't read '" << pFile << "'!" << std::endl;
 	}
 };
 
