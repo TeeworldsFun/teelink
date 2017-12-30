@@ -1,10 +1,6 @@
 /* Alexandre Díaz - 2017 - TW Log Network Reader */
 #include <base/system.h>
 #include <engine/shared/network.h>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip> // std::setprecision
 #include <map>
 
 class CLogNetworkReader
@@ -14,9 +10,8 @@ class CLogNetworkReader
 	public:
 		CDumpRecord()
 		{
-			m_Type = -1;
-			m_Size = 0;
 			m_pData = 0x0;
+			Reset();
 		}
 		~CDumpRecord()
 		{
@@ -25,19 +20,19 @@ class CLogNetworkReader
 
 		void Reset()
 		{
-			if (m_pData)
-			{
-				delete [] m_pData;
-				m_pData = 0x0;
-			}
+			mem_free(m_pData);
+			m_pData = 0x0;
+
+			m_Type = -1;
+			m_Size = -1;
 		}
 
 		int m_Type;
 		int m_Size;
-		char unsigned *m_pData;
+		unsigned char *m_pData;
 	};
 
-	std::ifstream m_Stream;
+	IOHANDLE m_FileHandle;
 
 	unsigned int m_TotalDumpRecords;
 	unsigned int m_NumPacketsRead;
@@ -60,53 +55,54 @@ class CLogNetworkReader
 	unsigned int m_NumNoFlagChunks;
 
 
-	void ReadNextDumpRecord(CDumpRecord *pDumpLine)
+	void ReadNextDumpRecord(CDumpRecord *pDumpRecord)
 	{
-		m_Stream.read(reinterpret_cast<char*>(&pDumpLine->m_Type), sizeof(pDumpLine->m_Type));
-		m_Stream.read(reinterpret_cast<char*>(&pDumpLine->m_Size), sizeof(pDumpLine->m_Size));
-		pDumpLine->m_pData = new unsigned char[pDumpLine->m_Size];
-		m_Stream.read(reinterpret_cast<char*>(pDumpLine->m_pData), pDumpLine->m_Size);
-
-		if (pDumpLine->m_Type == 1)
-			for (int i=0; i<pDumpLine->m_Size; ++m_FreqTable[pDumpLine->m_pData[i++]]);
+		io_read(m_FileHandle, &pDumpRecord->m_Type, sizeof(pDumpRecord->m_Type));
+		io_read(m_FileHandle, &pDumpRecord->m_Size, sizeof(pDumpRecord->m_Size));
+		pDumpRecord->m_pData = static_cast<unsigned char*>(mem_alloc(pDumpRecord->m_Size, 1));
+		dbg_assert(pDumpRecord->m_pData != 0x0, "Can't allocate memory!");
+		io_read(m_FileHandle, pDumpRecord->m_pData, pDumpRecord->m_Size);
 	}
 
-	void PrintInfo(const char *pFile) const
+	void PrintInfo() const
 	{
-		std::cout << "Log Network File: " << pFile << std::endl << std::endl;
-		std::cout << "Total Dump Records: " << m_TotalDumpRecords << " (" << m_TotalDumpRecords/2 << " unique)" << std::endl << std::endl;
-		std::cout << "Num. Packets Read: " << m_NumPacketsRead << std::endl;
-		std::cout << "  - Connless: " << m_NumConnlessPackets << std::endl;
-		std::cout << "  - Control: " << m_NumControlPackets << std::endl;
+		dbg_msg("NetDump", "Total Dump Records: %u (%u unique)\n", m_TotalDumpRecords, m_TotalDumpRecords/2);
+
+		dbg_msg("NetDump", "Num. Packets Read: %u", m_NumPacketsRead);
+		dbg_msg("NetDump", "  - Connless: %u", m_NumConnlessPackets);
+		dbg_msg("NetDump", "  - Control: %u", m_NumControlPackets);
 		std::map<int, int>::const_iterator cit = m_ControlIds.begin();
 		while (cit != m_ControlIds.end())
 		{
-			std::cout << "       " << (*cit).first << " \t" << (*cit).second << " times" << std::endl;
+			dbg_msg("NetDump", "       %d \t%d times", (*cit).first, (*cit).second);
 			++cit;
 		}
-		std::cout << "  - Resend: " << m_NumResendPackets << std::endl;
-		std::cout << "  - Compression: " << m_NumCompressionPackets << std::endl;
-		std::cout << "  - No Flagged: " << m_NumNoFlagPackets << std::endl;
-		std::cout << "Num. Invalid Packets: " << m_NumInvalidPackets << std::endl;
-		std::cout << std::endl;
-		std::cout << "Num. Chunks Read: " << m_NumChunksRead << std::endl;
-		std::cout << "  - Vital: " << m_NumVitalChunks << std::endl;
-		std::cout << "  - Resend: " << m_NumResendChunks << std::endl;
-		std::cout << "  - No Flagged: " << m_NumNoFlagChunks << std::endl;
-		std::cout << std::endl;
-		const int TotalBytes = m_TotalBytesPreProcessed - m_TotalBytesPostProcessed;
+		dbg_msg("NetDump", "  - Resend: %u", m_NumResendPackets);
+		dbg_msg("NetDump", "  - Compression: %u", m_NumCompressionPackets);
+		dbg_msg("NetDump", "  - No Flagged: %u", m_NumNoFlagPackets);
+		dbg_msg("NetDump", "Num. Invalid Packets: %u\n", m_NumInvalidPackets);
+
+		dbg_msg("NetDump", "Num. Chunks Read: %u",m_NumChunksRead);
+		dbg_msg("NetDump", "  - Vital: %u", m_NumVitalChunks);
+		dbg_msg("NetDump", "  - Resend: %u", m_NumResendChunks);
+		dbg_msg("NetDump", "  - No Flagged: %u\n", m_NumNoFlagChunks);
+
+		const int DiffBytes = m_TotalBytesPreProcessed - m_TotalBytesPostProcessed;
 		const float Perc = 100.0f - (m_TotalBytesPostProcessed * 100.0f / m_TotalBytesPreProcessed);
-		std::cout << "Total Bytes Pre-Processed: " << m_TotalBytesPreProcessed << std::endl;
-		std::cout << "Total Bytes Post-Processed: " << m_TotalBytesPostProcessed << std::endl;
-		std::cout << "Total Difference: " << std::fixed << std::setprecision(2) << Perc << "% (" << TotalBytes << " bytes)" << std::endl;
-		std::cout << std::endl << "Frequency Table (Pre-Processed Packets Data):" << std::endl;
+		dbg_msg("NetDump", "Total Bytes Pre-Processed: %u", m_TotalBytesPreProcessed);
+		dbg_msg("NetDump", "Total Bytes Post-Processed: %u", m_TotalBytesPostProcessed);
+		dbg_msg("NetDump", "Total Difference: %.2f (%d bytes)\n", Perc, DiffBytes);
+
+		dbg_msg("NetDump", "Frequency Table (Pre-Processed Packets Data):");
+		// FIXME
+		char aBuff[3072] = {0};
 		for (int i=0; i<255; i++)
 		{
-			std::cout << "0x" << std::hex << m_FreqTable[i];
-			if (i < 254)
-				std::cout << ", ";
+			char aHexVal[32] = {0};
+			str_format(aHexVal, sizeof(aHexVal), "%#0x%c ", m_FreqTable[i], (i < 254)?',':'\0');
+			str_append(aBuff, aHexVal, sizeof(aBuff));
 		}
-		std::cout << std::endl << std::endl;
+		dbg_msg("NetDump", "%s", aBuff);
 	}
 
 public:
@@ -132,22 +128,31 @@ public:
 
 	void Read(const char *pFile)
 	{
-		CDumpRecord DumpRecord;
-		CNetChunkHeader Header;
-		m_Stream.open(pFile, std::ios_base::in | std::ios_base::binary);
-		if (m_Stream.is_open())
+		m_FileHandle = io_open(pFile, IOFLAG_READ);
+		if (m_FileHandle)
 		{
+			io_seek(m_FileHandle, 0, IOSEEK_END);
+			const long int FileSize = io_tell(m_FileHandle);
+			io_seek(m_FileHandle, 0, IOSEEK_START);
+
+			if (FileSize <= 0)
+				return;
 			Reset();
+
+			CDumpRecord DumpRecord;
 			do
 			{
 				ReadNextDumpRecord(&DumpRecord);
+				if (DumpRecord.m_Type == -1)
+					continue;
+
 				++m_TotalDumpRecords;
 
 				if (DumpRecord.m_Type == 0)
 				{ // Is a Post-Processed Record (the information as it is sent/received through the network)
 					m_TotalBytesPostProcessed += DumpRecord.m_Size;
 
-					unsigned int CurrentChunk = 0;
+					unsigned int CurrentChunk = 0u;
 					CNetPacketConstruct PacketConstruct;
 					if (CNetBase::UnpackPacket(DumpRecord.m_pData, DumpRecord.m_Size, &PacketConstruct) == 0)
 					{
@@ -176,6 +181,7 @@ public:
 
 
 						// ** ANALIZE PACKET CHUNKS **
+						CNetChunkHeader Header;
 						const unsigned char *pEnd = PacketConstruct.m_aChunkData + PacketConstruct.m_DataSize;
 						while (1)
 						{
@@ -208,26 +214,34 @@ public:
 					} else
 						++m_NumInvalidPackets;
 				}
-				else
+				else if (DumpRecord.m_Type == 1)
+				{
 					m_TotalBytesPreProcessed += DumpRecord.m_Size;
 
+					for (int i=0; i<DumpRecord.m_Size; ++m_FreqTable[DumpRecord.m_pData[i++]]);
+				}
+
 				DumpRecord.Reset();
-			} while (!m_Stream.eof());
+			} while (io_tell(m_FileHandle) < FileSize);
 
-			m_Stream.close();
+			io_close(m_FileHandle);
+			m_FileHandle = 0;
 
-			PrintInfo(pFile);
+			dbg_msg("NetDump", "Log Network File: %s\n", pFile);
+			PrintInfo();
 		}
 		else
-			std::cout << "Can't read '" << pFile << "'!" << std::endl;
+			dbg_msg("NetDump", "Can't read '%s'!", pFile);
 	}
 };
 
 int main(int argc, const char **argv)
 {
-	if (argc < 2)
+	dbg_logger_stdout();
+
+	if (argc == 1)
 	{
-		std::cout << "Invalid parameters!" << std::endl << "\tUsage: " << argv[0] << " FILE1 [ FILE2... ]" << std::endl;
+		dbg_msg("NetDump", "Invalid parameters!\n\tUsage: %s FILE1 [ FILE2... ]", argv[0]);
 		return -1;
 	}
 
