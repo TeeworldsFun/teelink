@@ -2,8 +2,9 @@ image: gcc
 
 build:
   stage: build
-  environment:
-    - HCLIENT_VERSION: "4.0.3"
+  variables:
+    GIT_DEPTH: "3"
+    HCLIENT_VERSION: "4.0.3"
   before_script:
     - |
         apt update && sudo apt -y install libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev tar gcc
