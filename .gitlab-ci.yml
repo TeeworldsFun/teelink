@@ -3,11 +3,11 @@ image: gcc
 build:
   stage: build
   variables:
-    GIT_DEPTH: "3"
+    GIT_DEPTH: "1"
     HCLIENT_VERSION: "4.0.3"
   before_script:
     - |
-        apt update && sudo apt -y install libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev tar gcc
+        apt update && apt -y install libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev tar gcc
         if [ ! -x ~/bam-0.5.0/bam ]; then
           wget -O ~/bamv0.5.0.tar.gz https://github.com/matricks/bam/archive/v0.5.0.tar.gz
           tar -zxvf ~/bamv0.5.0.tar.gz -C ~/
@@ -20,7 +20,7 @@ build:
     - tar -tzf H-Client-$HCLIENT_VERSION-linux86_64.tar.gz >/dev/null
   artifacts:
     paths:
-      - H-Client-$HCLIENT_VERSION-linux86_64.tar.gz
+      - H-Client-*.tar.gz
   cache:
     paths:
         - "~/bam-0.5.0/"
