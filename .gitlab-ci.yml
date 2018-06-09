@@ -1,10 +1,9 @@
 image: gcc
 
-build:
+HClient-Release:
   stage: build
   variables:
     GIT_DEPTH: "1"
-    HCLIENT_VERSION: "4.0.3"
   before_script:
     - |
         apt update && apt -y install libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev tar gcc
@@ -16,12 +15,41 @@ build:
         fi
   script: 
     - ~/bam-0.5.0/bam release
-    - ~/bam-0.5.0/bam debug
-    - python2 scripts/make_release.py $HCLIENT_VERSION linux86_64
-    - tar -tzf H-Client-$HCLIENT_VERSION-linux86_64.tar.gz >/dev/null
   artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     paths:
-      - H-Client-*.tar.gz
+      - data/
+      - teeworlds
+      - teeworlds_srv
+      - license.txt
+      - storage.cfg
   cache:
     paths:
-        - "~/bam-0.5.0/"
+        - ~/bam-0.5.0/
+
+HClient-Debug:
+  stage: build
+  variables:
+    GIT_DEPTH: "1"
+  before_script:
+    - |
+        apt update && apt -y install libsdl1.2-dev zlib1g-dev libfreetype6-dev libnotify-dev libopus-dev tar gcc
+        if [ ! -x ~/bam-0.5.0/bam ]; then
+          wget -O ~/bamv0.5.0.tar.gz https://github.com/matricks/bam/archive/v0.5.0.tar.gz
+          tar -zxvf ~/bamv0.5.0.tar.gz -C ~/
+          cd ~/bam-0.5.0; ./make_unix.sh
+          cd $CI_PROJECT_DIR
+        fi
+  script: 
+    - ~/bam-0.5.0/bam debug
+  artifacts:
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    paths:
+      - data/
+      - teeworlds_d
+      - teeworlds_srv_d
+      - license.txt
+      - storage.cfg
+  cache:
+    paths:
+        - ~/bam-0.5.0/
