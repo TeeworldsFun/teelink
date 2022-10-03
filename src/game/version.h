@@ -7,7 +7,7 @@
 #define GAME_NETVERSION "0.6 " GAME_NETVERSION_HASH
 static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
 
-#define DDRACE_VERSIONNR 308 // Old DDRace Version only for >16 players support
+#define DDRACE_VERSIONNR 16031 // Old DDRace Version only for >16 players support
 /*
 1 - 3.5
 2 - 3.5.1
@@ -27,4 +27,7 @@ static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
 */
 #define HCLIENT_VERSION_CODE 15
 #define HCLIENT_VERSION "4.0.3"
+
+#define TEELINK_VERSION_CODE "flyer"
+#define TEELINK_VERSION "0.1.0"
 #endif

@@ -340,7 +340,6 @@ public:
 
 	void SendRequestMap();
 	void TryLoadMap();
-	bool DownloadMap(const char *pName);
 	char m_aMapdownloadName[256];
 	int m_MapdownloadCrc;
 	int m_MapdownloadTotalsize;

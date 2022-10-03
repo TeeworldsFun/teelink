@@ -169,17 +169,6 @@ void CNamePlates::RenderNameplate(
         }
 
         Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), IntraTick);
-
-        char aBuf[17];
-        if (m_pClient->Collision()->CheckPointFreeze(Position))
-            str_copy(aBuf, "Freezed: <Undef>", sizeof(aBuf));
-        else
-            str_format(aBuf, sizeof(aBuf), "Freezed: %d", 10-pPlayerChar->m_Armor);
-
-        float Width = TextRender()->TextWidth(0, 14.0f, aBuf, -1);
-        TextRender()->TextColor(1.0f, 0.39f, 0.0f, 0.95f);
-        TextRender()->Text(0x0, Position.x-Width/2, Position.y-45.0f, 14.0f, aBuf, -1);
-        TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
     }
 }
 

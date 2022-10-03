@@ -264,7 +264,7 @@ function build(settings)
 	-- apply opus settings
 	config.opusfile:Apply(client_settings)
 
-	engine = Compile(engine_settings, Collect("src/engine/shared/*.cpp", "src/base/*.c"))
+	engine = Compile(engine_settings, Collect("src/engine/shared/*.cpp", "src/base/*.c", "src/base/*.cpp"))
 	client = Compile(client_settings, Collect("src/engine/client/*.cpp"))
 	server = Compile(server_settings, Collect("src/engine/server/*.cpp"))
 
@@ -297,11 +297,11 @@ function build(settings)
 	end
 
 	-- build client, server, version server and master server
-	client_exe = Link(client_settings, "teeworlds", game_shared, game_client,
+	client_exe = Link(client_settings, "teelink", game_shared, game_client,
 		engine, client, game_editor, zlib, pnglite, wavpack, jsonparser,
                 client_link_other, client_osxlaunch, client_notification, md5)
 
-	server_exe = Link(server_settings, "teeworlds_srv", game_shared, game_server,
+	server_exe = Link(server_settings, "teelink_srv", game_shared, game_server,
         engine, server, zlib, md5, server_link_other)
 
 	serverlaunch = {}
@@ -448,5 +448,5 @@ if platform == "macosx" then
 else
 	build(debug_settings)
 	build(release_settings)
-	DefaultTarget("game_debug")
+	DefaultTarget("client_debug")
 end

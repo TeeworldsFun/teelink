@@ -265,17 +265,7 @@ int ThreadDownloadMap(void *params)
     lock_wait(pClient->m_DownloadLock);
     char aFileName[255];
     str_format(aFileName, sizeof(aFileName), "%s_%08x", pClient->m_aMapdownloadName, pClient->m_MapdownloadCrc);
-    if (pClient->DownloadMap(aFileName))
-    {
-    	dbg_msg("Client", "Map downloaded successfully! %d bytes -- %d -- %s", pClient->m_DownloadMapStatus.m_Received, pClient->m_DownloadMapStatus.m_Status, pClient->m_DownloadMapStatus.m_ForceStop?"YES":"NO");
-    	pClient->m_MapdownloadTotalsize = -1;
-    	pClient->TryLoadMap();
-    }
-    else
-    {
-    	dbg_msg("Client", "Can't download map from DDNet servers. Downloading direct from server...", pClient->m_DownloadMapStatus.m_Received);
-    	pClient->SendRequestMap();
-    }
+    pClient->SendRequestMap();
     lock_unlock(pClient->m_DownloadLock);
 
     return 0;
@@ -414,6 +404,7 @@ void CClient::SendInfo()
 	Msg.AddString(GameClient()->NetVersion(), 128);
 	Msg.AddString(g_Config.m_Password, 128);
 	Msg.AddString("H-Client", 32); // H-Client: Mapper
+	Msg.AddString("Teelink", 32);
 	SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH);
 }
 
@@ -1239,10 +1230,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 					m_MapdownloadCrc = MapCrc;
 					m_MapdownloadTotalsize = MapSize;
 
-					if (g_Config.m_ddrMapsFromHttp)
-						Engine()->AddJob(&m_DownloadMapJob, ThreadDownloadMap, this);
-					else
-						SendRequestMap();
+					Engine()->AddJob(&m_DownloadMapJob, ThreadDownloadMap, this);
 				}
 			}
 		}
@@ -2474,7 +2462,7 @@ int main(int argc, const char **argv) // ignore_conventi on
 // H-Client
 #if defined(CONF_PLATFORM_LINUX)
 	XInitThreads();
-	notify_init("H-Client Notifications");
+	notify_init("Teelink Notifications");
 #endif
 //
 #if defined(CONF_FAMILY_WINDOWS)
@@ -2552,7 +2540,7 @@ int main(int argc, const char **argv) // ignore_conventi on
 	pClient->InitInterfaces();
 
 	// execute config file
-	pConsole->ExecuteFile("settings_hclient.cfg");
+	pConsole->ExecuteFile("settings_space.cfg");
 
 	// execute autoexec file
 	pConsole->ExecuteFile("autoexec.cfg");
@@ -2661,19 +2649,6 @@ bool CClient::EndRecordVideo()
 	m_RecordVideo = false;
 
 	return true;
-}
-
-bool CClient::DownloadMap(const char *pName)
-{
-    char aUrl[255];
-    str_format(aUrl, sizeof(aUrl), "http://maps.ddnet.tw/%s.map", pName);
-    char aDest[255], aCompleteFilename[512];
-    str_format(aDest, sizeof(aDest), "downloadedmaps/%s.map", pName);
-    Storage()->GetPath(IStorage::TYPE_SAVE, aDest, aCompleteFilename, sizeof(aCompleteFilename));
-
-    dbg_msg("Client", "Try download '%s' map from ddnet server...", pName);
-    m_DownloadMapStatus.Reset();
-    return CHttpDownloader::GetToFile(aUrl, aCompleteFilename, &m_DownloadMapStatus, 3);
 }
 
 void CClient::SendRequestMap()

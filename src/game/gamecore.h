@@ -25,6 +25,8 @@
 //
 
 #define SERVER_GAMETYPE_DDRACE 	"ddrace"
+#define SERVER_GAMETYPE_GORES "gores"
+#define SERVER_GAMETYPE_INFCLASS "infclass"
 #define SERVER_GAMETYPE_FNG		"fng"
 
 class CTuneParam
@@ -218,7 +220,6 @@ public:
 	bool m_Freezes;
 	int m_ActiveWeapon;
 	int m_Team;
-	std::map<int, std::vector<vec2> > *m_pTeleOuts;
 	bool m_NewHook;
 	vec2 m_HookTeleBase;
 	//

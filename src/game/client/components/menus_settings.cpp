@@ -338,7 +338,9 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 				k = DoScrollbarH(&s_aColorSlider[i][s], &Button, k);
 				Color <<= 8;
 				Color += clamp((int)(k*255), 0, 255);
-				UI()->DoLabelScaled(&Label, paLabels[s], 14.0f, -1);
+				char aBuf[16];
+				str_format(aBuf, sizeof(aBuf), "%s: %03d", paLabels[s], (int)(k * 255.0f));
+				UI()->DoLabelScaled(&Label, aBuf, 14.0f, -1);
 			}
 
 			if(PrevColor != Color)
@@ -1124,11 +1126,6 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         if(DoButton_CheckBox(&g_Config.m_hcColorClan, Localize("Highlight clan members"), g_Config.m_hcColorClan, &HUDItem))
             g_Config.m_hcColorClan ^= 1;
 
-        //Chat Emoticons
-        StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
-        if(DoButton_CheckBox(&g_Config.m_hcChatEmoticons, Localize("Enable chat emoticons"), g_Config.m_hcChatEmoticons, &HUDItem))
-            g_Config.m_hcChatEmoticons ^= 1;
-
         //Chat Colours
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcChatColours, Localize("Enable chat colours"), g_Config.m_hcChatColours, &HUDItem))
@@ -1163,11 +1160,6 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcShowPreviewMap, Localize("Show map preview in server browser"), g_Config.m_hcShowPreviewMap, &HUDItem))
             g_Config.m_hcShowPreviewMap ^= 1;
-
-        //Download Maps From DDNet Servers
-        StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
-        if(DoButton_CheckBox(&g_Config.m_ddrMapsFromHttp, Localize("Try download maps from DDNet servers"), g_Config.m_ddrMapsFromHttp, &HUDItem))
-            g_Config.m_ddrMapsFromHttp ^= 1;
 
         /*if (g_Config.m_hcShowPreviewMap)
         {

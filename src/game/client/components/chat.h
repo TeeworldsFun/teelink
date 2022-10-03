@@ -33,18 +33,6 @@ class CChat : public CComponent
 	CLine m_aLines[MAX_LINES];
 	int m_CurrentLine;
 
-    //H-Client: Chat Emotes
-	struct CChatEmote
-	{
-	    const char *m_Emote;
-	    int m_SpriteID;
-
-        CChatEmote() {}
-	    CChatEmote(const char *emote, int scid): m_Emote(emote), m_SpriteID(scid) {}
-	};
-    std::list<CChat::CChatEmote> m_vChatEmotes;
-
-	void AssignChatEmote(const char *emote, int sc_id); // H-Client
 	void ParseServerMessage(const char *msg); // H-Client
 
 	// chat

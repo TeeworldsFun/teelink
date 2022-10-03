@@ -546,8 +546,8 @@ void CGameConsole::OnRender()
 		float Width = TextRender()->TextWidth(0, FontSize, aBuf, -1);
 		TextRender()->Text(0, Screen.w-Width-10.0f, 0.0f, FontSize, aBuf, -1);
 
-		//H-Client
-		str_format(aBuf, sizeof(aBuf), "H-Client v%s", HCLIENT_VERSION);
+		//Teelink
+		str_format(aBuf, sizeof(aBuf), "Teelink v%s", TEELINK_VERSION);
 		Width = TextRender()->TextWidth(0, FontSize, aBuf, -1);
 		TextRender()->TextColor(1.0f, 0.39f, 0.0f, 0.8f);
 		TextRender()->Text(0, Screen.w-Width-10.0f, FontSize+5.0f, FontSize, aBuf, -1);

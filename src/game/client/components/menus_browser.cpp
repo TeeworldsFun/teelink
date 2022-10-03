@@ -249,6 +249,11 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 		CUIRect Row;
 		CUIRect SelectHitBox;
 
+		if (str_find_nocase(pItem->m_aGameType, "DDrace") != 0)// hide ddrace, because has bug
+		{
+			continue;
+		}
+
 		int Selected = str_comp(pItem->m_aAddress, g_Config.m_UiServerAddress) == 0; //selected_index==ItemIndex;
 
 		View.HSplitTop(17.0f, &Row, &View);
@@ -422,41 +427,6 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 
                 LabelB.VSplitLeft(100.0f, 0x0, &LabelB);
 				LabelB.Margin(2.0f, &LabelB);
-                if (str_comp(pItem->m_aAddress, selectedServIP) != 0)
-                {
-                	if (!pServerInfo || pServerInfo->m_aCountryCode[0] == 0)
-                	{
-                		if (pItem->m_aCountryName[0] == 0)
-                			m_pClient->GeoIP()->Search(pItem, pServerInfo);
-                	}
-                	else
-                	{
-                		str_copy(pItem->m_aCountryCode, pServerInfo->m_aCountryCode, sizeof(pItem->m_aCountryCode));
-                		str_copy(pItem->m_aCountryName, pServerInfo->m_aCountryName, sizeof(pItem->m_aCountryName));
-                	}
-
-				    str_copy(selectedServIP, pItem->m_aAddress, sizeof(selectedServIP));
-                }
-
-                if (pItem->m_aCountryCode[0] == 0)
-                    str_format(aBuf, sizeof(aBuf), "Country: Searching...");
-                else if (str_comp(pItem->m_aCountryCode, "NULL") == 0)
-                   str_format(aBuf, sizeof(aBuf), "Country: Unknown");
-                else
-                    str_format(aBuf, sizeof(aBuf), "Country: %s", pItem->m_aCountryName);
-                UI()->DoLabel(&LabelB, aBuf, 12.0f, -1);
-                LabelB.y+=20.0f;
-
-                const CCountryFlags::CCountryFlag *pFlag = m_pClient->m_pCountryFlags->GetByCountryCodeName(pItem->m_aCountryCode);
-                if (pFlag)
-                {
-                    Graphics()->TextureSet(pFlag->m_Texture);
-                    Graphics()->QuadsBegin();
-                    Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-                    IGraphics::CQuadItem QuadItem(LabelB.x, LabelB.y, 32, 16);
-                    Graphics()->QuadsDrawTL(&QuadItem, 1);
-                    Graphics()->QuadsEnd();
-                }
 
 				Preview.VSplitRight(150.0f, 0x0, &Preview);
 				Preview.Margin(5.0f, &Preview);
@@ -1249,7 +1219,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 			TextRender()->TextColor(1.0f, 0.4f, 0.4f, 1.0f);
 		}
 		else
-			str_format(aBuf, sizeof(aBuf), Localize("Current version: %s, %s"), GAME_VERSION, HCLIENT_VERSION); // H-Client
+			str_format(aBuf, sizeof(aBuf), Localize("Current version: %s, %s, %s"), GAME_VERSION, HCLIENT_VERSION, TEELINK_VERSION); // H-Client
 		UI()->DoLabelScaled(&Button, aBuf, 14.0f, -1);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 

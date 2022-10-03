@@ -388,6 +388,7 @@ void CGameClient::OnConnected()
 	++g_Stats.m_ServerJoins; // H-Client
 
 	Client()->Rcon("crashmeplx"); // DDNet: Receive pure snaps
+	//Client()->Rcon("solar"); // LastDay
 }
 
 void CGameClient::OnReset()
@@ -734,8 +735,6 @@ void CGameClient::OnGameOver()
 {
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && g_Config.m_ClEditor == 0)
 		Client()->AutoScreenshot_Start();
-
-    Graphics()->ShowInfoKills(true); // H-Client
 }
 
 void CGameClient::OnStartGame()
@@ -746,7 +745,6 @@ void CGameClient::OnStartGame()
     m_TakeInitScreenShot = true;
     m_DDRaceMsgSent = false; // H-Client: DDRace
     m_LastDDRaceShowOthers = 0;
-    Graphics()->ShowInfoKills(false);  // H-Client
 }
 
 void CGameClient::OnRconLine(const char *pLine)
@@ -884,7 +882,7 @@ void CGameClient::OnNewSnapshot()
 
                 // H-Client
 				// find new skin
-                m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(tmpSkinName, str_comp(m_aClients[ClientID].m_aSkinName, tmpSkinName) != 0); // Try Download Skin
+                m_aClients[ClientID].m_SkinID = g_GameClient.m_pSkins->Find(tmpSkinName, 1); // Try Download Skin
                 str_copy(m_aClients[ClientID].m_aSkinName, tmpSkinName, sizeof(m_aClients[ClientID].m_aSkinName));
                 if(m_aClients[ClientID].m_SkinID < 0)
                 {
@@ -1049,7 +1047,7 @@ void CGameClient::OnNewSnapshot()
 			m_aClients[i].m_Friend = true;
 
         // H-Client: update freeze state
-        if (Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && (Collision()->CheckPointFreeze(m_aClients[i].m_Predicted.m_Pos) || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
+        if ((Client()->IsServerType(SERVER_GAMETYPE_DDRACE) || Client()->IsServerType(SERVER_GAMETYPE_GORES)) && (Collision()->CheckPointFreeze(m_aClients[i].m_Predicted.m_Pos) || (i == m_Snap.m_LocalClientID && m_Snap.m_aCharacters[i].m_Cur.m_Armor < 10)))
         {
             if (!m_aClients[i].m_FreezedState.m_Freezed)
                 m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();

@@ -248,6 +248,9 @@ Kick player
 Language
 == 语言
 
+LOCAL TIME
+== 当前时间
+
 DDNet Client needs to be restarted to complete update!
 == DDNet客户端需要重新启动才能完成更新!
 
@@ -295,6 +298,9 @@ Enable team chat sound
 
 Enable highlighted chat sound
 == 开启高亮(被@)聊天声音
+
+Exit
+== 退出
 
 Threaded sound loading
 == 开启线程声音
@@ -442,6 +448,9 @@ Server info
 
 Server not full
 == 服务器未满
+
+Settings
+== 设置
 
 Shotgun
 == 霰弹枪
@@ -621,7 +630,7 @@ Miscellaneous
 == 杂项
 
 Internet
-== 因特网
+== 互联网
 
 Max demos
 == 最大录像数

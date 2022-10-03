@@ -105,7 +105,6 @@ MACRO_CONFIG_INT(hcAutoDownloadSkins, hc_auto_download_skins, 0, 0, 1, CFGFLAG_S
 MACRO_CONFIG_STR(hcAutoDownloadSkinsSpeed, hc_auto_download_skins_speed, 5, "1", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Auto-Download Skins Speed (KiBps)")
 MACRO_CONFIG_INT(hcUseHUD, hc_use_hud, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Uses H-Client HUD")
 MACRO_CONFIG_INT(hcColorClan, hc_color_clan, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "HighLight Clan Members")
-MACRO_CONFIG_INT(hcChatEmoticons, hc_chat_emoticons, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat emoticons")
 MACRO_CONFIG_INT(hcChatColours, hc_chat_colours, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat colors")
 MACRO_CONFIG_INT(hcChatTeamColors, hc_chat_team_colors, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable chat team colors")
 MACRO_CONFIG_INT(hcGoreStyle, hc_gore_style, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable Gore Style!")
@@ -144,7 +143,6 @@ MACRO_CONFIG_INT(hcRaceSaveGhost, hc_race_save_ghost, 1, 0, 1, CFGFLAG_CLIENT|CF
 MACRO_CONFIG_INT(AntiPing, anti_ping, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Anti-Ping")
 
 MACRO_CONFIG_INT(ddrMapSounds, ddrace_map_sounds, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Play DDRace Map Sounds")
-MACRO_CONFIG_INT(ddrMapsFromHttp, ddrace_maps_from_http, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Try Download Maps From DDRaceNet HTTP Servers")
 MACRO_CONFIG_INT(ddrShowOthers, ddrace_show_others, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show Others")
 MACRO_CONFIG_INT(ddrShowHiddenWays, ddrace_show_hidden_ways, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Show hidden ways")
 MACRO_CONFIG_INT(ddrShowTeeDirection, ddrace_show_tee_direction, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "View Tee Direcion")

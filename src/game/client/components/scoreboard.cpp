@@ -306,8 +306,8 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
     float LineHeight = 40.0f;
     float TeeSizeMod = 0.4f;
     float Spacing = 0.0f;
-    float HeadlineFontsize = 12.0f;
-    float FontSize = 14.0f;
+    float HeadlineFontsize = 16.0f;
+    float FontSize = 16.0f;
     int part = 0;
     CTextCursor Cursor;
 
@@ -345,7 +345,7 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, int Team, const 
             RenderTools()->DrawUIRect(&rHeadLines, HexToVec4(g_Config.m_hcListHeaderBackgroundColor), 0, 0.0f);
             rHeadLines.Margin(5.0f,&rHeadLines);
 
-            y += 50.0f;
+            y += 40.0f;
 
             rHeadLines.VSplitLeft(80.0f, &rLabel, &rHeadLines);
             TextRender()->Text(0, rLabel.x + 20.0f, rLabel.y, HeadlineFontsize, Localize(isDDRace?"Time":"Score"), -1);

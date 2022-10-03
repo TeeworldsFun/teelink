@@ -1,14 +1,6 @@
-# H-Client README [![GitLab CI](https://gitlab.com/Tardo/HClient/badges/master/build.svg)](https://gitlab.com/Tardo/HClient/pipelines)
-H-Client its a mod for the game Teeworlds created and maintained by unsigned char*.
-
-Please visit http://hclient.wordpress.com for up-to-date information about 
-the mod.
-
-Extra libraries used:
-- libnotify (Only Linux)
-- gdk_pixbuf-2.0 (Only Linux)
-- libopus
-
+Teelink
+=====
+Based on H-Client
 
 
 # TEEWORLDS README

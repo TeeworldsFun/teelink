@@ -35,7 +35,7 @@ void CPlayers::OnMapLoad()
     m_RenderFreezeInfo.m_TextureDamage = -1;
     m_RenderFreezeInfo.m_Texture = -1;
     m_RenderFreezeInfo.m_Size = 64.0f;
-    const int fSkin = m_pClient->m_pSkins->Find("x_freeze");
+    const int fSkin = m_pClient->m_pSkins->Find("x_ninja");
     if (fSkin != -1)
     {
     	m_RenderFreezeInfo.m_Texture = m_pClient->m_pSkins->Get(fSkin)->m_OrgTexture;
@@ -43,7 +43,7 @@ void CPlayers::OnMapLoad()
     	m_RenderFreezeInfo.m_ColorFeet = vec4(1,1,1,1);
     	m_RenderFreezeInfo.m_ColorHand = vec4(1,1,1,1);
 
-    }
+    }else m_RenderFreezeInfo.m_Texture = fSkin;
 }
 //
 
@@ -394,8 +394,7 @@ void CPlayers::RenderPlayer(
             Graphics()->SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 
             // Collide with walls?
-            int teleNr = 0;
-            Hit = Collision()->IntersectLineTeleHook(orgPos, toPos, &toPos, 0, &teleNr);
+            Hit = Collision()->IntersectLine(orgPos, toPos, &toPos, 0);
             if (Hit && !(Hit&CCollision::COLFLAG_NOHOOK)) // Hookable Tile
             	Graphics()->SetColor(0.5f, 0.9f, 0.62f, 1.0f);
 
@@ -581,7 +580,6 @@ void CPlayers::RenderPlayer(
 	RenderInfo.m_ColorBody.a = 1.0f;
 	RenderInfo.m_ColorFeet.a = 1.0f;
 
-	// H-Client: Render Tee (Is Freezed?)
 	m_RenderFreezeInfo.m_GotAirJump = RenderInfo.m_GotAirJump;
 
 	if (m_pClient->m_aClients[PlayerInfo.m_ClientID].m_FreezedState.m_Freezed)
@@ -637,10 +635,9 @@ void CPlayers::RenderPlayer(
 			}
 		}
 	}
-	//
 
 	//H-Client: Gore
-    if (g_Config.m_hcGoreStyle && !Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && Prev.m_Emote == EMOTE_NORMAL && Player.m_Emote == EMOTE_PAIN)
+    if (g_Config.m_hcGoreStyle && !Client()->IsServerType(SERVER_GAMETYPE_DDRACE) && !Client()->IsServerType(SERVER_GAMETYPE_GORES) && !Client()->IsServerType(SERVER_GAMETYPE_INFCLASS) && Prev.m_Emote == EMOTE_NORMAL && Player.m_Emote == EMOTE_PAIN)
         m_pClient->m_pEffects->Blood(Position, Direction, 0);
     //
 
@@ -649,15 +646,6 @@ void CPlayers::RenderPlayer(
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
 		Graphics()->QuadsBegin();
 		RenderTools()->SelectSprite(SPRITE_DOTDOT);
-		IGraphics::CQuadItem QuadItem(Position.x + 24, Position.y - 40, 64,64);
-		Graphics()->QuadsDraw(&QuadItem, 1);
-		Graphics()->QuadsEnd();
-	}
-	else if(Player.m_PlayerFlags&PLAYERFLAG_IN_MENU) // H-Client
-	{
-		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
-		Graphics()->QuadsBegin();
-		RenderTools()->SelectSprite(SPRITE_ZZZ);
 		IGraphics::CQuadItem QuadItem(Position.x + 24, Position.y - 40, 64,64);
 		Graphics()->QuadsDraw(&QuadItem, 1);
 		Graphics()->QuadsEnd();

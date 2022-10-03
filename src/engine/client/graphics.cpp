@@ -912,7 +912,7 @@ int CGraphics_SDL::TryInit()
 
 	// set caption
 	char aTitle[64] = {0};
-	str_format(aTitle, sizeof(aTitle), "Teeworlds [H-Client MoD v%s]", HCLIENT_VERSION);
+	str_format(aTitle, sizeof(aTitle), "Teeworlds Teelink Client v%s]", TEELINK_VERSION);
 	SDL_WM_SetCaption(aTitle, aTitle); //H-Client
 
 	// create window

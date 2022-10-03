@@ -27,38 +27,6 @@
 CChat::CChat()
 {
 	OnReset();
-
-    //H-Client
-    AssignChatEmote("x_x",      0);
-    AssignChatEmote("-.-",      1);
-    AssignChatEmote("B)",       2);
-    AssignChatEmote("^^",       3);
-    AssignChatEmote("nerd",     4);
-    AssignChatEmote(":P",       5);
-    AssignChatEmote(":'(",      6);
-    AssignChatEmote(":brown:",  7);
-    AssignChatEmote(":S",       8);
-    AssignChatEmote("O_x",      9);
-    AssignChatEmote("&_&",      10);
-    AssignChatEmote("xD",       11);
-    AssignChatEmote(":3",       12);
-    AssignChatEmote(":blue:",   13);
-    AssignChatEmote(":red:",    14);
-    AssignChatEmote(":chomp:",  15);
-    AssignChatEmote(":cookie:", 16);
-    AssignChatEmote("e_e",      17);
-    AssignChatEmote(":emo:",    18);
-    AssignChatEmote(">_<",      19);
-    AssignChatEmote(":ganja:",  20);
-    AssignChatEmote(":x",       21);
-    AssignChatEmote(":!:",      22);
-    AssignChatEmote(":?:",      23);
-    AssignChatEmote(":B",       24);
-    AssignChatEmote("o_o",      25);
-    AssignChatEmote(":)",       26);
-    AssignChatEmote(":D",       27);
-    AssignChatEmote("!o!",      28);
-    AssignChatEmote(":|",       29);
 }
 
 void CChat::OnReset()
@@ -476,16 +444,7 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 	{
 		if(Now-m_aLastSoundPlayed[CHAT_HIGHLIGHT] >= time_freq()*3/10)
 		{
-			char aBuf[1024];
-			str_format(aBuf, sizeof(aBuf), "%s%s", m_aLines[m_CurrentLine].m_aName, m_aLines[m_CurrentLine].m_aText);
-
-		// 	WindowActive() seems to return true on mac always
-		#ifndef CONF_PLATFORM_MACOSX
-			if (!Graphics()->WindowActive()) // H-Client
-		#endif
-				Graphics()->NotifyWindow("Teeworlds - Chat", aBuf); // however, Apples notificationcenter is clever enough to show popups only when required
-
-			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_CHAT_HIGHLIGHT, 0);
+			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0);
 			m_aLastSoundPlayed[CHAT_HIGHLIGHT] = Now;
 		}
 	}
@@ -493,13 +452,8 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 	{
 		if(Now-m_aLastSoundPlayed[CHAT_CLIENT] >= time_freq()*3/10)
 		{
-		    // H-Client
-		    if (!g_Config.m_hcDisableChatSoundNotification)
-            {
-                m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0);
-                m_aLastSoundPlayed[CHAT_CLIENT] = Now;
-            }
-            //
+			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_CHAT_HIGHLIGHT, 0);
+			m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 		}
 	}
 }
@@ -659,47 +613,9 @@ void CChat::OnRender()
             if (g_Config.m_hcChatColours)
                 textColor = vec4(pClientData->m_RenderInfo.m_ColorBody.r, pClientData->m_RenderInfo.m_ColorBody.g, pClientData->m_RenderInfo.m_ColorBody.b, Blend);
         }
-        //Emotes
         std::string sText = m_aLines[r].m_aText;
         TextRender()->TextColor(textColor.r, textColor.g, textColor.b, textColor.a);
-        if (g_Config.m_hcChatEmoticons && m_aLines[r].m_ClientID > -1)
-        {
-            std::list<CChatEmote>::iterator it = m_vChatEmotes.begin();
-            while(it != m_vChatEmotes.end())
-            {
-                const char *pHL = 0x0;
-                int Length = str_length((it)->m_Emote);
-                do
-                {
-                    pHL = str_find_nocase(sText.c_str(), (it)->m_Emote);
-                    if(pHL)
-                    {
-                        TextRender()->TextEx(&Cursor, sText.substr(0,sText.length() - str_length(pHL)).c_str(), -1);
-
-                        int emoteSize = 8.0f;
-                        Graphics()->BlendNormal();
-                        Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CHAT_EMOTICONS].m_Id);
-                        Graphics()->QuadsBegin();
-                            Graphics()->SetColor(1.0f, 1.0f, 1.0f, Blend);
-                            RenderTools()->SelectSprite((it)->m_SpriteID);
-                            Graphics()->QuadsSetRotation(0.0f);
-                            IGraphics::CQuadItem QuadItem(Cursor.m_X+emoteSize/2, Cursor.m_Y+emoteSize/2, emoteSize, emoteSize);
-                            Graphics()->QuadsDraw(&QuadItem, 1);
-                        Graphics()->QuadsEnd();
-
-                        Cursor.m_X += emoteSize;
-                        sText = sText.substr(sText.length() - (str_length(pHL) - Length), -1);
-                    }
-                } while(pHL);
-
-                it++;
-            }
-
-            if (sText.length() > 0)
-                TextRender()->TextEx(&Cursor, sText.c_str(), -1);
-        }
-        else
-            TextRender()->TextEx(&Cursor, sText.c_str(), -1);
+        TextRender()->TextEx(&Cursor, sText.c_str(), -1);
         /**/
 
         //TextRender()->TextEx(&Cursor, m_aLines[r].m_aText, -1);
@@ -718,16 +634,6 @@ void CChat::Say(int Team, const char *pLine)
 	Msg.m_pMessage = pLine;
 	Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 	g_Stats.m_ChatMessagesSent++; // H-Client
-}
-
-//H-Client
-void CChat::AssignChatEmote(const char *emote, int sc_id)
-{
-    int spriteID = SPRITE_CHAT_EMOTE1 + sc_id;
-    if (spriteID < SPRITE_CHAT_EMOTE1 || spriteID > SPRITE_CHAT_EMOTE30)
-        return;
-
-    m_vChatEmotes.push_back(CChatEmote(emote, SPRITE_CHAT_EMOTE1 + sc_id));
 }
 
 void CChat::ParseServerMessage(const char *msg)

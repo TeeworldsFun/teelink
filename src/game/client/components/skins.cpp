@@ -232,7 +232,7 @@ void CSkins::DownloadSkin(const char *pName)
 
     const unsigned downloadSpeed = clamp(atoi(g_Config.m_hcAutoDownloadSkinsSpeed), 0, 2048) * 1024;
     char aUrl[255];
-    str_format(aUrl, sizeof(aUrl), "http://ddnet.tw/skins/skin/%s.png", pName);
+    str_format(aUrl, sizeof(aUrl), "https://ddnet.org/skins/skin/%s.png", pName);
     char aDest[255], aCompleteFilename[512];
     str_format(aDest, sizeof(aDest), "skins/%s.png", pName);
     Storage()->GetPath(IStorage::TYPE_SAVE+1, aDest, aCompleteFilename, sizeof(aCompleteFilename));

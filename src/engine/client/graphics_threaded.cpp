@@ -720,7 +720,7 @@ int CGraphics_Threaded::IssueInit()
 	if(g_Config.m_DbgResizable) Flags |= IGraphicsBackend::INITFLAG_RESIZABLE;
 
 	char aTitle[64] = {0};
-	str_format(aTitle, sizeof(aTitle), "Teeworlds [H-Client MoD v%s]", HCLIENT_VERSION);
+	str_format(aTitle, sizeof(aTitle), "Teeworlds Teelink Client v%s", TEELINK_VERSION);
 	return m_pBackend->Init(aTitle, &g_Config.m_GfxScreenWidth, &g_Config.m_GfxScreenHeight, g_Config.m_GfxFsaaSamples, Flags);
 }
 
