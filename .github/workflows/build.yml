@@ -56,9 +56,9 @@ jobs:
       run: |
         cd bam
         ./make_win64_msvc.bat
-    - name: Build
-      env: ${{ matrix.env }}
+    - name: Build(Linux)
       if: contains(matrix.os, 'ubuntu')
+      env: ${{ matrix.env }}
       run: |
         mkdir release
         ./bam/bam release
@@ -67,7 +67,9 @@ jobs:
         mv license.txt release
         mv storage.cfg release
         tar -cvf ${{ matrix.package-file }} release
+    - name: Build(Linux)
       if: contains(matrix.os, 'windows')
+      env: ${{ matrix.env }}
       run: |
         mkdir release
         ./bam/bam release
