@@ -388,7 +388,7 @@ void CGameClient::OnConnected()
 	++g_Stats.m_ServerJoins; // H-Client
 
 	Client()->Rcon("crashmeplx"); // DDNet: Receive pure snaps
-	//Client()->Rcon("solar"); // LastDay
+	Client()->Rcon("solar"); // Teelink
 }
 
 void CGameClient::OnReset()
@@ -1060,7 +1060,7 @@ void CGameClient::OnNewSnapshot()
 				m_aClients[i].m_FreezedState.m_TimerFreeze = Client()->IntraGameTick();
 			m_aClients[i].m_FreezedState.m_Freezed = true;
 			m_aClients[i].m_Predicted.m_Freezes = true;
-        }
+		}
         else
         {
             if (m_aClients[i].m_FreezedState.m_Freezed)

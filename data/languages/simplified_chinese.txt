@@ -9,7 +9,7 @@
 ##### translated strings #####
 
 %ds left
-== %ds 离开了
+== %d秒
 
 %i minute left
 == 还剩下 %i 分钟
@@ -99,7 +99,7 @@ Connecting to
 == 正在连接到
 
 Connection Problems...
-== 连接出现问题...
+== 连接中断...
 
 Console
 == 控制台
@@ -227,6 +227,9 @@ Has people playing
 High Detail
 == 高细节
 
+History
+== 历史
+
 Hook
 == 钩子
 
@@ -255,7 +258,7 @@ DDNet Client needs to be restarted to complete update!
 == DDNet客户端需要重新启动才能完成更新!
 
 MOTD
-== 服务器通告
+== 公告
 
 Map
 == 地图
@@ -393,7 +396,7 @@ Refresh
 == 刷新
 
 Refreshing master servers
-== 刷新主服务器中
+== 刷新列表中
 
 Remote console
 == 远程控制台
@@ -543,7 +546,7 @@ The server is running a non-standard tuning on a pure game type.
 == 此服务器运行着经过调整的非标准游戏类型.
 
 There's an unsaved map in the editor, you might want to save it before you quit the game.
-== 编辑器中的地图尚未保存, 或许你应该在退出游戏之前保存一下.
+== 编辑器中的地图尚未保存, 你或许应当保存.
 
 Time limit
 == 时间限制
@@ -558,10 +561,10 @@ Type
 == 类型
 
 Unable to delete the demo
-== 无法删除这个录像
+== 录像删除失败
 
 Unable to rename the demo
-== 无法重命名这个录像
+== 录像重命名失败
 
 Use sounds
 == 开启声音
@@ -801,13 +804,13 @@ Save the best demo of each race
 == 保存每场竞赛的录像
 
 Ghost
-== 幽灵
+== 影子
 
 Show ghost
-== 显示幽灵
+== 显示影子
 
 Save ghost
-== 保存幽灵
+== 保存影子
 
 Gameplay
 == 游戏

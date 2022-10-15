@@ -219,7 +219,7 @@ void CMenus::RenderSettingsPlayer(CUIRect MainView)
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	static float s_ScrollValue = 0.0f;
 	int OldSelected = -1;
-	UiDoListboxStart(&s_ScrollValue, &MainView, 50.0f, Localize("Country"), "", m_pClient->m_pCountryFlags->Num(), 6, OldSelected, s_ScrollValue);
+	UiDoListboxStart(&s_ScrollValue, &MainView, 50.0f, " ", "", m_pClient->m_pCountryFlags->Num(), 6, OldSelected, s_ScrollValue);
 
 	for(int i = 0; i < m_pClient->m_pCountryFlags->Num(); ++i)
 	{
@@ -400,8 +400,10 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 
 			Info.m_Size = UI()->Scale()*50.0f;
 			Item.m_Rect.HSplitTop(5.0f, 0, &Item.m_Rect); // some margin from the top
-			RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1.0f, 0.0f), vec2(Item.m_Rect.x+Item.m_Rect.w/2, Item.m_Rect.y+Item.m_Rect.h/2));
-
+			RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1.0f, 0.0f), vec2(Item.m_Rect.x+Item.m_Rect.w/5, Item.m_Rect.y+Item.m_Rect.h/2));
+			char aSkinName[64];
+			str_copy(aSkinName, s->m_aName, sizeof(aSkinName));
+			TextRender()->Text(0, Item.m_Rect.x+Item.m_Rect.w/3, Item.m_Rect.y+Item.m_Rect.h/5, 14.0f, aSkinName, -1);
 			if(g_Config.m_Debug)
 			{
 				vec3 BloodColor = g_Config.m_PlayerUseCustomColor ? m_pClient->m_pSkins->GetColorV3(g_Config.m_PlayerColorBody) : s->m_BloodColor;
@@ -1114,7 +1116,7 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         StandartGame.HSplitTop(ms_ListheaderHeight, &HUDItem, &StandartGame);
         RenderTools()->DrawUIRect(&HUDItem, s_HeaderColors);
         HUDItem.VSplitLeft(3.0f, 0x0, &HUDItem);
-        UI()->DoLabel(&HUDItem, Localize("⚫·· General"), HUDItem.h*ms_FontmodHeight, -1);
+        UI()->DoLabel(&HUDItem, Localize("······ General"), HUDItem.h*ms_FontmodHeight, -1);
 
         //H-Client HUD
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);

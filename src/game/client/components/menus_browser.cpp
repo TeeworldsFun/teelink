@@ -249,11 +249,6 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 		CUIRect Row;
 		CUIRect SelectHitBox;
 
-		if (str_find_nocase(pItem->m_aGameType, "DDrace") != 0)// hide ddrace, because has bug
-		{
-			continue;
-		}
-
 		int Selected = str_comp(pItem->m_aAddress, g_Config.m_UiServerAddress) == 0; //selected_index==ItemIndex;
 
 		View.HSplitTop(17.0f, &Row, &View);

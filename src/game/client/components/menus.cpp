@@ -689,20 +689,6 @@ int CMenus::RenderMenubar(CUIRect r)
 			DemolistPopulate();
 			NewPage = PAGE_DEMOS;
 		}
-
-		Box.HSplitTop(20.0f, &Button, &Box);
-		static int s_MapEditor=0;
-        if (DoButton_MenuTab(&s_MapEditor, Localize("Map Editor"), 0, &Button, 0, -1, false))
-		{
-			g_Config.m_ClEditor = g_Config.m_ClEditor^1;
-			Input()->MouseModeRelative();
-		}
-
-		Box.HSplitTop(20.0f, &Button, &Box);
-		static int s_Irc=0;
-        if (DoButton_MenuTab(&s_Irc, Localize("Chat IRC"), m_ActivePage==PAGE_IRC, &Button, 0, -1, false))
-        	NewPage = PAGE_IRC;
-
         Box.HSplitTop(20.0f, 0, &Box);
         Box.HSplitTop(20.0f, &Button, &Box);
         ms_ColorTabbarInactive = vec4(0.68f,0.30f,0.25f,0.25f);

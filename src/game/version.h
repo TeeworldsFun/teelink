@@ -3,9 +3,9 @@
 #ifndef GAME_VERSION_H
 #define GAME_VERSION_H
 #include "generated/nethash.cpp"
-#define GAME_VERSION "0.6.¾"
-#define GAME_NETVERSION "0.6 " GAME_NETVERSION_HASH
-static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
+#define GAME_VERSION "0.6.4"
+#define GAME_NETVERSION "0.6 626fce9a778df4d4"
+#define GAME_RELEASE_VERSION "0.6.4"
 
 #define DDRACE_VERSIONNR 16031 // Old DDRace Version only for >16 players support
 /*
@@ -28,6 +28,6 @@ static const char GAME_RELEASE_VERSION[8] = {'0', '.', '6', '.', '2', 0};
 #define HCLIENT_VERSION_CODE 15
 #define HCLIENT_VERSION "4.0.3"
 
-#define TEELINK_VERSION_CODE "flyer"
-#define TEELINK_VERSION "0.1.0"
+#define TEELINK_VERSION_CODE "reviver"
+#define TEELINK_VERSION "0.2.0"
 #endif

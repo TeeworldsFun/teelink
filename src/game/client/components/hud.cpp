@@ -117,14 +117,14 @@ void CHud::RenderScoreHud()
 {
     CServerInfo Info;
     Client()->GetServerInfo(&Info);
-    if (g_Config.m_hcUseHUD && str_find_nocase(Info.m_aGameType, "race"))
+    if (g_Config.m_hcUseHUD && Client()->IsServerType(SERVER_GAMETYPE_DDRACE))
         return;
 
 	// render small score hud
 	if(!(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER))
 	{
 		int GameFlags = m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags;
-		float Whole = 300*Graphics()->ScreenAspect();
+		float Whole = 295*Graphics()->ScreenAspect();
 
 		if((GameFlags&GAMEFLAG_TEAMS) && m_pClient->m_Snap.m_pGameDataObj)
 		{
@@ -238,25 +238,30 @@ void CHud::RenderScoreHud()
 					Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.25f);
 				else
 					Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.25f);
-				RenderTools()->DrawRoundRectExt(Whole-ScoreWidthMax-ImageSize-2*Split-PosSize, 245.0f+t*20, ScoreWidthMax+ImageSize+2*Split+PosSize, 18.0f, 5.0f, CUI::CORNER_L);
+				RenderTools()->DrawRoundRectExt(Whole-ScoreWidthMax-ImageSize-2*Split-PosSize, 225.0f+t*35, ScoreWidthMax+ImageSize+2*Split+PosSize+50.0f, 33.0f, 5.0f, CUI::CORNER_L);
 				Graphics()->QuadsEnd();
 
 				// draw score
-				TextRender()->Text(0, Whole-ScoreWidthMax+(ScoreWidthMax-aScoreWidth[t])/2-Split, 245.0f+t*20, 14.0f, aScore[t], -1);
+				TextRender()->Text(0, Whole-ScoreWidthMax+(ScoreWidthMax-aScoreWidth[t])/2-Split, 225.0f+t*35, 14.0f, aScore[t], -1);
 
 				// draw tee
 				if(apPlayerInfo[t])
  				{
+					// draw name and ping
+					int ID = apPlayerInfo[t]->m_ClientID;
+					const char *pName = m_pClient->m_aClients[ID].m_aName;
+					float w = TextRender()->TextWidth(0, 10.0f, pName, -1);
+					TextRender()->Text(0, Whole-w, 240.0f+t*35, 10.0f, pName, -1);
 					CTeeRenderInfo Info = m_pClient->m_aClients[apPlayerInfo[t]->m_ClientID].m_RenderInfo;
  					Info.m_Size = 18.0f;
  					RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(1,0),
- 						vec2(Whole-ScoreWidthMax-Info.m_Size/2-Split, 246.0f+Info.m_Size/2+t*20));
+ 						vec2(Whole-ScoreWidthMax-Info.m_Size/2-Split, 226.0f+Info.m_Size/2+t*35));
 				}
 
 				// draw position
 				char aBuf[32];
 				str_format(aBuf, sizeof(aBuf), "%d.", aPos[t]);
-				TextRender()->Text(0, Whole-ScoreWidthMax-ImageSize-Split-PosSize, 247.0f+t*20, 10.0f, aBuf, -1);
+				TextRender()->Text(0, Whole-ScoreWidthMax-ImageSize-Split-PosSize, 227.0f+t*35, 10.0f, aBuf, -1);
 			}
 		}
 	}

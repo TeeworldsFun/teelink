@@ -112,10 +112,10 @@ void CMenus::RenderGame(CUIRect MainView)
 			Client()->DemoRecorder_Stop();
 	}
 
-    if (Client()->IsServerType("race"))
+    if (Client()->IsServerType(SERVER_GAMETYPE_GORES) || Client()->IsServerType(SERVER_GAMETYPE_DDRACE))
     {
-        ms_ColorTabbarActive = vec4(1,1,1,0.85f);
-        ms_ColorTabbarInactive = vec4(1,1,1,0.15f);
+        ms_ColorTabbarActive = vec4(-1,0,0,0.85f);
+        ms_ColorTabbarInactive = vec4(-1,0,0,0.85f);
 
         ButtonBar.VSplitLeft(100.0f, 0, &ButtonBar);
         ButtonBar.VSplitLeft(150.0f, &Button, &ButtonBar);
