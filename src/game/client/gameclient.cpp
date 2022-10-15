@@ -735,6 +735,7 @@ void CGameClient::OnGameOver()
 {
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && g_Config.m_ClEditor == 0)
 		Client()->AutoScreenshot_Start();
+	Graphics()->ShowInfoKills(true); // H-Client
 }
 
 void CGameClient::OnStartGame()
@@ -745,6 +746,7 @@ void CGameClient::OnStartGame()
     m_TakeInitScreenShot = true;
     m_DDRaceMsgSent = false; // H-Client: DDRace
     m_LastDDRaceShowOthers = 0;
+	Graphics()->ShowInfoKills(false); // H-Client
 }
 
 void CGameClient::OnRconLine(const char *pLine)
@@ -1123,7 +1125,7 @@ void CGameClient::OnNewSnapshot()
 	}
 
     //H-Client: >16 players support
-	if ((Client()->IsServerType(SERVER_GAMETYPE_DDRACE) || CurrentServerInfo.m_MaxClients > 16) && !m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
+	if (CurrentServerInfo.m_MaxClients > 16 && !m_DDRaceMsgSent && m_Snap.m_pLocalInfo)
 	{
 		CMsgPacker Msg(NETMSGTYPE_CL_ISHCLIENT); // <-- DDNet Servers & derivatives (>16 players support & other minor ddrace stuff)
 		Msg.AddInt(DDRACE_VERSIONNR);

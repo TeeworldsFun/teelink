@@ -126,7 +126,6 @@ MACRO_CONFIG_INT(hcSmokeColorAlpha, hc_smoke_color_alpha, 255, 0, 255, CFGFLAG_C
 
 MACRO_CONFIG_INT(hcDisableChatSoundNotification, hc_disable_chat_sound_notification, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Disable Chat Sound Notification")
 MACRO_CONFIG_INT(hcPlayerInfo, hc_player_info, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Player Info")
-MACRO_CONFIG_INT(hcShowOffScreenPlayers, hc_show_offscreen_players, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Off-Screen Players")
 MACRO_CONFIG_INT(hcShowPreviewMap, hc_show_preview_map, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Preview Map")
 MACRO_CONFIG_INT(hcPreviewMapMaxWidth, hc_preview_map_max_width, 600, 1, 999999, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Preview Map Max Width")
 MACRO_CONFIG_INT(hcPreviewMapMaxHeight, hc_preview_map_max_height, 600, 1, 999999, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Preview Map Max Height")

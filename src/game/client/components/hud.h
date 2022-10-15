@@ -50,7 +50,6 @@ class CHud : public CComponent
 	void RenderSelectorSpectatorHud();
 	void RenderRecord(); //DDRace
 	void RenderPlayerInfo();
-	void RenderPlayersOffScreen();
 
 	virtual void OnMessage(int MsgType, void *pRawMsg);
 	void DrawCircle(float x, float y, float r, int Segments);

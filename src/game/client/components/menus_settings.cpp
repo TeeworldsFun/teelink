@@ -1153,11 +1153,6 @@ void CMenus::RenderSettingsHClient(CUIRect MainView)
         if(DoButton_CheckBox(&g_Config.m_hcPlayerInfo, Localize("Show player info"), g_Config.m_hcPlayerInfo, &HUDItem))
             g_Config.m_hcPlayerInfo ^= 1;
 
-        //Show Off-Screen Players
-		StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
-		if(DoButton_CheckBox(&g_Config.m_hcShowOffScreenPlayers, Localize("Show off-screen players"), g_Config.m_hcShowOffScreenPlayers, &HUDItem))
-			g_Config.m_hcShowOffScreenPlayers ^= 1;
-
         //Show Map Preview
         StandartGame.HSplitTop(20.0f, &HUDItem, &StandartGame);
         if(DoButton_CheckBox(&g_Config.m_hcShowPreviewMap, Localize("Show map preview in server browser"), g_Config.m_hcShowPreviewMap, &HUDItem))

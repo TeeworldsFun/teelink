@@ -280,14 +280,12 @@ function build(settings)
 
         client_notification = {}
 	client_osxlaunch = {}
-	server_osxlaunch = {}
 	if platform == "macosx" then
                 notification_settings = client_settings:Copy()
                 notification_settings.cc.flags:Add("-x objective-c++")
                 notification_settings.cc.flags:Add("-I/System/Library/Frameworks/Foundation.framework/Versions/C/Headers")
                 client_notification = Compile(notification_settings, "src/osxlaunch/notification.m")
 		client_osxlaunch = Compile(client_settings, "src/osxlaunch/client.m")
-		server_osxlaunch = Compile(launcher_settings, "src/osxlaunch/server.m")
 	end
 
 	tools = {}
@@ -296,35 +294,15 @@ function build(settings)
 		tools[i] = Link(settings, toolname, Compile(settings, v), engine, zlib, pnglite, md5)
 	end
 
-	-- build client, server, version server and master server
+	-- build client
 	client_exe = Link(client_settings, "teelink", game_shared, game_client,
 		engine, client, game_editor, zlib, pnglite, wavpack, jsonparser,
                 client_link_other, client_osxlaunch, client_notification, md5)
 
-	server_exe = Link(server_settings, "teelink_srv", game_shared, game_server,
-        engine, server, zlib, md5, server_link_other)
-
-	serverlaunch = {}
-	if platform == "macosx" then
-		serverlaunch = Link(launcher_settings, "serverlaunch", server_osxlaunch)
-	end
-
-	versionserver_exe = Link(server_settings, "versionsrv", versionserver,
-		engine, zlib, md5)
-
-	masterserver_exe = Link(server_settings, "mastersrv", masterserver,
-		engine, zlib, md5)
-
 	-- make targets
 	c = PseudoTarget("client".."_"..settings.config_name, client_exe, client_depends)
-	s = PseudoTarget("server".."_"..settings.config_name, server_exe, serverlaunch)
-	g = PseudoTarget("game".."_"..settings.config_name, client_exe, server_exe)
 
-	v = PseudoTarget("versionserver".."_"..settings.config_name, versionserver_exe)
-	m = PseudoTarget("masterserver".."_"..settings.config_name, masterserver_exe)
-	t = PseudoTarget("tools".."_"..settings.config_name, tools)
-
-	all = PseudoTarget(settings.config_name, c, s, v, m, t)
+	all = PseudoTarget(settings.config_name, c)
 	return all
 end
 
