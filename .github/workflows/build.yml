@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, windows-2022]
+        os: [ubuntu-latest, windows-latest]
         include:
         - name: "Ubuntu-Latest x86_64"
           os: ubuntu-latest
@@ -67,14 +67,14 @@ jobs:
         mv license.txt release
         mv storage.cfg release
         tar -cvf ${{ matrix.package-file }} release
-    - name: Build(Linux)
+    - name: Build(Windows)
       if: contains(matrix.os, 'windows')
       env: ${{ matrix.env }}
       run: |
         mkdir release
         ./bam/bam release
         mv data release
-        mv teelink release
+        mv teelink.exe release
         mv license.txt release
         mv storage.cfg release
         7z a ${{ matrix.package-file }} release
