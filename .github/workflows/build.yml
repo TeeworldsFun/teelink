@@ -32,37 +32,50 @@ jobs:
             CFLAGS: /WX
             CXXFLAGS: /WX
             LDFLAGS: /WX
-
-        - name: "Windows x86"
-          os: windows-2022
-          cmake-args: -G "Visual Studio 17 2022" -A Win32
-          package-file: Teelink-win32.zip
-          env:
-            CFLAGS: /WX
-            CXXFLAGS: /WX
-            LDFLAGS: /WX
-
     steps:
     - name: Checkout submodules
       uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Check Bam
+      uses: actions/checkout@v2
+      with:
+        repository: matricks/bam
+        ref: 8cd08744c37666830d439ab54016c9d228c63b68
+        path: ./bam
     - name: Prepare Linux
       if: contains(matrix.os, 'ubuntu')
       run: |
         sudo apt-get update -y
         sudo apt-get install pkg-config cmake libfreetype6-dev libsdl-dev libicu-dev libssl-dev libcurl4-openssl-dev -y
-        sudo apt install bam git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev python3 libnotify-dev libgdk-pixbuf2.0-0 libopus-dev -y
+        sudo apt install git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev python3 libnotify-dev libgdk-pixbuf2.0-0 libopus-dev -y
+        cd bam
+        ./make_unix.sh
+    - name: Prepare Windows
+      if: contains(matrix.os, 'windows')
+      run: |
+        cd bam
+        ./make_win64_msvc.bat
     - name: Build
       env: ${{ matrix.env }}
+      if: contains(matrix.os, 'ubuntu')
       run: |
         mkdir release
-        bam release
+        ./bam/bam release
         mv data release
         mv teelink release
         mv license.txt release
         mv storage.cfg release
         tar -cvf ${{ matrix.package-file }} release
+      if: contains(matrix.os, 'windows')
+      run: |
+        mkdir release
+        ./bam/bam release
+        mv data release
+        mv teelink release
+        mv license.txt release
+        mv storage.cfg release
+        7z a ${{ matrix.package-file }} release
     - name: Package(Linux)
       if: contains(matrix.os, 'ubuntu')
       run: |
@@ -72,13 +85,9 @@ jobs:
       if: contains(matrix.os, 'windows')
       run: |
         mkdir release/artifacts
-        cd release
-        mv ${{ matrix.package-file }} ..
-        cd ..
-        7z a ${{ matrix.package-full-file }} ${{ matrix.package-file }}
-        mv ${{ matrix.package-full-file }} release/artifacts
+        mv ${{ matrix.package-file }} release/artifacts
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2-preview
       with:
-        name: ${{ matrix.name }}
-        path: release/artifacts/${{ matrix.package-full-file }}
+        name: ${{ matrix.package-file }}
+        path: release/artifacts/${{ matrix.package-file }}
