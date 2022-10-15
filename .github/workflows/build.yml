@@ -60,8 +60,9 @@ jobs:
       env: ${{ matrix.env }}
       run: |
         mkdir release
-        cd release
         bam
+        mv * release
+        cd release
     - name: Package(Linux)
       if: contains(matrix.os, 'ubuntu')
       run: |
