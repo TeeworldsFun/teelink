@@ -19,8 +19,8 @@ jobs:
           os: ubuntu-latest
           cmake-args: -G "Unix Makefiles"
           build-args: --parallel
-          package-file: TeeLinks-linux_x86_64.tar.xz
-          package-full-file: TeeLinks-linux_x86_64-full.tar.xz
+          package-file: TeeLink-linux_x86_64.tar.xz
+          package-full-file: TeeLink-linux_x86_64-full.tar.xz
           env:
             CFLAGS: -Wdeclaration-after-statement -Wduplicated-branches
             CXXFLAGS: -Wduplicated-branches
@@ -60,7 +60,7 @@ jobs:
       env: ${{ matrix.env }}
       run: |
         mkdir release
-        bam
+        bam release
         mv data teelink license.txt storage.cfg release
         cd release
     - name: Package(Linux)
