@@ -61,7 +61,7 @@ jobs:
       run: |
         mkdir release
         bam
-        mv * release
+        mv data teelink license.txt storage.cfg release
         cd release
     - name: Package(Linux)
       if: contains(matrix.os, 'ubuntu')
