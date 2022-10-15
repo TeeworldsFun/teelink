@@ -63,6 +63,7 @@ jobs:
         bam release
         mv data teelink license.txt storage.cfg release
         cd release
+        tar -cf * ${{ matrix.package-full-file }}
     - name: Package(Linux)
       if: contains(matrix.os, 'ubuntu')
       run: |
