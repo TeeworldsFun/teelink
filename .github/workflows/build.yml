@@ -33,12 +33,11 @@ jobs:
             CXXFLAGS: /WX
             LDFLAGS: /WX
     steps:
-    - name: Install Python(windows)
-      if: contains(matrix.os, 'windows')
-        - uses: actions/checkout@v2
-        - uses: actions/setup-python@v4
-          with:
-            python-version: '3.10'
+    - name: Install Python
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
     - name: Checkout submodules
       uses: actions/checkout@v2
       with:
@@ -54,7 +53,7 @@ jobs:
       run: |
         sudo apt-get update -y
         sudo apt-get install pkg-config cmake libfreetype6-dev libsdl-dev libicu-dev libssl-dev libcurl4-openssl-dev -y
-        sudo apt install git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev python3 libnotify-dev libgdk-pixbuf2.0-0 libopus-dev -y
+        sudo apt install git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev libnotify-dev libgdk-pixbuf2.0-0 libopus-dev -y
         cd bam
         ./make_unix.sh
     - name: Prepare Windows
