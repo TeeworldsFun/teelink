@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build-cmake:
+  build-bam:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -28,6 +28,7 @@ jobs:
           os: windows-latest
           cmake-args: -G "Visual Studio 17 2022" -A x64
           package-file: Teelink-win64.zip
+          fancy: false
           env:
             CFLAGS: /WX
             CXXFLAGS: /WX
