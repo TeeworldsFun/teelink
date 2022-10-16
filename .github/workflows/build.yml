@@ -72,8 +72,9 @@ jobs:
       if: contains(matrix.os, 'windows')
       env: ${{ matrix.env }}
       run: |
+        mv ./bam/bam ./
         mkdir release
-        ./bam/bam release
+        ./bam release
         mv data release
         mv teelink.exe release
         mv license.txt release
