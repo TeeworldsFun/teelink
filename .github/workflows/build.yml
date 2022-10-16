@@ -1,0 +1,97 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-cmake:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+        - name: "Ubuntu-Latest x86_64"
+          os: ubuntu-latest
+          cmake-args: -G "Unix Makefiles"
+          build-args: --parallel
+          package-file: Teelink-linux_x86_64.tar.xz
+          env:
+            CFLAGS: -Wdeclaration-after-statement -Wduplicated-branches
+            CXXFLAGS: -Wduplicated-branches
+            
+        - name: "Windows x64"
+          os: windows-latest
+          cmake-args: -A x64
+          package-file: Teelink-win64.zip
+          fancy: false
+          env:
+            CFLAGS: /WX
+            CXXFLAGS: /WX
+            LDFLAGS: /WX
+    steps:
+    - name: Checkout submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Check Bam
+      uses: actions/checkout@v2
+      with:
+        repository: matricks/bam
+        ref: 8cd08744c37666830d439ab54016c9d228c63b68
+        path: ./bam
+    - name: Prepare Linux
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install pkg-config cmake libfreetype6-dev libsdl-dev libicu-dev libssl-dev libcurl4-openssl-dev -y
+        sudo apt install git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev libnotify-dev libgdk-pixbuf2.0-0 libopus-dev -y
+        cd bam
+        ./make_unix.sh
+    - name: Prepare Windows
+      if: contains(matrix.os, 'windows')
+      run: |
+        cd bam
+        ./make_win64_msvc.bat
+    - name: Build(Linux)
+      if: contains(matrix.os, 'ubuntu')
+      env: ${{ matrix.env }}
+      run: |
+        mkdir release
+        ./bam/bam release
+        mv data release
+        mv teelink release
+        mv license.txt release
+        mv storage.cfg release
+        tar -cvf ${{ matrix.package-file }} release
+    - name: Build(Windows)
+      if: contains(matrix.os, 'windows')
+      env: ${{ matrix.env }}
+      run: |
+        mv ./bam/bam ./
+        mkdir release
+        ./bam release
+        mv data release
+        mv teelink.exe release
+        mv license.txt release
+        mv storage.cfg release
+        7z a ${{ matrix.package-file }} release
+    - name: Package(Linux)
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        mkdir release/artifacts
+        mv ${{ matrix.package-file }} release/artifacts
+    - name: Package(Windows)
+      if: contains(matrix.os, 'windows')
+      run: |
+        mkdir release/artifacts
+        mv ${{ matrix.package-file }} release/artifacts
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: ${{ matrix.package-file }}
+        path: release/artifacts/${{ matrix.package-file }}
