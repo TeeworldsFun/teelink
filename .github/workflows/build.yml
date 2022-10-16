@@ -33,11 +33,6 @@ jobs:
             CXXFLAGS: /WX
             LDFLAGS: /WX
     steps:
-    - name: Install Python
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
     - name: Checkout submodules
       uses: actions/checkout@v2
       with:
@@ -48,6 +43,12 @@ jobs:
         repository: matricks/bam
         ref: 8cd08744c37666830d439ab54016c9d228c63b68
         path: ./bam
+    - name: Install Python
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: python my_script.py
     - name: Prepare Linux
       if: contains(matrix.os, 'ubuntu')
       run: |
