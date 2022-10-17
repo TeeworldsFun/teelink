@@ -1,0 +1,88 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-cmake:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, windows-2022]
+        include:
+        - name: "Ubuntu-Latest x86_64"
+          os: ubuntu-latest
+          cmake-args: -G "Unix Makefiles"
+          build-args: --parallel
+          package-file: TeeLink-linux_x86_64.tar.xz
+          package-full-file: TeeLink-linux_x86_64-full.tar.xz
+          env:
+            CFLAGS: -Wdeclaration-after-statement -Wduplicated-branches
+            CXXFLAGS: -Wduplicated-branches
+            
+        - name: "Windows x64"
+          os: windows-latest
+          cmake-args: -G "Visual Studio 17 2022" -A x64
+          package-file: TeeLinks-win64.zip
+          package-full-file: TeeLinks-win64-full.zip
+          env:
+            CFLAGS: /WX
+            CXXFLAGS: /WX
+            LDFLAGS: /WX
+
+        - name: "Windows x86"
+          os: windows-2022
+          cmake-args: -G "Visual Studio 17 2022" -A Win32
+          package-file: TeeLinks-win32.zip
+          package-full-file: TeeLinks-win32-full.zip
+          env:
+            CFLAGS: /WX
+            CXXFLAGS: /WX
+            LDFLAGS: /WX
+
+    steps:
+    - name: Checkout submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Prepare Linux
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install pkg-config cmake libfreetype6-dev libsdl-dev libicu-dev libssl-dev libcurl4-openssl-dev -y
+        sudo apt install bam git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev python3 libnotify-dev libgdk-pixbuf2.0-0 libopus-dev -y
+    - name: Build
+      env: ${{ matrix.env }}
+      run: |
+        mkdir release
+        bam release
+        mv data teelink license.txt storage.cfg release
+        tar -cf release ${{ matrix.package-full-file }}
+    - name: Package(Linux)
+      if: contains(matrix.os, 'ubuntu')
+      run: |
+        mkdir release/artifacts
+        cd release
+        mv ${{ matrix.package-file }} ..
+        cd ..
+        tar -cf ${{ matrix.package-full-file }} ${{ matrix.package-file }}
+        mv ${{ matrix.package-full-file }} release/artifacts
+    - name: Package(Windows)
+      if: contains(matrix.os, 'windows')
+      run: |
+        mkdir release/artifacts
+        cd release
+        mv ${{ matrix.package-file }} ..
+        cd ..
+        7z a ${{ matrix.package-full-file }} ${{ matrix.package-file }}
+        mv ${{ matrix.package-full-file }} release/artifacts
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: ${{ matrix.name }}
+        path: release/artifacts/${{ matrix.package-full-file }}
